@@ -280,6 +280,8 @@ AnimationItem.prototype.waitForFontsLoaded = function () {
   if (!this.renderer) {
     return;
   }
+  //console.log(this.renderer.globalData);
+
   if (this.renderer.globalData.fontManager.loaded()) {
     this.checkLoaded();
   } else {
@@ -386,11 +388,13 @@ AnimationItem.prototype.goToAndStop = function (value, isFrame, name) {
   if (name && this.name != name) {
     return;
   }
+
   if (isFrame) {
     this.setCurrentRawFrameValue(value);
   } else {
     this.setCurrentRawFrameValue(value * this.frameModifier);
   }
+
   this.pause();
 };
 

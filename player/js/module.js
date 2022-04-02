@@ -83,6 +83,10 @@
     }
   }
 
+  lottiejs.canvas = null;
+  lottiejs.setCanvas = function (canvas) {
+    lottiejs.canvas = canvas;
+  };
   lottiejs.play = animationManager.play;
   lottiejs.pause = animationManager.pause;
   lottiejs.setLocationHref = setLocationHref;

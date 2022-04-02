@@ -137,20 +137,18 @@ CanvasRenderer.prototype.restore = function(actionFlag){
 
 CanvasRenderer.prototype.configAnimation = function(animData){
     if(this.animationItem.wrapper){
-        this.animationItem.container = createTag('canvas');
-        this.animationItem.container.style.width = '100%';
-        this.animationItem.container.style.height = '100%';
-        //this.animationItem.container.style.transform = 'translate3d(0,0,0)';
-        //this.animationItem.container.style.webkitTransform = 'translate3d(0,0,0)';
-        this.animationItem.container.style.transformOrigin = this.animationItem.container.style.mozTransformOrigin = this.animationItem.container.style.webkitTransformOrigin = this.animationItem.container.style['-webkit-transform'] = "0px 0px 0px";
-        this.animationItem.wrapper.appendChild(this.animationItem.container);
+        this.animationItem.container = this.animationItem.wrapper;
+        // this.animationItem.container.style.width = '100%';
+        // this.animationItem.container.style.height = '100%';
+        
+        // this.animationItem.container.style.transformOrigin = this.animationItem.container.style.mozTransformOrigin = this.animationItem.container.style.webkitTransformOrigin = this.animationItem.container.style['-webkit-transform'] = "0px 0px 0px";
+        // this.animationItem.wrapper.appendChild(this.animationItem.container);
+
         this.canvasContext = this.animationItem.container.getContext('2d');
-        if(this.renderConfig.className) {
-            this.animationItem.container.setAttribute('class', this.renderConfig.className);
-        }
     }else{
         this.canvasContext = this.renderConfig.context;
     }
+    
     this.data = animData;
     this.layers = animData.layers;
     this.transformCanvas = {
@@ -161,7 +159,8 @@ CanvasRenderer.prototype.configAnimation = function(animData){
         tx:0,
         ty:0
     };
-    this.setupGlobalData(animData, document.body);
+    
+    this.setupGlobalData(animData);
     this.globalData.canvasContext = this.canvasContext;
     this.globalData.renderer = this;
     this.globalData.isDashed = false;
@@ -178,8 +177,8 @@ CanvasRenderer.prototype.updateContainerSize = function () {
     if(this.animationItem.wrapper && this.animationItem.container){
         elementWidth = this.animationItem.wrapper.offsetWidth;
         elementHeight = this.animationItem.wrapper.offsetHeight;
-        this.animationItem.container.setAttribute('width',elementWidth * this.renderConfig.dpr );
-        this.animationItem.container.setAttribute('height',elementHeight * this.renderConfig.dpr);
+        // this.animationItem.container.setAttribute('width',elementWidth * this.renderConfig.dpr );
+        // this.animationItem.container.setAttribute('height',elementHeight * this.renderConfig.dpr);
     }else{
         elementWidth = this.canvasContext.canvas.width * this.renderConfig.dpr;
         elementHeight = this.canvasContext.canvas.height * this.renderConfig.dpr;

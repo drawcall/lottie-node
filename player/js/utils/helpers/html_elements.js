@@ -1,4 +1,6 @@
 function createTag(type) {
-	console.trace(1111);
-	return document.createElement(type);
+  if (type === "canvas") return new lottiejs.canvas.Canvas(1, 1);
+  else if (type === "image") return new lottiejs.canvas.Image();
+
+  return null;
 }

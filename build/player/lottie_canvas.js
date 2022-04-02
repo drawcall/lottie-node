@@ -295,9 +295,12 @@ function createSizedArray(len) {
 	return Array.apply(null,{length:len});
 }
 function createTag(type) {
-	console.trace(1111);
-	return document.createElement(type);
+  if (type === "canvas") return new lottiejs.canvas.Canvas(1, 1);
+  else if (type === "image") return new lottiejs.canvas.Image();
+
+  return null;
 }
+
 function DynamicPropertyContainer(){};
 DynamicPropertyContainer.prototype = {
 	addDynamicProperty: function(prop) {
@@ -1443,95 +1446,95 @@ function bezFunction(){
 }
 
 var bez = bezFunction();
-function dataFunctionManager(){
-
-    //var tCanvasHelper = createTag('canvas').getContext('2d');
-
-    function completeLayers(layers, comps, fontManager){
-        var layerData;
-        var animArray, lastFrame;
-        var i, len = layers.length;
-        var j, jLen, k, kLen;
-        for(i=0;i<len;i+=1){
-            layerData = layers[i];
-            if(!('ks' in layerData) || layerData.completed){
-                continue;
+function dataFunctionManager() {
+  function completeLayers(layers, comps, fontManager) {
+    var layerData;
+    var animArray, lastFrame;
+    var i,
+      len = layers.length;
+    var j, jLen, k, kLen;
+    for (i = 0; i < len; i += 1) {
+      layerData = layers[i];
+      if (!("ks" in layerData) || layerData.completed) {
+        continue;
+      }
+      layerData.completed = true;
+      if (layerData.tt) {
+        layers[i - 1].td = layerData.tt;
+      }
+      animArray = [];
+      lastFrame = -1;
+      if (layerData.hasMask) {
+        var maskProps = layerData.masksProperties;
+        jLen = maskProps.length;
+        for (j = 0; j < jLen; j += 1) {
+          if (maskProps[j].pt.k.i) {
+            convertPathsToAbsoluteValues(maskProps[j].pt.k);
+          } else {
+            kLen = maskProps[j].pt.k.length;
+            for (k = 0; k < kLen; k += 1) {
+              if (maskProps[j].pt.k[k].s) {
+                convertPathsToAbsoluteValues(maskProps[j].pt.k[k].s[0]);
+              }
+              if (maskProps[j].pt.k[k].e) {
+                convertPathsToAbsoluteValues(maskProps[j].pt.k[k].e[0]);
+              }
             }
-            layerData.completed = true;
-            if(layerData.tt){
-                layers[i-1].td = layerData.tt;
-            }
-            animArray = [];
-            lastFrame = -1;
-            if(layerData.hasMask){
-                var maskProps = layerData.masksProperties;
-                jLen = maskProps.length;
-                for(j=0;j<jLen;j+=1){
-                    if(maskProps[j].pt.k.i){
-                        convertPathsToAbsoluteValues(maskProps[j].pt.k);
-                    }else{
-                        kLen = maskProps[j].pt.k.length;
-                        for(k=0;k<kLen;k+=1){
-                            if(maskProps[j].pt.k[k].s){
-                                convertPathsToAbsoluteValues(maskProps[j].pt.k[k].s[0]);
-                            }
-                            if(maskProps[j].pt.k[k].e){
-                                convertPathsToAbsoluteValues(maskProps[j].pt.k[k].e[0]);
-                            }
-                        }
-                    }
-                }
-            }
-            if(layerData.ty===0){
-                layerData.layers = findCompLayers(layerData.refId, comps);
-                completeLayers(layerData.layers,comps, fontManager);
-            }else if(layerData.ty === 4){
-                completeShapes(layerData.shapes);
-            }else if(layerData.ty == 5){
-                completeText(layerData, fontManager);
-            }
+          }
         }
+      }
+      if (layerData.ty === 0) {
+        layerData.layers = findCompLayers(layerData.refId, comps);
+        completeLayers(layerData.layers, comps, fontManager);
+      } else if (layerData.ty === 4) {
+        completeShapes(layerData.shapes);
+      } else if (layerData.ty == 5) {
+        completeText(layerData, fontManager);
+      }
     }
+  }
 
-    function findCompLayers(id,comps){
-        var i = 0, len = comps.length;
-        while(i<len){
-            if(comps[i].id === id){
-                if(!comps[i].layers.__used) {
-                    comps[i].layers.__used = true;
-                    return comps[i].layers;
-                }
-                return JSON.parse(JSON.stringify(comps[i].layers));
-            }
-            i += 1;
+  function findCompLayers(id, comps) {
+    var i = 0,
+      len = comps.length;
+    while (i < len) {
+      if (comps[i].id === id) {
+        if (!comps[i].layers.__used) {
+          comps[i].layers.__used = true;
+          return comps[i].layers;
         }
+        return JSON.parse(JSON.stringify(comps[i].layers));
+      }
+      i += 1;
     }
+  }
 
-    function completeShapes(arr){
-        var i, len = arr.length;
-        var j, jLen;
-        var hasPaths = false;
-        for(i=len-1;i>=0;i-=1){
-            if(arr[i].ty == 'sh'){
-                if(arr[i].ks.k.i){
-                    convertPathsToAbsoluteValues(arr[i].ks.k);
-                }else{
-                    jLen = arr[i].ks.k.length;
-                    for(j=0;j<jLen;j+=1){
-                        if(arr[i].ks.k[j].s){
-                            convertPathsToAbsoluteValues(arr[i].ks.k[j].s[0]);
-                        }
-                        if(arr[i].ks.k[j].e){
-                            convertPathsToAbsoluteValues(arr[i].ks.k[j].e[0]);
-                        }
-                    }
-                }
-                hasPaths = true;
-            }else if(arr[i].ty == 'gr'){
-                completeShapes(arr[i].it);
+  function completeShapes(arr) {
+    var i,
+      len = arr.length;
+    var j, jLen;
+    var hasPaths = false;
+    for (i = len - 1; i >= 0; i -= 1) {
+      if (arr[i].ty == "sh") {
+        if (arr[i].ks.k.i) {
+          convertPathsToAbsoluteValues(arr[i].ks.k);
+        } else {
+          jLen = arr[i].ks.k.length;
+          for (j = 0; j < jLen; j += 1) {
+            if (arr[i].ks.k[j].s) {
+              convertPathsToAbsoluteValues(arr[i].ks.k[j].s[0]);
             }
+            if (arr[i].ks.k[j].e) {
+              convertPathsToAbsoluteValues(arr[i].ks.k[j].e[0]);
+            }
+          }
         }
-        /*if(hasPaths){
+        hasPaths = true;
+      } else if (arr[i].ty == "gr") {
+        completeShapes(arr[i].it);
+      }
+    }
+    /*if(hasPaths){
             //mx: distance
             //ss: sensitivity
             //dc: decay
@@ -1543,266 +1546,276 @@ function dataFunctionManager(){
                 "maxDist":200
             });
         }*/
+  }
+
+  function convertPathsToAbsoluteValues(path) {
+    var i,
+      len = path.i.length;
+    for (i = 0; i < len; i += 1) {
+      path.i[i][0] += path.v[i][0];
+      path.i[i][1] += path.v[i][1];
+      path.o[i][0] += path.v[i][0];
+      path.o[i][1] += path.v[i][1];
+    }
+  }
+
+  function checkVersion(minimum, animVersionString) {
+    var animVersion = animVersionString ? animVersionString.split(".") : [100, 100, 100];
+    if (minimum[0] > animVersion[0]) {
+      return true;
+    } else if (animVersion[0] > minimum[0]) {
+      return false;
+    }
+    if (minimum[1] > animVersion[1]) {
+      return true;
+    } else if (animVersion[1] > minimum[1]) {
+      return false;
+    }
+    if (minimum[2] > animVersion[2]) {
+      return true;
+    } else if (animVersion[2] > minimum[2]) {
+      return false;
+    }
+  }
+
+  var checkText = (function () {
+    var minimumVersion = [4, 4, 14];
+
+    function updateTextLayer(textLayer) {
+      var documentData = textLayer.t.d;
+      textLayer.t.d = {
+        k: [
+          {
+            s: documentData,
+            t: 0,
+          },
+        ],
+      };
     }
 
-    function convertPathsToAbsoluteValues(path){
-        var i, len = path.i.length;
-        for(i=0;i<len;i+=1){
-            path.i[i][0] += path.v[i][0];
-            path.i[i][1] += path.v[i][1];
-            path.o[i][0] += path.v[i][0];
-            path.o[i][1] += path.v[i][1];
+    function iterateLayers(layers) {
+      var i,
+        len = layers.length;
+      for (i = 0; i < len; i += 1) {
+        if (layers[i].ty === 5) {
+          updateTextLayer(layers[i]);
         }
+      }
     }
 
-    function checkVersion(minimum,animVersionString){
-        var animVersion = animVersionString ? animVersionString.split('.') : [100,100,100];
-        if(minimum[0]>animVersion[0]){
-            return true;
-        } else if(animVersion[0] > minimum[0]){
-            return false;
+    return function (animationData) {
+      if (checkVersion(minimumVersion, animationData.v)) {
+        iterateLayers(animationData.layers);
+        if (animationData.assets) {
+          var i,
+            len = animationData.assets.length;
+          for (i = 0; i < len; i += 1) {
+            if (animationData.assets[i].layers) {
+              iterateLayers(animationData.assets[i].layers);
+            }
+          }
         }
-        if(minimum[1]>animVersion[1]){
-            return true;
-        } else if(animVersion[1] > minimum[1]){
-            return false;
+      }
+    };
+  })();
+
+  var checkChars = (function () {
+    var minimumVersion = [4, 7, 99];
+    return function (animationData) {
+      if (animationData.chars && !checkVersion(minimumVersion, animationData.v)) {
+        var i,
+          len = animationData.chars.length,
+          j,
+          jLen,
+          k,
+          kLen;
+        var pathData, paths;
+        for (i = 0; i < len; i += 1) {
+          if (animationData.chars[i].data && animationData.chars[i].data.shapes) {
+            paths = animationData.chars[i].data.shapes[0].it;
+            jLen = paths.length;
+
+            for (j = 0; j < jLen; j += 1) {
+              pathData = paths[j].ks.k;
+              if (!pathData.__converted) {
+                convertPathsToAbsoluteValues(paths[j].ks.k);
+                pathData.__converted = true;
+              }
+            }
+          }
         }
-        if(minimum[2]>animVersion[2]){
-            return true;
-        } else if(animVersion[2] > minimum[2]){
-            return false;
+      }
+    };
+  })();
+
+  var checkColors = (function () {
+    var minimumVersion = [4, 1, 9];
+
+    function iterateShapes(shapes) {
+      var i,
+        len = shapes.length;
+      var j, jLen;
+      for (i = 0; i < len; i += 1) {
+        if (shapes[i].ty === "gr") {
+          iterateShapes(shapes[i].it);
+        } else if (shapes[i].ty === "fl" || shapes[i].ty === "st") {
+          if (shapes[i].c.k && shapes[i].c.k[0].i) {
+            jLen = shapes[i].c.k.length;
+            for (j = 0; j < jLen; j += 1) {
+              if (shapes[i].c.k[j].s) {
+                shapes[i].c.k[j].s[0] /= 255;
+                shapes[i].c.k[j].s[1] /= 255;
+                shapes[i].c.k[j].s[2] /= 255;
+                shapes[i].c.k[j].s[3] /= 255;
+              }
+              if (shapes[i].c.k[j].e) {
+                shapes[i].c.k[j].e[0] /= 255;
+                shapes[i].c.k[j].e[1] /= 255;
+                shapes[i].c.k[j].e[2] /= 255;
+                shapes[i].c.k[j].e[3] /= 255;
+              }
+            }
+          } else {
+            shapes[i].c.k[0] /= 255;
+            shapes[i].c.k[1] /= 255;
+            shapes[i].c.k[2] /= 255;
+            shapes[i].c.k[3] /= 255;
+          }
         }
+      }
     }
 
-    var checkText = (function(){
-        var minimumVersion = [4,4,14];
-
-        function updateTextLayer(textLayer){
-            var documentData = textLayer.t.d;
-            textLayer.t.d = {
-                k: [
-                    {
-                        s:documentData,
-                        t:0
-                    }
-                ]
-            };
+    function iterateLayers(layers) {
+      var i,
+        len = layers.length;
+      for (i = 0; i < len; i += 1) {
+        if (layers[i].ty === 4) {
+          iterateShapes(layers[i].shapes);
         }
-
-        function iterateLayers(layers){
-            var i, len = layers.length;
-            for(i=0;i<len;i+=1){
-                if(layers[i].ty === 5){
-                    updateTextLayer(layers[i]);
-                }
-            }
-        }
-
-        return function (animationData){
-            if(checkVersion(minimumVersion,animationData.v)){
-                iterateLayers(animationData.layers);
-                if(animationData.assets){
-                    var i, len = animationData.assets.length;
-                    for(i=0;i<len;i+=1){
-                        if(animationData.assets[i].layers){
-                            iterateLayers(animationData.assets[i].layers);
-
-                        }
-                    }
-                }
-            }
-        };
-    }());
-
-    var checkChars = (function() {
-        var minimumVersion = [4,7,99];
-        return function (animationData){
-            if(animationData.chars && !checkVersion(minimumVersion,animationData.v)){
-                var i, len = animationData.chars.length, j, jLen, k, kLen;
-                var pathData, paths;
-                for(i = 0; i < len; i += 1) {
-                    if(animationData.chars[i].data && animationData.chars[i].data.shapes) {
-                        paths = animationData.chars[i].data.shapes[0].it;
-                        jLen = paths.length;
-
-                        for(j = 0; j < jLen; j += 1) {
-                            pathData = paths[j].ks.k;
-                            if(!pathData.__converted) {
-                                convertPathsToAbsoluteValues(paths[j].ks.k);
-                                pathData.__converted = true;
-                            }
-                        }
-                    }
-                }
-            }
-        };
-    }());
-
-    var checkColors = (function(){
-        var minimumVersion = [4,1,9];
-
-        function iterateShapes(shapes){
-            var i, len = shapes.length;
-            var j, jLen;
-            for(i=0;i<len;i+=1){
-                if(shapes[i].ty === 'gr'){
-                    iterateShapes(shapes[i].it);
-                }else if(shapes[i].ty === 'fl' || shapes[i].ty === 'st'){
-                    if(shapes[i].c.k && shapes[i].c.k[0].i){
-                        jLen = shapes[i].c.k.length;
-                        for(j=0;j<jLen;j+=1){
-                            if(shapes[i].c.k[j].s){
-                                shapes[i].c.k[j].s[0] /= 255;
-                                shapes[i].c.k[j].s[1] /= 255;
-                                shapes[i].c.k[j].s[2] /= 255;
-                                shapes[i].c.k[j].s[3] /= 255;
-                            }
-                            if(shapes[i].c.k[j].e){
-                                shapes[i].c.k[j].e[0] /= 255;
-                                shapes[i].c.k[j].e[1] /= 255;
-                                shapes[i].c.k[j].e[2] /= 255;
-                                shapes[i].c.k[j].e[3] /= 255;
-                            }
-                        }
-                    } else {
-                        shapes[i].c.k[0] /= 255;
-                        shapes[i].c.k[1] /= 255;
-                        shapes[i].c.k[2] /= 255;
-                        shapes[i].c.k[3] /= 255;
-                    }
-                }
-            }
-        }
-
-        function iterateLayers(layers){
-            var i, len = layers.length;
-            for(i=0;i<len;i+=1){
-                if(layers[i].ty === 4){
-                    iterateShapes(layers[i].shapes);
-                }
-            }
-        }
-
-        return function (animationData){
-            if(checkVersion(minimumVersion,animationData.v)){
-                iterateLayers(animationData.layers);
-                if(animationData.assets){
-                    var i, len = animationData.assets.length;
-                    for(i=0;i<len;i+=1){
-                        if(animationData.assets[i].layers){
-                            iterateLayers(animationData.assets[i].layers);
-
-                        }
-                    }
-                }
-            }
-        };
-    }());
-
-    var checkShapes = (function(){
-        var minimumVersion = [4,4,18];
-
-
-
-        function completeShapes(arr){
-            var i, len = arr.length;
-            var j, jLen;
-            var hasPaths = false;
-            for(i=len-1;i>=0;i-=1){
-                if(arr[i].ty == 'sh'){
-                    if(arr[i].ks.k.i){
-                        arr[i].ks.k.c = arr[i].closed;
-                    }else{
-                        jLen = arr[i].ks.k.length;
-                        for(j=0;j<jLen;j+=1){
-                            if(arr[i].ks.k[j].s){
-                                arr[i].ks.k[j].s[0].c = arr[i].closed;
-                            }
-                            if(arr[i].ks.k[j].e){
-                                arr[i].ks.k[j].e[0].c = arr[i].closed;
-                            }
-                        }
-                    }
-                    hasPaths = true;
-                }else if(arr[i].ty == 'gr'){
-                    completeShapes(arr[i].it);
-                }
-            }
-        }
-
-        function iterateLayers(layers){
-            var layerData;
-            var i, len = layers.length;
-            var j, jLen, k, kLen;
-            for(i=0;i<len;i+=1){
-                layerData = layers[i];
-                if(layerData.hasMask){
-                    var maskProps = layerData.masksProperties;
-                    jLen = maskProps.length;
-                    for(j=0;j<jLen;j+=1){
-                        if(maskProps[j].pt.k.i){
-                            maskProps[j].pt.k.c = maskProps[j].cl;
-                        }else{
-                            kLen = maskProps[j].pt.k.length;
-                            for(k=0;k<kLen;k+=1){
-                                if(maskProps[j].pt.k[k].s){
-                                    maskProps[j].pt.k[k].s[0].c = maskProps[j].cl;
-                                }
-                                if(maskProps[j].pt.k[k].e){
-                                    maskProps[j].pt.k[k].e[0].c = maskProps[j].cl;
-                                }
-                            }
-                        }
-                    }
-                }
-                if(layerData.ty === 4){
-                    completeShapes(layerData.shapes);
-                }
-            }
-        }
-
-        return function (animationData){
-            if(checkVersion(minimumVersion,animationData.v)){
-                iterateLayers(animationData.layers);
-                if(animationData.assets){
-                    var i, len = animationData.assets.length;
-                    for(i=0;i<len;i+=1){
-                        if(animationData.assets[i].layers){
-                            iterateLayers(animationData.assets[i].layers);
-
-                        }
-                    }
-                }
-            }
-        };
-    }());
-
-    function completeData(animationData, fontManager){
-        if(animationData.__complete){
-            return;
-        }
-        checkColors(animationData);
-        checkText(animationData);
-        checkChars(animationData);
-        checkShapes(animationData);
-        completeLayers(animationData.layers, animationData.assets, fontManager);
-        animationData.__complete = true;
-        //blitAnimation(animationData, animationData.assets, fontManager);
+      }
     }
 
-    function completeText(data, fontManager){
-        if(data.t.a.length === 0 && !('m' in data.t.p)){
-            data.singleShape = true;
+    return function (animationData) {
+      if (checkVersion(minimumVersion, animationData.v)) {
+        iterateLayers(animationData.layers);
+        if (animationData.assets) {
+          var i,
+            len = animationData.assets.length;
+          for (i = 0; i < len; i += 1) {
+            if (animationData.assets[i].layers) {
+              iterateLayers(animationData.assets[i].layers);
+            }
+          }
         }
+      }
+    };
+  })();
+
+  var checkShapes = (function () {
+    var minimumVersion = [4, 4, 18];
+
+    function completeShapes(arr) {
+      var i,
+        len = arr.length;
+      var j, jLen;
+      var hasPaths = false;
+      for (i = len - 1; i >= 0; i -= 1) {
+        if (arr[i].ty == "sh") {
+          if (arr[i].ks.k.i) {
+            arr[i].ks.k.c = arr[i].closed;
+          } else {
+            jLen = arr[i].ks.k.length;
+            for (j = 0; j < jLen; j += 1) {
+              if (arr[i].ks.k[j].s) {
+                arr[i].ks.k[j].s[0].c = arr[i].closed;
+              }
+              if (arr[i].ks.k[j].e) {
+                arr[i].ks.k[j].e[0].c = arr[i].closed;
+              }
+            }
+          }
+          hasPaths = true;
+        } else if (arr[i].ty == "gr") {
+          completeShapes(arr[i].it);
+        }
+      }
     }
 
-    var moduleOb = {};
-    moduleOb.completeData = completeData;
+    function iterateLayers(layers) {
+      var layerData;
+      var i,
+        len = layers.length;
+      var j, jLen, k, kLen;
+      for (i = 0; i < len; i += 1) {
+        layerData = layers[i];
+        if (layerData.hasMask) {
+          var maskProps = layerData.masksProperties;
+          jLen = maskProps.length;
+          for (j = 0; j < jLen; j += 1) {
+            if (maskProps[j].pt.k.i) {
+              maskProps[j].pt.k.c = maskProps[j].cl;
+            } else {
+              kLen = maskProps[j].pt.k.length;
+              for (k = 0; k < kLen; k += 1) {
+                if (maskProps[j].pt.k[k].s) {
+                  maskProps[j].pt.k[k].s[0].c = maskProps[j].cl;
+                }
+                if (maskProps[j].pt.k[k].e) {
+                  maskProps[j].pt.k[k].e[0].c = maskProps[j].cl;
+                }
+              }
+            }
+          }
+        }
+        if (layerData.ty === 4) {
+          completeShapes(layerData.shapes);
+        }
+      }
+    }
 
-    return moduleOb;
+    return function (animationData) {
+      if (checkVersion(minimumVersion, animationData.v)) {
+        iterateLayers(animationData.layers);
+        if (animationData.assets) {
+          var i,
+            len = animationData.assets.length;
+          for (i = 0; i < len; i += 1) {
+            if (animationData.assets[i].layers) {
+              iterateLayers(animationData.assets[i].layers);
+            }
+          }
+        }
+      }
+    };
+  })();
+
+  function completeData(animationData, fontManager) {
+    if (animationData.__complete) {
+      return;
+    }
+    checkColors(animationData);
+    checkText(animationData);
+    checkChars(animationData);
+    checkShapes(animationData);
+    completeLayers(animationData.layers, animationData.assets, fontManager);
+    animationData.__complete = true;
+    //blitAnimation(animationData, animationData.assets, fontManager);
+  }
+
+  function completeText(data, fontManager) {
+    if (data.t.a.length === 0 && !("m" in data.t.p)) {
+      data.singleShape = true;
+    }
+  }
+
+  var moduleOb = {};
+  moduleOb.completeData = completeData;
+
+  return moduleOb;
 }
 
 var dataManager = dataFunctionManager();
+
 var FontManager = (function(){
 
     var maxWaitingTime = 5000;
@@ -5749,133 +5762,140 @@ var bezier_length_pool = (function(){
 	}
 	return pool_factory(8, create);
 }());
-function BaseRenderer(){}
-BaseRenderer.prototype.checkLayers = function(num){
-    var i, len = this.layers.length, data;
-    this.completeLayers = true;
-    for (i = len - 1; i >= 0; i--) {
-        if (!this.elements[i]) {
-            data = this.layers[i];
-            if(data.ip - data.st <= (num - this.layers[i].st) && data.op - data.st > (num - this.layers[i].st))
-            {
-                this.buildItem(i);
-            }
-        }
-        this.completeLayers = this.elements[i] ? this.completeLayers:false;
-    }
-    this.checkPendingElements();
-};
-
-BaseRenderer.prototype.createItem = function(layer){
-    switch(layer.ty){
-        case 2:
-            return this.createImage(layer);
-        case 0:
-            return this.createComp(layer);
-        case 1:
-            return this.createSolid(layer);
-        case 3:
-            return this.createNull(layer);
-        case 4:
-            return this.createShape(layer);
-        case 5:
-            return this.createText(layer);
-        case 13:
-            return this.createCamera(layer);
-    }
-    return this.createNull(layer);
-};
-
-BaseRenderer.prototype.createCamera = function(){
-    throw new Error('You\'re using a 3d camera. Try the html renderer.');
-};
-
-BaseRenderer.prototype.buildAllItems = function(){
-    var i, len = this.layers.length;
-    for(i=0;i<len;i+=1){
+function BaseRenderer() {}
+BaseRenderer.prototype.checkLayers = function (num) {
+  var i,
+    len = this.layers.length,
+    data;
+  this.completeLayers = true;
+  for (i = len - 1; i >= 0; i--) {
+    if (!this.elements[i]) {
+      data = this.layers[i];
+      if (data.ip - data.st <= num - this.layers[i].st && data.op - data.st > num - this.layers[i].st) {
         this.buildItem(i);
+      }
     }
-    this.checkPendingElements();
+    this.completeLayers = this.elements[i] ? this.completeLayers : false;
+  }
+  this.checkPendingElements();
 };
 
-BaseRenderer.prototype.includeLayers = function(newLayers){
-    this.completeLayers = false;
-    var i, len = newLayers.length;
-    var j, jLen = this.layers.length;
-    for(i=0;i<len;i+=1){
-        j = 0;
-        while(j<jLen){
-            if(this.layers[j].id == newLayers[i].id){
-                this.layers[j] = newLayers[i];
-                break;
-            }
-            j += 1;
+BaseRenderer.prototype.createItem = function (layer) {
+  switch (layer.ty) {
+    case 2:
+      return this.createImage(layer);
+    case 0:
+      return this.createComp(layer);
+    case 1:
+      return this.createSolid(layer);
+    case 3:
+      return this.createNull(layer);
+    case 4:
+      return this.createShape(layer);
+    case 5:
+      return this.createText(layer);
+    case 13:
+      return this.createCamera(layer);
+  }
+  return this.createNull(layer);
+};
+
+BaseRenderer.prototype.createCamera = function () {
+  throw new Error("You're using a 3d camera. Try the html renderer.");
+};
+
+BaseRenderer.prototype.buildAllItems = function () {
+  var i,
+    len = this.layers.length;
+  for (i = 0; i < len; i += 1) {
+    this.buildItem(i);
+  }
+  this.checkPendingElements();
+};
+
+BaseRenderer.prototype.includeLayers = function (newLayers) {
+  this.completeLayers = false;
+  var i,
+    len = newLayers.length;
+  var j,
+    jLen = this.layers.length;
+  for (i = 0; i < len; i += 1) {
+    j = 0;
+    while (j < jLen) {
+      if (this.layers[j].id == newLayers[i].id) {
+        this.layers[j] = newLayers[i];
+        break;
+      }
+      j += 1;
+    }
+  }
+};
+
+BaseRenderer.prototype.setProjectInterface = function (pInterface) {
+  this.globalData.projectInterface = pInterface;
+};
+
+BaseRenderer.prototype.initItems = function () {
+  if (!this.globalData.progressiveLoad) {
+    this.buildAllItems();
+  }
+};
+BaseRenderer.prototype.buildElementParenting = function (element, parentName, hierarchy) {
+  var elements = this.elements;
+  var layers = this.layers;
+  var i = 0,
+    len = layers.length;
+  while (i < len) {
+    if (layers[i].ind == parentName) {
+      if (!elements[i] || elements[i] === true) {
+        this.buildItem(i);
+        this.addPendingElement(element);
+      } else {
+        hierarchy.push(elements[i]);
+        elements[i].setAsParent();
+        if (layers[i].parent !== undefined) {
+          this.buildElementParenting(element, layers[i].parent, hierarchy);
+        } else {
+          element.setHierarchy(hierarchy);
         }
+      }
     }
+    i += 1;
+  }
 };
 
-BaseRenderer.prototype.setProjectInterface = function(pInterface){
-    this.globalData.projectInterface = pInterface;
+BaseRenderer.prototype.addPendingElement = function (element) {
+  this.pendingElements.push(element);
 };
 
-BaseRenderer.prototype.initItems = function(){
-    if(!this.globalData.progressiveLoad){
-        this.buildAllItems();
+BaseRenderer.prototype.searchExtraCompositions = function (assets) {
+  var i,
+    len = assets.length;
+  for (i = 0; i < len; i += 1) {
+    if (assets[i].xt) {
+      var comp = this.createComp(assets[i]);
+      comp.initExpressions();
+      this.globalData.projectInterface.registerComposition(comp);
     }
-};
-BaseRenderer.prototype.buildElementParenting = function(element, parentName, hierarchy) {
-    var elements = this.elements;
-    var layers = this.layers;
-    var i=0, len = layers.length;
-    while (i < len) {
-        if (layers[i].ind == parentName) {
-            if (!elements[i] || elements[i] === true) {
-                this.buildItem(i);
-                this.addPendingElement(element);
-            } else {
-                hierarchy.push(elements[i]);
-                elements[i].setAsParent();
-                if(layers[i].parent !== undefined) {
-                    this.buildElementParenting(element, layers[i].parent, hierarchy);
-                } else {
-                    element.setHierarchy(hierarchy);
-                }
-            }
-        }
-        i += 1;
-    }
+  }
 };
 
-BaseRenderer.prototype.addPendingElement = function(element){
-    this.pendingElements.push(element);
+BaseRenderer.prototype.setupGlobalData = function (animData) {
+  this.globalData.fontManager = new FontManager();
+  this.globalData.fontManager.addChars(animData.chars);
+  //this.globalData.fontManager.addFonts(animData.fonts, fontsContainer);
+  this.globalData.getAssetData = this.animationItem.getAssetData.bind(this.animationItem);
+  this.globalData.getAssetsPath = this.animationItem.getAssetsPath.bind(this.animationItem);
+  this.globalData.imageLoader = this.animationItem.imagePreloader;
+  this.globalData.frameId = 0;
+  this.globalData.frameRate = animData.fr;
+  this.globalData.nm = animData.nm;
+  this.globalData.compSize = {
+    w: animData.w,
+    h: animData.h,
+  };
 };
 
-BaseRenderer.prototype.searchExtraCompositions = function(assets){
-    var i, len = assets.length;
-    for(i=0;i<len;i+=1){
-        if(assets[i].xt){
-            var comp = this.createComp(assets[i]);
-            comp.initExpressions();
-            this.globalData.projectInterface.registerComposition(comp);
-        }
-    }
-};
-
-BaseRenderer.prototype.setupGlobalData = function(animData, fontsContainer) {
-    this.globalData.fontManager = new FontManager();
-    this.globalData.fontManager.addChars(animData.chars);
-    this.globalData.fontManager.addFonts(animData.fonts, fontsContainer);
-    this.globalData.getAssetData = this.animationItem.getAssetData.bind(this.animationItem);
-    this.globalData.getAssetsPath = this.animationItem.getAssetsPath.bind(this.animationItem);
-    this.globalData.imageLoader = this.animationItem.imagePreloader;
-    this.globalData.frameId = 0;
-    this.globalData.frameRate = animData.fr;
-    this.globalData.nm = animData.nm;
-    this.globalData.compSize = {
-        w: animData.w,
-        h: animData.h
-    }
-}
 function SVGRenderer(animationItem, config){
     this.animationItem = animationItem;
     this.layers = null;
@@ -6243,20 +6263,18 @@ CanvasRenderer.prototype.restore = function(actionFlag){
 
 CanvasRenderer.prototype.configAnimation = function(animData){
     if(this.animationItem.wrapper){
-        this.animationItem.container = createTag('canvas');
-        this.animationItem.container.style.width = '100%';
-        this.animationItem.container.style.height = '100%';
-        //this.animationItem.container.style.transform = 'translate3d(0,0,0)';
-        //this.animationItem.container.style.webkitTransform = 'translate3d(0,0,0)';
-        this.animationItem.container.style.transformOrigin = this.animationItem.container.style.mozTransformOrigin = this.animationItem.container.style.webkitTransformOrigin = this.animationItem.container.style['-webkit-transform'] = "0px 0px 0px";
-        this.animationItem.wrapper.appendChild(this.animationItem.container);
+        this.animationItem.container = this.animationItem.wrapper;
+        // this.animationItem.container.style.width = '100%';
+        // this.animationItem.container.style.height = '100%';
+        
+        // this.animationItem.container.style.transformOrigin = this.animationItem.container.style.mozTransformOrigin = this.animationItem.container.style.webkitTransformOrigin = this.animationItem.container.style['-webkit-transform'] = "0px 0px 0px";
+        // this.animationItem.wrapper.appendChild(this.animationItem.container);
+
         this.canvasContext = this.animationItem.container.getContext('2d');
-        if(this.renderConfig.className) {
-            this.animationItem.container.setAttribute('class', this.renderConfig.className);
-        }
     }else{
         this.canvasContext = this.renderConfig.context;
     }
+    
     this.data = animData;
     this.layers = animData.layers;
     this.transformCanvas = {
@@ -6267,7 +6285,8 @@ CanvasRenderer.prototype.configAnimation = function(animData){
         tx:0,
         ty:0
     };
-    this.setupGlobalData(animData, document.body);
+    
+    this.setupGlobalData(animData);
     this.globalData.canvasContext = this.canvasContext;
     this.globalData.renderer = this;
     this.globalData.isDashed = false;
@@ -6284,8 +6303,8 @@ CanvasRenderer.prototype.updateContainerSize = function () {
     if(this.animationItem.wrapper && this.animationItem.container){
         elementWidth = this.animationItem.wrapper.offsetWidth;
         elementHeight = this.animationItem.wrapper.offsetHeight;
-        this.animationItem.container.setAttribute('width',elementWidth * this.renderConfig.dpr );
-        this.animationItem.container.setAttribute('height',elementHeight * this.renderConfig.dpr);
+        // this.animationItem.container.setAttribute('width',elementWidth * this.renderConfig.dpr );
+        // this.animationItem.container.setAttribute('height',elementHeight * this.renderConfig.dpr);
     }else{
         elementWidth = this.canvasContext.canvas.width * this.renderConfig.dpr;
         elementHeight = this.canvasContext.canvas.height * this.renderConfig.dpr;
@@ -9395,6 +9414,8 @@ AnimationItem.prototype.waitForFontsLoaded = function () {
   if (!this.renderer) {
     return;
   }
+  //console.log(this.renderer.globalData);
+
   if (this.renderer.globalData.fontManager.loaded()) {
     this.checkLoaded();
   } else {
@@ -9501,11 +9522,13 @@ AnimationItem.prototype.goToAndStop = function (value, isFrame, name) {
   if (name && this.name != name) {
     return;
   }
+
   if (isFrame) {
     this.setCurrentRawFrameValue(value);
   } else {
     this.setCurrentRawFrameValue(value * this.frameModifier);
   }
+
   this.pause();
 };
 
@@ -12207,6 +12230,10 @@ GroupEffect.prototype.init = function (data, element) {
     }
   }
 
+  lottiejs.canvas = null;
+  lottiejs.setCanvas = function (canvas) {
+    lottiejs.canvas = canvas;
+  };
   lottiejs.play = animationManager.play;
   lottiejs.pause = animationManager.pause;
   lottiejs.setLocationHref = setLocationHref;
