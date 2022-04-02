@@ -136,7 +136,7 @@ const plugins = [
   }),
   // noTreeShakingForStandalonePlugin(),
   injectVersion(),
-  addNavigatorValidation(),
+  // addNavigatorValidation(),
 ];
 const pluginsWithTerser = [...plugins, terser()];
 

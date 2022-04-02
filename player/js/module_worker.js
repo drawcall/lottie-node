@@ -1,23 +1,18 @@
-import {
-  setDefaultCurveSegments,
-  getDefaultCurveSegments,
-  roundValues,
-  setIdPrefix,
-} from './utils/common';
-import animationManager from './animation/AnimationManager';
+import { setDefaultCurveSegments, getDefaultCurveSegments, roundValues, setIdPrefix } from "./utils/common";
+import animationManager from "./animation/AnimationManager";
 
 function workerContent() {
   var localIdCounter = 0;
   var animations = {};
 
-  var styleProperties = ['width', 'height', 'display', 'transform', 'opacity', 'contentVisibility'];
+  var styleProperties = ["width", "height", "display", "transform", "opacity", "contentVisibility"];
   function createElement(namespace, type) {
     var style = {
       serialize: function () {
         var obj = {};
         for (var i = 0; i < styleProperties.length; i += 1) {
           var propertyKey = styleProperties[i];
-          var keyName = '_' + propertyKey;
+          var keyName = "_" + propertyKey;
           if (keyName in this) {
             obj[propertyKey] = this[keyName];
           }
@@ -32,18 +27,18 @@ function workerContent() {
             element._isDirty = true;
           }
           element._changedStyles.push(propertyKey);
-          var keyName = '_' + propertyKey;
+          var keyName = "_" + propertyKey;
           this[keyName] = value;
         },
         get: function () {
-          var keyName = '_' + propertyKey;
+          var keyName = "_" + propertyKey;
           return this[keyName];
         },
       });
     });
     localIdCounter += 1;
     var element = {
-      _state: 'init',
+      _state: "init",
       _isDirty: false,
       _changedStyles: [],
       _changedAttributes: [],
@@ -52,7 +47,7 @@ function workerContent() {
       namespace: namespace,
       children: [],
       attributes: {
-        id: 'l_d_' + localIdCounter,
+        id: "l_d_" + localIdCounter,
       },
       style: style,
       appendChild: function (child) {
@@ -86,10 +81,14 @@ function workerContent() {
           namespace: this.namespace,
           style: this.style.serialize(),
           attributes: this.attributes,
-          children: this.children.map(function (child) { return child.serialize(); }),
+          children: this.children.map(function (child) {
+            return child.serialize();
+          }),
         };
       },
-      getContext: function () { return { fillRect: function () {} }; },
+      getContext: function () {
+        return { fillRect: function () {} };
+      },
       addEventListener: function (_, callback) {
         setTimeout(callback, 1);
       },
@@ -107,17 +106,18 @@ function workerContent() {
 
   var window = self; // eslint-disable-line no-redeclare, no-unused-vars
 
-  var document = { // eslint-disable-line no-redeclare
+  var document = {
+    // eslint-disable-line no-redeclare
     createElementNS: function (namespace, type) {
       return createElement(namespace, type);
     },
     createElement: function (type) {
-      return createElement('', type);
+      return createElement("", type);
     },
   };
   /* eslint-enable */
   var lottieInternal = (function () {
-    'use strict';
+    "use strict";
 
     /* <%= contents %> */
     var lottiejs = {};
@@ -172,27 +172,27 @@ function workerContent() {
       var wrapper;
       var animation;
       var elements = [];
-      if (params.renderer === 'svg') {
-        wrapper = document.createElement('div');
+      if (params.renderer === "svg") {
+        wrapper = document.createElement("div");
         params.container = wrapper;
       } else {
         var canvas = params.rendererSettings.canvas;
-        var ctx = canvas.getContext('2d');
+        var ctx = canvas.getContext("2d");
         params.rendererSettings.context = ctx;
       }
       animation = animationManager.loadAnimation(params);
-      animation.addEventListener('error', function (error) {
+      animation.addEventListener("error", function (error) {
         console.log(error); // eslint-disable-line
       });
       animation.onError = function (error) {
-        console.log('ERRORO', error); // eslint-disable-line
+        console.log("ERRORO", error); // eslint-disable-line
       };
-      if (params.renderer === 'svg') {
-        animation.addEventListener('DOMLoaded', function () {
+      if (params.renderer === "svg") {
+        animation.addEventListener("DOMLoaded", function () {
           var serialized = wrapper.serialize();
           addElementToList(wrapper, elements);
           self.postMessage({
-            type: 'loaded',
+            type: "loaded",
             payload: {
               id: payload.id,
               tree: serialized.children[0],
@@ -201,7 +201,7 @@ function workerContent() {
             },
           });
         });
-        animation.addEventListener('drawnFrame', function (event) {
+        animation.addEventListener("drawnFrame", function (event) {
           var changedElements = [];
           var element;
           for (var i = 0; i < elements.length; i += 1) {
@@ -221,7 +221,7 @@ function workerContent() {
             }
           }
           self.postMessage({
-            type: 'updated',
+            type: "updated",
             payload: {
               elements: changedElements,
               id: payload.id,
@@ -234,15 +234,15 @@ function workerContent() {
     }
 
     function setQuality(value) {
-      if (typeof value === 'string') {
+      if (typeof value === "string") {
         switch (value) {
-          case 'high':
+          case "high":
             setDefaultCurveSegments(200);
             break;
-          case 'medium':
+          case "medium":
             setDefaultCurveSegments(50);
             break;
-          case 'low':
+          case "low":
           default:
             setDefaultCurveSegments(10);
             break;
@@ -280,57 +280,57 @@ function workerContent() {
     lottiejs.unmute = animationManager.unmute;
     lottiejs.getRegisteredAnimations = animationManager.getRegisteredAnimations;
     lottiejs.setIDPrefix = setIDPrefix;
-    lottiejs.version = '[[BM_VERSION]]';
+    lottiejs.version = "[[BM_VERSION]]";
 
     return lottiejs;
-  }({}));
+  })({});
   onmessage = function (evt) {
     var data = evt.data;
     var type = data.type;
     var payload = data.payload;
-    if (type === 'load') {
+    if (type === "load") {
       lottieInternal.loadAnimation(payload);
-    } else if (type === 'pause') {
+    } else if (type === "pause") {
       if (animations[payload.id]) {
         animations[payload.id].pause();
       }
-    } else if (type === 'play') {
+    } else if (type === "play") {
       if (animations[payload.id]) {
         animations[payload.id].play();
       }
-    } else if (type === 'stop') {
+    } else if (type === "stop") {
       if (animations[payload.id]) {
         animations[payload.id].stop();
       }
-    } else if (type === 'setSpeed') {
+    } else if (type === "setSpeed") {
       if (animations[payload.id]) {
         animations[payload.id].setSpeed(payload.value);
       }
-    } else if (type === 'setDirection') {
+    } else if (type === "setDirection") {
       if (animations[payload.id]) {
         animations[payload.id].setDirection(payload.value);
       }
-    } else if (type === 'setDirection') {
+    } else if (type === "setDirection") {
       if (animations[payload.id]) {
         animations[payload.id].setDirection(payload.value);
       }
-    } else if (type === 'goToAndPlay') {
+    } else if (type === "goToAndPlay") {
       if (animations[payload.id]) {
         animations[payload.id].goToAndPlay(payload.value, payload.isFrame);
       }
-    } else if (type === 'goToAndStop') {
+    } else if (type === "goToAndStop") {
       if (animations[payload.id]) {
         animations[payload.id].goToAndStop(payload.value, payload.isFrame);
       }
-    } else if (type === 'setSubframe') {
+    } else if (type === "setSubframe") {
       if (animations[payload.id]) {
         animations[payload.id].setSubframe(payload.value);
       }
-    } else if (type === 'addEventListener') {
+    } else if (type === "addEventListener") {
       if (animations[payload.id]) {
         animations[payload.id].addEventListener(payload.eventName, function () {
           self.postMessage({
-            type: 'event',
+            type: "event",
             payload: {
               id: payload.id,
               callbackId: payload.callbackId,
@@ -339,12 +339,12 @@ function workerContent() {
           });
         });
       }
-    } else if (type === 'destroy') {
+    } else if (type === "destroy") {
       if (animations[payload.id]) {
         animations[payload.id].destroy();
         animations[payload.id] = null;
       }
-    } else if (type === 'resize') {
+    } else if (type === "resize") {
       if (animations[payload.id]) {
         animations[payload.id].resize();
       }
@@ -353,13 +353,13 @@ function workerContent() {
 }
 
 function createWorker(fn) {
-  var blob = new Blob(['(' + fn.toString() + '())'], { type: 'text/javascript' });
+  var blob = new Blob(["(" + fn.toString() + "())"], { type: "text/javascript" });
   var url = URL.createObjectURL(blob);
   return new Worker(url);
 }
 // eslint-disable-next-line no-unused-vars
 var lottie = (function () {
-  'use strict';
+  "use strict";
 
   var workerInstance = createWorker(workerContent);
   var animationIdCounter = 0;
@@ -371,19 +371,19 @@ var lottie = (function () {
 
   function createTree(data, container, map, afterElement) {
     var elem;
-    if (data.type === 'div') {
-      elem = document.createElement('div');
+    if (data.type === "div") {
+      elem = document.createElement("div");
     } else {
       elem = document.createElementNS(data.namespace, data.type);
     }
     for (var attr in data.attributes) {
       if (Object.prototype.hasOwnProperty.call(data.attributes, attr)) {
-        if (attr === 'href') {
-          elem.setAttributeNS('http://www.w3.org/1999/xlink', attr, data.attributes[attr]);
+        if (attr === "href") {
+          elem.setAttributeNS("http://www.w3.org/1999/xlink", attr, data.attributes[attr]);
         } else {
           elem.setAttribute(attr, data.attributes[attr]);
         }
-        if (attr === 'id') {
+        if (attr === "id") {
           map[data.attributes[attr]] = elem;
         }
       }
@@ -410,7 +410,7 @@ var lottie = (function () {
       // if callbacks have been added before the animation has loaded
       animation.pendingCallbacks.forEach(function (callbackData) {
         animation.animInstance.addEventListener(callbackData.eventName, callbackData.callback);
-        if (callbackData.eventName === 'DOMLoaded') {
+        if (callbackData.eventName === "DOMLoaded") {
           callbackData.callback();
         }
       });
@@ -420,7 +420,7 @@ var lottie = (function () {
       var elements = animation.elements;
       createTree(payload.tree, container, elements);
     };
-  }());
+  })();
 
   function addNewElements(newElements, elements) {
     var element;
@@ -483,11 +483,11 @@ var lottie = (function () {
   }
 
   workerInstance.onmessage = function (event) {
-    if (event.data.type === 'loaded') {
+    if (event.data.type === "loaded") {
       handleAnimationLoaded(event.data.payload);
-    } else if (event.data.type === 'updated') {
+    } else if (event.data.type === "updated") {
       handleAnimationUpdate(event.data.payload);
-    } else if (event.data.type === 'event') {
+    } else if (event.data.type === "event") {
       handleEvent(event.data.payload);
     }
   };
@@ -524,7 +524,7 @@ var lottie = (function () {
 
   function loadAnimation(params) {
     animationIdCounter += 1;
-    var animationId = 'lottie_animationId_' + animationIdCounter;
+    var animationId = "lottie_animationId_" + animationIdCounter;
     var animation = {
       elements: {},
       callbacks: {},
@@ -534,7 +534,7 @@ var lottie = (function () {
       id: animationId,
       pause: function () {
         workerInstance.postMessage({
-          type: 'pause',
+          type: "pause",
           payload: {
             id: animationId,
           },
@@ -542,7 +542,7 @@ var lottie = (function () {
       },
       play: function () {
         workerInstance.postMessage({
-          type: 'play',
+          type: "play",
           payload: {
             id: animationId,
           },
@@ -550,7 +550,7 @@ var lottie = (function () {
       },
       stop: function () {
         workerInstance.postMessage({
-          type: 'stop',
+          type: "stop",
           payload: {
             id: animationId,
           },
@@ -558,7 +558,7 @@ var lottie = (function () {
       },
       setSpeed: function (value) {
         workerInstance.postMessage({
-          type: 'setSpeed',
+          type: "setSpeed",
           payload: {
             id: animationId,
             value: value,
@@ -567,7 +567,7 @@ var lottie = (function () {
       },
       setDirection: function (value) {
         workerInstance.postMessage({
-          type: 'setDirection',
+          type: "setDirection",
           payload: {
             id: animationId,
             value: value,
@@ -576,7 +576,7 @@ var lottie = (function () {
       },
       goToAndStop: function (value, isFrame) {
         workerInstance.postMessage({
-          type: 'goToAndStop',
+          type: "goToAndStop",
           payload: {
             id: animationId,
             value: value,
@@ -586,7 +586,7 @@ var lottie = (function () {
       },
       goToAndPlay: function (value, isFrame) {
         workerInstance.postMessage({
-          type: 'goToAndPlay',
+          type: "goToAndPlay",
           payload: {
             id: animationId,
             value: value,
@@ -596,7 +596,7 @@ var lottie = (function () {
       },
       setSubframe: function (value) {
         workerInstance.postMessage({
-          type: 'setSubframe',
+          type: "setSubframe",
           payload: {
             id: animationId,
             value: value,
@@ -611,10 +611,10 @@ var lottie = (function () {
           });
         } else {
           eventsIdCounter += 1;
-          var callbackId = 'callback_' + eventsIdCounter;
+          var callbackId = "callback_" + eventsIdCounter;
           animation.callbacks[callbackId] = callback;
           workerInstance.postMessage({
-            type: 'addEventListener',
+            type: "addEventListener",
             payload: {
               id: animationId,
               callbackId: callbackId,
@@ -626,10 +626,10 @@ var lottie = (function () {
       destroy: function () {
         animations[animationId] = null;
         if (animation.container) {
-          animation.container.innerHTML = '';
+          animation.container.innerHTML = "";
         }
         workerInstance.postMessage({
-          type: 'destroy',
+          type: "destroy",
           payload: {
             id: animationId,
           },
@@ -637,7 +637,7 @@ var lottie = (function () {
       },
       resize: function () {
         workerInstance.postMessage({
-          type: 'resize',
+          type: "resize",
           payload: {
             id: animationId,
           },
@@ -645,33 +645,35 @@ var lottie = (function () {
       },
     };
     animation.animInstance = animInstance;
-    resolveAnimationData(params)
-      .then(function (animationParams) {
-        var transferedObjects = [];
-        if (animationParams.container) {
-          animation.container = animationParams.container;
-          delete animationParams.container;
-        }
-        if (animationParams.renderer === 'canvas' && !animationParams.rendererSettings.canvas) {
-          var canvas = document.createElement('canvas');
-          animation.container.appendChild(canvas);
-          canvas.width = animationParams.animationData.w;
-          canvas.height = animationParams.animationData.h;
-          canvas.style.width = '100%';
-          canvas.style.height = '100%';
-          var offscreen = canvas.transferControlToOffscreen();
-          transferedObjects.push(offscreen);
-          animationParams.rendererSettings.canvas = offscreen;
-        }
-        animations[animationId] = animation;
-        workerInstance.postMessage({
-          type: 'load',
+    resolveAnimationData(params).then(function (animationParams) {
+      var transferedObjects = [];
+      if (animationParams.container) {
+        animation.container = animationParams.container;
+        delete animationParams.container;
+      }
+      if (animationParams.renderer === "canvas" && !animationParams.rendererSettings.canvas) {
+        var canvas = document.createElement("canvas");
+        animation.container.appendChild(canvas);
+        canvas.width = animationParams.animationData.w;
+        canvas.height = animationParams.animationData.h;
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        var offscreen = canvas.transferControlToOffscreen();
+        transferedObjects.push(offscreen);
+        animationParams.rendererSettings.canvas = offscreen;
+      }
+      animations[animationId] = animation;
+      workerInstance.postMessage(
+        {
+          type: "load",
           payload: {
             params: animationParams,
             id: animationId,
           },
-        }, transferedObjects);
-      });
+        },
+        transferedObjects
+      );
+    });
     return animInstance;
   }
 
@@ -679,4 +681,4 @@ var lottie = (function () {
     loadAnimation: loadAnimation,
   };
   return lottiejs;
-}());
+})();

@@ -129,27 +129,6 @@ function checkReady() {
   }
 }
 
-function getQueryVariable(variable) {
-  var vars = queryString.split("&");
-  for (var i = 0; i < vars.length; i += 1) {
-    var pair = vars[i].split("=");
-    if (decodeURIComponent(pair[0]) == variable) {
-      // eslint-disable-line eqeqeq
-      return decodeURIComponent(pair[1]);
-    }
-  }
-  return null;
-}
-var queryString;
-if (standalone) {
-  var scripts = document.getElementsByTagName("script");
-  var index = scripts.length - 1;
-  var myScript = scripts[index] || {
-    src: "",
-  };
-  queryString = myScript.src.replace(/^[^\?]+\??/, ""); // eslint-disable-line no-useless-escape
-  renderer = getQueryVariable("renderer");
-}
-var readyStateCheckInterval = setInterval(checkReady, 100);
+//var readyStateCheckInterval = setInterval(checkReady, 100);
 
 export default lottie;

@@ -5,7 +5,7 @@ import {
 let subframeEnabled = true;
 let expressionsPlugin = null;
 let idPrefix = '';
-const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+const isSafari = false;
 let _shouldRoundValues = false;
 const bmPow = Math.pow;
 const bmSqrt = Math.sqrt;
