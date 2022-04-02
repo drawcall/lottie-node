@@ -1,15 +1,10 @@
-import {
-  createSizedArray,
-} from '../helpers/arrays';
+var pooling = (function(){
 
-const pooling = (function () {
-  function double(arr) {
-    return arr.concat(createSizedArray(arr.length));
-  }
+	function double(arr){
+		return arr.concat(createSizedArray(arr.length));
+	}
 
-  return {
-    double: double,
-  };
+	return {
+		double: double
+	};
 }());
-
-export default pooling;

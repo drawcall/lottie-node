@@ -1,4 +1,3 @@
-const BaseTextElement = function () {
+var BaseTextElement = function (){
 };
 
-export default BaseTextElement;

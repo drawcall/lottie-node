@@ -1,33 +1,10 @@
-import { extendPrototype } from "../utils/functionExtensions";
-
-import audioControllerFactory from "../utils/audio/AudioController";
-import {
-  getSubframeEnabled,
-  BMEnterFrameEvent,
-  BMCompleteEvent,
-  BMCompleteLoopEvent,
-  BMSegmentStartEvent,
-  BMDestroyEvent,
-  BMRenderFrameErrorEvent,
-  BMConfigErrorEvent,
-  createElementID,
-  getExpressionsPlugin,
-} from "../utils/common";
-//import ImagePreloader from "../utils/imagePreloader";
-import BaseEvent from "../utils/BaseEvent";
-import dataManager from "../utils/DataManager";
-import markerParser from "../utils/markers/markerParser";
-import ProjectInterface from "../utils/expressions/ProjectInterface";
-import { getRenderer } from "../renderers/renderersManager";
-
-const AnimationItem = function () {
+var AnimationItem = function () {
   this._cbs = [];
   this.name = "";
   this.path = "";
   this.isLoaded = false;
   this.currentFrame = 0;
   this.currentRawFrame = 0;
-  this.firstFrame = 0;
   this.totalFrames = 0;
   this.frameRate = 0;
   this.frameMult = 0;
@@ -44,141 +21,142 @@ const AnimationItem = function () {
   this.assetsPath = "";
   this.timeCompleted = 0;
   this.segmentPos = 0;
-  this.isSubframeEnabled = getSubframeEnabled();
+  this.subframeEnabled = subframeEnabled;
   this.segments = [];
   this._idle = true;
   this._completedLoop = false;
   this.projectInterface = ProjectInterface();
-  //this.imagePreloader = new ImagePreloader();
-  this.audioController = audioControllerFactory();
-  this.markers = [];
-  this.configAnimation = this.configAnimation.bind(this);
-  this.onSetupError = this.onSetupError.bind(this);
-  this.onSegmentComplete = this.onSegmentComplete.bind(this);
+  this.imagePreloader = new ImagePreloader();
 };
 
 extendPrototype([BaseEvent], AnimationItem);
 
 AnimationItem.prototype.setParams = function (params) {
+  if (params.context) {
+    this.context = params.context;
+  }
   if (params.wrapper || params.container) {
     this.wrapper = params.wrapper || params.container;
   }
-  var animType = "svg";
-  if (params.animType) {
-    animType = params.animType;
-  } else if (params.renderer) {
-    animType = params.renderer;
+  var animType = params.animType ? params.animType : params.renderer ? params.renderer : "svg";
+  switch (animType) {
+    case "canvas":
+      this.renderer = new CanvasRenderer(this, params.rendererSettings);
+      break;
+    case "svg":
+      this.renderer = new SVGRenderer(this, params.rendererSettings);
+      break;
+    default:
+      this.renderer = new HybridRenderer(this, params.rendererSettings);
+      break;
   }
-
-  const RendererClass = getRenderer(animType);
-  this.renderer = new RendererClass(this, params.rendererSettings);
-  //this.imagePreloader.setCacheType(animType, this.renderer.globalData.defs);
   this.renderer.setProjectInterface(this.projectInterface);
   this.animType = animType;
 
-  if (params.loop === "" || params.loop === null || params.loop === undefined || params.loop === true) {
-    this.loop = true;
+  if (params.loop === "" || params.loop === null) {
   } else if (params.loop === false) {
     this.loop = false;
+  } else if (params.loop === true) {
+    this.loop = true;
   } else {
-    this.loop = parseInt(params.loop, 10);
+    this.loop = parseInt(params.loop);
   }
   this.autoplay = "autoplay" in params ? params.autoplay : true;
   this.name = params.name ? params.name : "";
-  this.autoloadSegments = Object.prototype.hasOwnProperty.call(params, "autoloadSegments")
-    ? params.autoloadSegments
-    : true;
+  this.autoloadSegments = params.hasOwnProperty("autoloadSegments") ? params.autoloadSegments : true;
   this.assetsPath = params.assetsPath;
-  this.initialSegment = params.initialSegment;
-  if (params.audioFactory) {
-    this.audioController.setAudioFactory(params.audioFactory);
-  }
   if (params.animationData) {
-    this.setupAnimation(params.animationData);
+    this.configAnimation(params.animationData);
   } else if (params.path) {
-    if (params.path.lastIndexOf("\\") !== -1) {
+    if (params.path.substr(-4) != "json") {
+      if (params.path.substr(-1, 1) != "/") {
+        params.path += "/";
+      }
+      params.path += "data.json";
+    }
+
+    if (params.path.lastIndexOf("\\") != -1) {
       this.path = params.path.substr(0, params.path.lastIndexOf("\\") + 1);
     } else {
       this.path = params.path.substr(0, params.path.lastIndexOf("/") + 1);
     }
     this.fileName = params.path.substr(params.path.lastIndexOf("/") + 1);
     this.fileName = this.fileName.substr(0, this.fileName.lastIndexOf(".json"));
-    dataManager.loadAnimation(params.path, this.configAnimation, this.onSetupError);
+
+    assetLoader.load(
+      params.path,
+      this.configAnimation.bind(this),
+      function () {
+        this.trigger("data_failed");
+      }.bind(this)
+    );
   }
-};
-
-AnimationItem.prototype.onSetupError = function () {
-  this.trigger("data_failed");
-};
-
-AnimationItem.prototype.setupAnimation = function (data) {
-  dataManager.completeAnimation(data, this.configAnimation);
 };
 
 AnimationItem.prototype.setData = function (wrapper, animationData) {
-  if (animationData) {
-    if (typeof animationData !== "object") {
-      animationData = JSON.parse(animationData);
-    }
-  }
   var params = {
     wrapper: wrapper,
-    animationData: animationData,
+    animationData: animationData
+      ? typeof animationData === "object"
+        ? animationData
+        : JSON.parse(animationData)
+      : null,
   };
   var wrapperAttributes = wrapper.attributes;
 
-  params.path = wrapperAttributes.getNamedItem("data-animation-path") // eslint-disable-line no-nested-ternary
+  params.path = wrapperAttributes.getNamedItem("data-animation-path")
     ? wrapperAttributes.getNamedItem("data-animation-path").value
-    : wrapperAttributes.getNamedItem("data-bm-path") // eslint-disable-line no-nested-ternary
+    : wrapperAttributes.getNamedItem("data-bm-path")
     ? wrapperAttributes.getNamedItem("data-bm-path").value
     : wrapperAttributes.getNamedItem("bm-path")
     ? wrapperAttributes.getNamedItem("bm-path").value
     : "";
-  params.animType = wrapperAttributes.getNamedItem("data-anim-type") // eslint-disable-line no-nested-ternary
+  params.animType = wrapperAttributes.getNamedItem("data-anim-type")
     ? wrapperAttributes.getNamedItem("data-anim-type").value
-    : wrapperAttributes.getNamedItem("data-bm-type") // eslint-disable-line no-nested-ternary
+    : wrapperAttributes.getNamedItem("data-bm-type")
     ? wrapperAttributes.getNamedItem("data-bm-type").value
-    : wrapperAttributes.getNamedItem("bm-type") // eslint-disable-line no-nested-ternary
+    : wrapperAttributes.getNamedItem("bm-type")
     ? wrapperAttributes.getNamedItem("bm-type").value
-    : wrapperAttributes.getNamedItem("data-bm-renderer") // eslint-disable-line no-nested-ternary
+    : wrapperAttributes.getNamedItem("data-bm-renderer")
     ? wrapperAttributes.getNamedItem("data-bm-renderer").value
     : wrapperAttributes.getNamedItem("bm-renderer")
     ? wrapperAttributes.getNamedItem("bm-renderer").value
     : "canvas";
 
-  var loop = wrapperAttributes.getNamedItem("data-anim-loop") // eslint-disable-line no-nested-ternary
+  var loop = wrapperAttributes.getNamedItem("data-anim-loop")
     ? wrapperAttributes.getNamedItem("data-anim-loop").value
-    : wrapperAttributes.getNamedItem("data-bm-loop") // eslint-disable-line no-nested-ternary
+    : wrapperAttributes.getNamedItem("data-bm-loop")
     ? wrapperAttributes.getNamedItem("data-bm-loop").value
     : wrapperAttributes.getNamedItem("bm-loop")
     ? wrapperAttributes.getNamedItem("bm-loop").value
     : "";
-  if (loop === "false") {
+  if (loop === "") {
+  } else if (loop === "false") {
     params.loop = false;
   } else if (loop === "true") {
     params.loop = true;
-  } else if (loop !== "") {
-    params.loop = parseInt(loop, 10);
+  } else {
+    params.loop = parseInt(loop);
   }
-  var autoplay = wrapperAttributes.getNamedItem("data-anim-autoplay") // eslint-disable-line no-nested-ternary
+  var autoplay = wrapperAttributes.getNamedItem("data-anim-autoplay")
     ? wrapperAttributes.getNamedItem("data-anim-autoplay").value
-    : wrapperAttributes.getNamedItem("data-bm-autoplay") // eslint-disable-line no-nested-ternary
+    : wrapperAttributes.getNamedItem("data-bm-autoplay")
     ? wrapperAttributes.getNamedItem("data-bm-autoplay").value
     : wrapperAttributes.getNamedItem("bm-autoplay")
     ? wrapperAttributes.getNamedItem("bm-autoplay").value
     : true;
   params.autoplay = autoplay !== "false";
 
-  params.name = wrapperAttributes.getNamedItem("data-name") // eslint-disable-line no-nested-ternary
+  params.name = wrapperAttributes.getNamedItem("data-name")
     ? wrapperAttributes.getNamedItem("data-name").value
-    : wrapperAttributes.getNamedItem("data-bm-name") // eslint-disable-line no-nested-ternary
+    : wrapperAttributes.getNamedItem("data-bm-name")
     ? wrapperAttributes.getNamedItem("data-bm-name").value
     : wrapperAttributes.getNamedItem("bm-name")
     ? wrapperAttributes.getNamedItem("bm-name").value
     : "";
-  var prerender = wrapperAttributes.getNamedItem("data-anim-prerender") // eslint-disable-line no-nested-ternary
+  var prerender = wrapperAttributes.getNamedItem("data-anim-prerender")
     ? wrapperAttributes.getNamedItem("data-anim-prerender").value
-    : wrapperAttributes.getNamedItem("data-bm-prerender") // eslint-disable-line no-nested-ternary
+    : wrapperAttributes.getNamedItem("data-bm-prerender")
     ? wrapperAttributes.getNamedItem("data-bm-prerender").value
     : wrapperAttributes.getNamedItem("bm-prerender")
     ? wrapperAttributes.getNamedItem("bm-prerender").value
@@ -196,15 +174,15 @@ AnimationItem.prototype.includeLayers = function (data) {
     this.totalFrames = Math.floor(data.op - this.animationData.ip);
   }
   var layers = this.animationData.layers;
-  var i;
-  var len = layers.length;
+  var i,
+    len = layers.length;
   var newLayers = data.layers;
-  var j;
-  var jLen = newLayers.length;
+  var j,
+    jLen = newLayers.length;
   for (j = 0; j < jLen; j += 1) {
     i = 0;
     while (i < len) {
-      if (layers[i].id === newLayers[j].id) {
+      if (layers[i].id == newLayers[j].id) {
         layers[i] = newLayers[j];
         break;
       }
@@ -222,12 +200,8 @@ AnimationItem.prototype.includeLayers = function (data) {
     }
   }
   this.animationData.__complete = false;
-  dataManager.completeAnimation(this.animationData, this.onSegmentComplete);
-};
-
-AnimationItem.prototype.onSegmentComplete = function (data) {
-  this.animationData = data;
-  var expressionsPlugin = getExpressionsPlugin();
+  dataManager.completeData(this.animationData, this.renderer.globalData.fontManager);
+  this.renderer.includeLayers(data.layers);
   if (expressionsPlugin) {
     expressionsPlugin.initExpressions(this);
   }
@@ -245,7 +219,7 @@ AnimationItem.prototype.loadNextSegment = function () {
   this.timeCompleted = segment.time * this.frameRate;
   var segmentPath = this.path + this.fileName + "_" + this.segmentPos + ".json";
   this.segmentPos += 1;
-  dataManager.loadData(
+  assetLoader.load(
     segmentPath,
     this.includeLayers.bind(this),
     function () {
@@ -268,52 +242,39 @@ AnimationItem.prototype.imagesLoaded = function () {
 };
 
 AnimationItem.prototype.preloadImages = function () {
-  // this.imagePreloader.setAssetsPath(this.assetsPath);
-  // this.imagePreloader.setPath(this.path);
-  // this.imagePreloader.loadAssets(this.animationData.assets, this.imagesLoaded.bind(this));
+  this.imagePreloader.setAssetsPath(this.assetsPath);
+  this.imagePreloader.setPath(this.path);
+  this.imagePreloader.loadAssets(this.animationData.assets, this.imagesLoaded.bind(this));
 };
 
 AnimationItem.prototype.configAnimation = function (animData) {
   if (!this.renderer) {
     return;
   }
-  try {
-    this.animationData = animData;
-    if (this.initialSegment) {
-      this.totalFrames = Math.floor(this.initialSegment[1] - this.initialSegment[0]);
-      this.firstFrame = Math.round(this.initialSegment[0]);
-    } else {
-      this.totalFrames = Math.floor(this.animationData.op - this.animationData.ip);
-      this.firstFrame = Math.round(this.animationData.ip);
-    }
-    this.renderer.configAnimation(animData);
-    if (!animData.assets) {
-      animData.assets = [];
-    }
-
-    this.assets = this.animationData.assets;
-    this.frameRate = this.animationData.fr;
-    this.frameMult = this.animationData.fr / 1000;
-    this.renderer.searchExtraCompositions(animData.assets);
-    this.markers = markerParser(animData.markers || []);
-    this.trigger("config_ready");
-    this.preloadImages();
-    this.loadSegments();
-    this.updaFrameModifier();
-    this.waitForFontsLoaded();
-    if (this.isPaused) {
-      this.audioController.pause();
-    }
-  } catch (error) {
-    this.triggerConfigError(error);
+  this.animationData = animData;
+  this.totalFrames = Math.floor(this.animationData.op - this.animationData.ip);
+  this.renderer.configAnimation(animData);
+  if (!animData.assets) {
+    animData.assets = [];
   }
+  this.renderer.searchExtraCompositions(animData.assets);
+
+  this.assets = this.animationData.assets;
+  this.frameRate = this.animationData.fr;
+  this.firstFrame = Math.round(this.animationData.ip);
+  this.frameMult = this.animationData.fr / 1000;
+  this.trigger("config_ready");
+  this.preloadImages();
+  this.loadSegments();
+  this.updaFrameModifier();
+  this.waitForFontsLoaded();
 };
 
 AnimationItem.prototype.waitForFontsLoaded = function () {
   if (!this.renderer) {
     return;
   }
-  if (this.renderer.globalData.fontManager.isLoaded) {
+  if (this.renderer.globalData.fontManager.loaded()) {
     this.checkLoaded();
   } else {
     setTimeout(this.waitForFontsLoaded.bind(this), 20);
@@ -323,12 +284,11 @@ AnimationItem.prototype.waitForFontsLoaded = function () {
 AnimationItem.prototype.checkLoaded = function () {
   if (
     !this.isLoaded &&
-    this.renderer.globalData.fontManager.isLoaded && true
-    // (this.imagePreloader.loadedImages() || this.renderer.rendererType !== "canvas") &&
-    // this.imagePreloader.loadedFootages()
+    this.renderer.globalData.fontManager.loaded() &&
+    (this.imagePreloader.loaded() || this.renderer.rendererType !== "canvas")
   ) {
     this.isLoaded = true;
-    var expressionsPlugin = getExpressionsPlugin();
+    dataManager.completeData(this.animationData, this.renderer.globalData.fontManager);
     if (expressionsPlugin) {
       expressionsPlugin.initExpressions(this);
     }
@@ -351,38 +311,32 @@ AnimationItem.prototype.resize = function () {
 };
 
 AnimationItem.prototype.setSubframe = function (flag) {
-  this.isSubframeEnabled = !!flag;
+  this.subframeEnabled = flag ? true : false;
 };
 
 AnimationItem.prototype.gotoFrame = function () {
-  this.currentFrame = this.isSubframeEnabled ? this.currentRawFrame : ~~this.currentRawFrame; // eslint-disable-line no-bitwise
+  this.currentFrame = this.subframeEnabled ? this.currentRawFrame : ~~this.currentRawFrame;
 
   if (this.timeCompleted !== this.totalFrames && this.currentFrame > this.timeCompleted) {
     this.currentFrame = this.timeCompleted;
   }
   this.trigger("enterFrame");
   this.renderFrame();
-  this.trigger("drawnFrame");
 };
 
 AnimationItem.prototype.renderFrame = function () {
-  if (this.isLoaded === false || !this.renderer) {
+  if (this.isLoaded === false) {
     return;
   }
-  try {
-    this.renderer.renderFrame(this.currentFrame + this.firstFrame);
-  } catch (error) {
-    this.triggerRenderFrameError(error);
-  }
+  this.renderer.renderFrame(this.currentFrame + this.firstFrame);
 };
 
 AnimationItem.prototype.play = function (name) {
-  if (name && this.name !== name) {
+  if (name && this.name != name) {
     return;
   }
   if (this.isPaused === true) {
     this.isPaused = false;
-    this.audioController.resume();
     if (this._idle) {
       this._idle = false;
       this.trigger("_active");
@@ -391,19 +345,18 @@ AnimationItem.prototype.play = function (name) {
 };
 
 AnimationItem.prototype.pause = function (name) {
-  if (name && this.name !== name) {
+  if (name && this.name != name) {
     return;
   }
   if (this.isPaused === false) {
     this.isPaused = true;
     this._idle = true;
     this.trigger("_idle");
-    this.audioController.pause();
   }
 };
 
 AnimationItem.prototype.togglePause = function (name) {
-  if (name && this.name !== name) {
+  if (name && this.name != name) {
     return;
   }
   if (this.isPaused === true) {
@@ -414,7 +367,7 @@ AnimationItem.prototype.togglePause = function (name) {
 };
 
 AnimationItem.prototype.stop = function (name) {
-  if (name && this.name !== name) {
+  if (name && this.name != name) {
     return;
   }
   this.pause();
@@ -423,28 +376,11 @@ AnimationItem.prototype.stop = function (name) {
   this.setCurrentRawFrameValue(0);
 };
 
-AnimationItem.prototype.getMarkerData = function (markerName) {
-  var marker;
-  for (var i = 0; i < this.markers.length; i += 1) {
-    marker = this.markers[i];
-    if (marker.payload && marker.payload.name.cm === markerName) {
-      return marker;
-    }
-  }
-  return null;
-};
-
 AnimationItem.prototype.goToAndStop = function (value, isFrame, name) {
-  if (name && this.name !== name) {
+  if (name && this.name != name) {
     return;
   }
-  var numValue = Number(value);
-  if (isNaN(numValue)) {
-    var marker = this.getMarkerData(value);
-    if (marker) {
-      this.goToAndStop(marker.time, true);
-    }
-  } else if (isFrame) {
+  if (isFrame) {
     this.setCurrentRawFrameValue(value);
   } else {
     this.setCurrentRawFrameValue(value * this.frameModifier);
@@ -453,22 +389,7 @@ AnimationItem.prototype.goToAndStop = function (value, isFrame, name) {
 };
 
 AnimationItem.prototype.goToAndPlay = function (value, isFrame, name) {
-  if (name && this.name !== name) {
-    return;
-  }
-  var numValue = Number(value);
-  if (isNaN(numValue)) {
-    var marker = this.getMarkerData(value);
-    if (marker) {
-      if (!marker.duration) {
-        this.goToAndStop(marker.time, true);
-      } else {
-        this.playSegments([marker.time, marker.time + marker.duration], true);
-      }
-    }
-  } else {
-    this.goToAndStop(numValue, isFrame, name);
-  }
+  this.goToAndStop(value, isFrame, name);
   this.play();
 };
 
@@ -499,7 +420,6 @@ AnimationItem.prototype.advanceTime = function (value) {
   } else if (nextValue < 0) {
     if (!this.checkSegments(nextValue % this.totalFrames)) {
       if (this.loop && !(this.playCount-- <= 0 && this.loop !== true)) {
-        // eslint-disable-line no-plusplus
         this.setCurrentRawFrameValue(this.totalFrames + (nextValue % this.totalFrames));
         if (!this._completedLoop) {
           this._completedLoop = true;
@@ -531,8 +451,7 @@ AnimationItem.prototype.adjustSegment = function (arr, offset) {
         this.setDirection(-1);
       }
     }
-    this.totalFrames = arr[0] - arr[1];
-    this.timeCompleted = this.totalFrames;
+    this.timeCompleted = this.totalFrames = arr[0] - arr[1];
     this.firstFrame = arr[1];
     this.setCurrentRawFrameValue(this.totalFrames - 0.001 - offset);
   } else if (arr[1] > arr[0]) {
@@ -543,8 +462,7 @@ AnimationItem.prototype.adjustSegment = function (arr, offset) {
         this.setDirection(1);
       }
     }
-    this.totalFrames = arr[1] - arr[0];
-    this.timeCompleted = this.totalFrames;
+    this.timeCompleted = this.totalFrames = arr[1] - arr[0];
     this.firstFrame = arr[0];
     this.setCurrentRawFrameValue(0.001 + offset);
   }
@@ -561,8 +479,7 @@ AnimationItem.prototype.setSegment = function (init, end) {
   }
 
   this.firstFrame = init;
-  this.totalFrames = end - init;
-  this.timeCompleted = this.totalFrames;
+  this.timeCompleted = this.totalFrames = end - init;
   if (pendingFrame !== -1) {
     this.goToAndStop(pendingFrame, true);
   }
@@ -573,15 +490,15 @@ AnimationItem.prototype.playSegments = function (arr, forceFlag) {
     this.segments.length = 0;
   }
   if (typeof arr[0] === "object") {
-    var i;
-    var len = arr.length;
+    var i,
+      len = arr.length;
     for (i = 0; i < len; i += 1) {
       this.segments.push(arr[i]);
     }
   } else {
     this.segments.push(arr);
   }
-  if (this.segments.length && forceFlag) {
+  if (this.segments.length) {
     this.adjustSegment(this.segments.shift(), 0);
   }
   if (this.isPaused) {
@@ -592,6 +509,7 @@ AnimationItem.prototype.playSegments = function (arr, forceFlag) {
 AnimationItem.prototype.resetSegments = function (forceFlag) {
   this.segments.length = 0;
   this.segments.push([this.animationData.ip, this.animationData.op]);
+  //this.segments.push([this.animationData.ip*this.frameRate,Math.floor(this.animationData.op - this.animationData.ip+this.animationData.ip*this.frameRate)]);
   if (forceFlag) {
     this.checkSegments(0);
   }
@@ -605,23 +523,15 @@ AnimationItem.prototype.checkSegments = function (offset) {
 };
 
 AnimationItem.prototype.destroy = function (name) {
-  if ((name && this.name !== name) || !this.renderer) {
+  if ((name && this.name != name) || !this.renderer) {
     return;
   }
   this.renderer.destroy();
-  
+  this.imagePreloader.destroy();
   this.trigger("destroy");
   this._cbs = null;
-  this.onEnterFrame = null;
-  this.onLoopComplete = null;
-  this.onComplete = null;
-  this.onSegmentStart = null;
-  this.onDestroy = null;
+  this.onEnterFrame = this.onLoopComplete = this.onComplete = this.onSegmentStart = this.onDestroy = null;
   this.renderer = null;
-  this.renderer = null;
-  // this.imagePreloader.destroy();
-  // this.imagePreloader = null;
-  this.projectInterface = null;
 };
 
 AnimationItem.prototype.setCurrentRawFrameValue = function (value) {
@@ -639,34 +549,8 @@ AnimationItem.prototype.setDirection = function (val) {
   this.updaFrameModifier();
 };
 
-AnimationItem.prototype.setVolume = function (val, name) {
-  if (name && this.name !== name) {
-    return;
-  }
-  this.audioController.setVolume(val);
-};
-
-AnimationItem.prototype.getVolume = function () {
-  return this.audioController.getVolume();
-};
-
-AnimationItem.prototype.mute = function (name) {
-  if (name && this.name !== name) {
-    return;
-  }
-  this.audioController.mute();
-};
-
-AnimationItem.prototype.unmute = function (name) {
-  if (name && this.name !== name) {
-    return;
-  }
-  this.audioController.unmute();
-};
-
 AnimationItem.prototype.updaFrameModifier = function () {
   this.frameModifier = this.frameMult * this.playSpeed * this.playDirection;
-  this.audioController.setRate(this.playSpeed * this.playDirection);
 };
 
 AnimationItem.prototype.getPath = function () {
@@ -692,15 +576,14 @@ AnimationItem.prototype.getAssetsPath = function (assetData) {
 };
 
 AnimationItem.prototype.getAssetData = function (id) {
-  var i = 0;
-  var len = this.assets.length;
+  var i = 0,
+    len = this.assets.length;
   while (i < len) {
-    if (id === this.assets[i].id) {
+    if (id == this.assets[i].id) {
       return this.assets[i];
     }
     i += 1;
   }
-  return null;
 };
 
 AnimationItem.prototype.hide = function () {
@@ -719,8 +602,7 @@ AnimationItem.prototype.trigger = function (name) {
   if (this._cbs && this._cbs[name]) {
     switch (name) {
       case "enterFrame":
-      case "drawnFrame":
-        this.triggerEvent(name, new BMEnterFrameEvent(name, this.currentFrame, this.totalFrames, this.frameModifier));
+        this.triggerEvent(name, new BMEnterFrameEvent(name, this.currentFrame, this.totalFrames, this.frameMult));
         break;
       case "loopComplete":
         this.triggerEvent(name, new BMCompleteLoopEvent(name, this.loop, this.playCount, this.frameMult));
@@ -754,23 +636,3 @@ AnimationItem.prototype.trigger = function (name) {
     this.onDestroy.call(this, new BMDestroyEvent(name, this));
   }
 };
-
-AnimationItem.prototype.triggerRenderFrameError = function (nativeError) {
-  var error = new BMRenderFrameErrorEvent(nativeError, this.currentFrame);
-  this.triggerEvent("error", error);
-
-  if (this.onError) {
-    this.onError.call(this, error);
-  }
-};
-
-AnimationItem.prototype.triggerConfigError = function (nativeError) {
-  var error = new BMConfigErrorEvent(nativeError, this.currentFrame);
-  this.triggerEvent("error", error);
-
-  if (this.onError) {
-    this.onError.call(this, error);
-  }
-};
-
-export default AnimationItem;

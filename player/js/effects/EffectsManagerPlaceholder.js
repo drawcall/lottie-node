@@ -1,5 +1,1 @@
-function EffectsManager() {
-  this.effectElements = [];
-}
-
-export default EffectsManager;
+function EffectsManager(){}
