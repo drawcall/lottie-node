@@ -21,6 +21,7 @@ const ImagePreloader = (function () {
       }
     }
   }
+  
   function footageLoaded() {
     this.loadedFootagesCount += 1;
     if (this.loadedAssets === this.totalImages && this.loadedFootagesCount === this.totalFootages) {

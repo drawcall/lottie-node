@@ -1,4 +1,4 @@
-import { getWebWorker } from '../main';
+import { getWebWorker } from "../main";
 
 const dataManager = (function () {
   var _counterId = 1;
@@ -6,9 +6,7 @@ const dataManager = (function () {
   var workerFn;
   var workerInstance;
   var workerProxy = {
-    onmessage: function () {
-
-    },
+    onmessage: function () {},
     postMessage: function (path) {
       workerFn({
         data: path,
@@ -23,9 +21,9 @@ const dataManager = (function () {
     },
   };
   function createWorker(fn) {
-    if (window.Worker && window.Blob && getWebWorker()) {
-      var blob = new Blob(['var _workerSelf = self; self.onmessage = ', fn.toString()], { type: 'text/javascript' });
-      // var blob = new Blob(['self.onmessage = ', fn.toString()], { type: 'text/javascript' });
+    if (false && getWebWorker()) {
+      var blob = new Blob(["var _workerSelf = self; self.onmessage = ", fn.toString()], { type: "text/javascript" });
+
       var url = URL.createObjectURL(blob);
       return new Worker(url);
     }
@@ -47,7 +45,7 @@ const dataManager = (function () {
             var kLen;
             for (i = 0; i < len; i += 1) {
               layerData = layers[i];
-              if (('ks' in layerData) && !layerData.completed) {
+              if ("ks" in layerData && !layerData.completed) {
                 layerData.completed = true;
                 if (layerData.tt) {
                   layers[i - 1].td = layerData.tt;
@@ -139,7 +137,7 @@ const dataManager = (function () {
             var j;
             var jLen;
             for (i = len - 1; i >= 0; i -= 1) {
-              if (arr[i].ty === 'sh') {
+              if (arr[i].ty === "sh") {
                 if (arr[i].ks.k.i) {
                   convertPathsToAbsoluteValues(arr[i].ks.k);
                 } else {
@@ -153,7 +151,7 @@ const dataManager = (function () {
                     }
                   }
                 }
-              } else if (arr[i].ty === 'gr') {
+              } else if (arr[i].ty === "gr") {
                 completeShapes(arr[i].it);
               }
             }
@@ -171,20 +169,23 @@ const dataManager = (function () {
           }
 
           function checkVersion(minimum, animVersionString) {
-            var animVersion = animVersionString ? animVersionString.split('.') : [100, 100, 100];
+            var animVersion = animVersionString ? animVersionString.split(".") : [100, 100, 100];
             if (minimum[0] > animVersion[0]) {
               return true;
-            } if (animVersion[0] > minimum[0]) {
+            }
+            if (animVersion[0] > minimum[0]) {
               return false;
             }
             if (minimum[1] > animVersion[1]) {
               return true;
-            } if (animVersion[1] > minimum[1]) {
+            }
+            if (animVersion[1] > minimum[1]) {
               return false;
             }
             if (minimum[2] > animVersion[2]) {
               return true;
-            } if (animVersion[2] > minimum[2]) {
+            }
+            if (animVersion[2] > minimum[2]) {
               return false;
             }
             return null;
@@ -229,7 +230,7 @@ const dataManager = (function () {
                 }
               }
             };
-          }());
+          })();
 
           var checkChars = (function () {
             var minimumVersion = [4, 7, 99];
@@ -253,48 +254,44 @@ const dataManager = (function () {
                       o: { k: 100, a: 0 },
                     };
                     if (!animationData.chars[i].t) {
-                      charData.data.shapes.push(
-                        {
-                          ty: 'no',
-                        }
-                      );
-                      charData.data.shapes[0].it.push(
-                        {
-                          p: { k: [0, 0], a: 0 },
-                          s: { k: [100, 100], a: 0 },
-                          a: { k: [0, 0], a: 0 },
-                          r: { k: 0, a: 0 },
-                          o: { k: 100, a: 0 },
-                          sk: { k: 0, a: 0 },
-                          sa: { k: 0, a: 0 },
-                          ty: 'tr',
-                        }
-                      );
+                      charData.data.shapes.push({
+                        ty: "no",
+                      });
+                      charData.data.shapes[0].it.push({
+                        p: { k: [0, 0], a: 0 },
+                        s: { k: [100, 100], a: 0 },
+                        a: { k: [0, 0], a: 0 },
+                        r: { k: 0, a: 0 },
+                        o: { k: 100, a: 0 },
+                        sk: { k: 0, a: 0 },
+                        sa: { k: 0, a: 0 },
+                        ty: "tr",
+                      });
                     }
                   }
                 }
               }
             };
-          }());
+          })();
 
           var checkPathProperties = (function () {
             var minimumVersion = [5, 7, 15];
 
             function updateTextLayer(textLayer) {
               var pathData = textLayer.t.p;
-              if (typeof pathData.a === 'number') {
+              if (typeof pathData.a === "number") {
                 pathData.a = {
                   a: 0,
                   k: pathData.a,
                 };
               }
-              if (typeof pathData.p === 'number') {
+              if (typeof pathData.p === "number") {
                 pathData.p = {
                   a: 0,
                   k: pathData.p,
                 };
               }
-              if (typeof pathData.r === 'number') {
+              if (typeof pathData.r === "number") {
                 pathData.r = {
                   a: 0,
                   k: pathData.r,
@@ -326,7 +323,7 @@ const dataManager = (function () {
                 }
               }
             };
-          }());
+          })();
 
           var checkColors = (function () {
             var minimumVersion = [4, 1, 9];
@@ -337,9 +334,9 @@ const dataManager = (function () {
               var j;
               var jLen;
               for (i = 0; i < len; i += 1) {
-                if (shapes[i].ty === 'gr') {
+                if (shapes[i].ty === "gr") {
                   iterateShapes(shapes[i].it);
-                } else if (shapes[i].ty === 'fl' || shapes[i].ty === 'st') {
+                } else if (shapes[i].ty === "fl" || shapes[i].ty === "st") {
                   if (shapes[i].c.k && shapes[i].c.k[0].i) {
                     jLen = shapes[i].c.k.length;
                     for (j = 0; j < jLen; j += 1) {
@@ -390,7 +387,7 @@ const dataManager = (function () {
                 }
               }
             };
-          }());
+          })();
 
           var checkShapes = (function () {
             var minimumVersion = [4, 4, 18];
@@ -401,7 +398,7 @@ const dataManager = (function () {
               var j;
               var jLen;
               for (i = len - 1; i >= 0; i -= 1) {
-                if (arr[i].ty === 'sh') {
+                if (arr[i].ty === "sh") {
                   if (arr[i].ks.k.i) {
                     arr[i].ks.k.c = arr[i].closed;
                   } else {
@@ -415,7 +412,7 @@ const dataManager = (function () {
                       }
                     }
                   }
-                } else if (arr[i].ty === 'gr') {
+                } else if (arr[i].ty === "gr") {
                   completeClosingShapes(arr[i].it);
                 }
               }
@@ -470,7 +467,7 @@ const dataManager = (function () {
                 }
               }
             };
-          }());
+          })();
 
           function completeData(animationData) {
             if (animationData.__complete) {
@@ -487,7 +484,7 @@ const dataManager = (function () {
           }
 
           function completeText(data) {
-            if (data.t.a.length === 0 && !('m' in data.t.p)) {
+            if (data.t.a.length === 0 && !("m" in data.t.p)) {
               // data.singleShape = true;
             }
           }
@@ -511,15 +508,17 @@ const dataManager = (function () {
             function formatResponse(xhr) {
               // using typeof doubles the time of execution of this method,
               // so if available, it's better to use the header to validate the type
-              var contentTypeHeader = xhr.getResponseHeader('content-type');
-              if (contentTypeHeader && xhr.responseType === 'json' && contentTypeHeader.indexOf('json') !== -1) {
+              var contentTypeHeader = xhr.getResponseHeader("content-type");
+              if (contentTypeHeader && xhr.responseType === "json" && contentTypeHeader.indexOf("json") !== -1) {
                 return xhr.response;
               }
-              if (xhr.response && typeof xhr.response === 'object') {
+              if (xhr.response && typeof xhr.response === "object") {
                 return xhr.response;
-              } if (xhr.response && typeof xhr.response === 'string') {
+              }
+              if (xhr.response && typeof xhr.response === "string") {
                 return JSON.parse(xhr.response);
-              } if (xhr.responseText) {
+              }
+              if (xhr.responseText) {
                 return JSON.parse(xhr.responseText);
               }
               return null;
@@ -531,7 +530,7 @@ const dataManager = (function () {
               // set responseType after calling open or IE will break.
               try {
                 // This crashes on Android WebView prior to KitKat
-                xhr.responseType = 'json';
+                xhr.responseType = "json";
               } catch (err) {} // eslint-disable-line no-empty
               xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) {
@@ -551,19 +550,19 @@ const dataManager = (function () {
                 }
               };
               try {
-                xhr.open('GET', path, true);
+                xhr.open("GET", path, true);
               } catch (error) {
-                xhr.open('GET', fullPath + '/' + path, true);
+                xhr.open("GET", fullPath + "/" + path, true);
               }
               xhr.send();
             }
             return {
               load: loadAsset,
             };
-          }());
+          })();
         }
 
-        if (e.data.type === 'loadAnimation') {
+        if (e.data.type === "loadAnimation") {
           _workerSelf.assetLoader.load(
             e.data.path,
             e.data.fullPath,
@@ -572,25 +571,25 @@ const dataManager = (function () {
               _workerSelf.postMessage({
                 id: e.data.id,
                 payload: data,
-                status: 'success',
+                status: "success",
               });
             },
             function () {
               _workerSelf.postMessage({
                 id: e.data.id,
-                status: 'error',
+                status: "error",
               });
             }
           );
-        } else if (e.data.type === 'complete') {
+        } else if (e.data.type === "complete") {
           var animation = e.data.animation;
           _workerSelf.dataManager.completeData(animation);
           _workerSelf.postMessage({
             id: e.data.id,
             payload: animation,
-            status: 'success',
+            status: "success",
           });
-        } else if (e.data.type === 'loadData') {
+        } else if (e.data.type === "loadData") {
           _workerSelf.assetLoader.load(
             e.data.path,
             e.data.fullPath,
@@ -598,13 +597,13 @@ const dataManager = (function () {
               _workerSelf.postMessage({
                 id: e.data.id,
                 payload: data,
-                status: 'success',
+                status: "success",
               });
             },
             function () {
               _workerSelf.postMessage({
                 id: e.data.id,
-                status: 'error',
+                status: "error",
               });
             }
           );
@@ -616,7 +615,7 @@ const dataManager = (function () {
         var id = data.id;
         var process = processes[id];
         processes[id] = null;
-        if (data.status === 'success') {
+        if (data.status === "success") {
           process.onComplete(data.payload);
         } else if (process.onError) {
           process.onError();
@@ -627,7 +626,7 @@ const dataManager = (function () {
 
   function createProcess(onComplete, onError) {
     _counterId += 1;
-    var id = 'processId_' + _counterId;
+    var id = "processId_" + _counterId;
     processes[id] = {
       onComplete: onComplete,
       onError: onError,
@@ -639,7 +638,7 @@ const dataManager = (function () {
     setupWorker();
     var processId = createProcess(onComplete, onError);
     workerInstance.postMessage({
-      type: 'loadAnimation',
+      type: "loadAnimation",
       path: path,
       fullPath: window.location.origin + window.location.pathname,
       id: processId,
@@ -650,7 +649,7 @@ const dataManager = (function () {
     setupWorker();
     var processId = createProcess(onComplete, onError);
     workerInstance.postMessage({
-      type: 'loadData',
+      type: "loadData",
       path: path,
       fullPath: window.location.origin + window.location.pathname,
       id: processId,
@@ -661,7 +660,7 @@ const dataManager = (function () {
     setupWorker();
     var processId = createProcess(onComplete, onError);
     workerInstance.postMessage({
-      type: 'complete',
+      type: "complete",
       animation: anim,
       id: processId,
     });
@@ -672,6 +671,6 @@ const dataManager = (function () {
     loadData: loadData,
     completeAnimation: completeAnimation,
   };
-}());
+})();
 
 export default dataManager;

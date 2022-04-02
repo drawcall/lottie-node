@@ -13,7 +13,7 @@ import {
   createElementID,
   getExpressionsPlugin,
 } from "../utils/common";
-import ImagePreloader from "../utils/imagePreloader";
+//import ImagePreloader from "../utils/imagePreloader";
 import BaseEvent from "../utils/BaseEvent";
 import dataManager from "../utils/DataManager";
 import markerParser from "../utils/markers/markerParser";
@@ -49,7 +49,7 @@ const AnimationItem = function () {
   this._idle = true;
   this._completedLoop = false;
   this.projectInterface = ProjectInterface();
-  this.imagePreloader = new ImagePreloader();
+  //this.imagePreloader = new ImagePreloader();
   this.audioController = audioControllerFactory();
   this.markers = [];
   this.configAnimation = this.configAnimation.bind(this);
@@ -72,7 +72,7 @@ AnimationItem.prototype.setParams = function (params) {
 
   const RendererClass = getRenderer(animType);
   this.renderer = new RendererClass(this, params.rendererSettings);
-  this.imagePreloader.setCacheType(animType, this.renderer.globalData.defs);
+  //this.imagePreloader.setCacheType(animType, this.renderer.globalData.defs);
   this.renderer.setProjectInterface(this.projectInterface);
   this.animType = animType;
 
@@ -268,9 +268,9 @@ AnimationItem.prototype.imagesLoaded = function () {
 };
 
 AnimationItem.prototype.preloadImages = function () {
-  this.imagePreloader.setAssetsPath(this.assetsPath);
-  this.imagePreloader.setPath(this.path);
-  this.imagePreloader.loadAssets(this.animationData.assets, this.imagesLoaded.bind(this));
+  // this.imagePreloader.setAssetsPath(this.assetsPath);
+  // this.imagePreloader.setPath(this.path);
+  // this.imagePreloader.loadAssets(this.animationData.assets, this.imagesLoaded.bind(this));
 };
 
 AnimationItem.prototype.configAnimation = function (animData) {
@@ -323,9 +323,9 @@ AnimationItem.prototype.waitForFontsLoaded = function () {
 AnimationItem.prototype.checkLoaded = function () {
   if (
     !this.isLoaded &&
-    this.renderer.globalData.fontManager.isLoaded &&
-    (this.imagePreloader.loadedImages() || this.renderer.rendererType !== "canvas") &&
-    this.imagePreloader.loadedFootages()
+    this.renderer.globalData.fontManager.isLoaded && true
+    // (this.imagePreloader.loadedImages() || this.renderer.rendererType !== "canvas") &&
+    // this.imagePreloader.loadedFootages()
   ) {
     this.isLoaded = true;
     var expressionsPlugin = getExpressionsPlugin();
@@ -609,7 +609,7 @@ AnimationItem.prototype.destroy = function (name) {
     return;
   }
   this.renderer.destroy();
-  this.imagePreloader.destroy();
+  
   this.trigger("destroy");
   this._cbs = null;
   this.onEnterFrame = null;
@@ -619,7 +619,8 @@ AnimationItem.prototype.destroy = function (name) {
   this.onDestroy = null;
   this.renderer = null;
   this.renderer = null;
-  this.imagePreloader = null;
+  // this.imagePreloader.destroy();
+  // this.imagePreloader = null;
   this.projectInterface = null;
 };
 

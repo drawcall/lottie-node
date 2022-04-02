@@ -20,7 +20,7 @@ function CanvasRenderer(animationItem, config) {
   };
   this.renderConfig.dpr = (config && config.dpr) || 1;
   if (this.animationItem.wrapper) {
-    this.renderConfig.dpr = (config && config.dpr) || window.devicePixelRatio || 1;
+    this.renderConfig.dpr = (config && config.dpr) || 1;
   }
   this.renderedFrame = -1;
   this.globalData = {

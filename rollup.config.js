@@ -35,12 +35,12 @@ const noTreeShakingForStandalonePlugin = () => {
 const destinationBuildFolder = "build/player/";
 
 const builds = [
-  {
-    input: "player/js/modules/full.js",
-    dest: `${destinationBuildFolder}`,
-    file: "lottie.min.js",
-    esm: true,
-  },
+  // {
+  //   input: "player/js/modules/full.js",
+  //   dest: `${destinationBuildFolder}`,
+  //   file: "lottie.min.js",
+  //   esm: true,
+  // },
   {
     input: "player/js/modules/full.js",
     dest: `${destinationBuildFolder}`,

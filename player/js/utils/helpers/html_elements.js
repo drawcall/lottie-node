@@ -2,6 +2,7 @@ let CanvasClass;
 let createCanvasFunc;
 
 function createTag(type) {
+  console.log(type,createCanvasFunc);
   if (type === "canvas") {
     if (createCanvasFunc) {
       return createCanvasFunc(1, 1);
