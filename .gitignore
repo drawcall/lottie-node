@@ -1,0 +1,17 @@
+.idea/
+player/exports/
+player/tests/
+node_modules/
+node_modules/
+tests/
+esprima/
+bodymovinCert.p12
+ZXPSignCmd.exe
+signer.bat
+commands.txt
+debug.txt
+package-lock.json
+build/
+build/*
+builds/
+.DS_Store
