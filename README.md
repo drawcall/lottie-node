@@ -1,26 +1,10 @@
-# Lottie for Web, [Android](https://github.com/airbnb/lottie-android), [iOS](https://github.com/airbnb/lottie-ios), [React Native](https://github.com/airbnb/lottie-react-native), and [Windows](https://aka.ms/lottie)
+# Lottie for Node.js
 
-Lottie is a mobile library for Web,  and iOS that parses [Adobe After Effects](http://www.adobe.com/products/aftereffects.html) animations exported as json with [Bodymovin](https://github.com/airbnb/lottie-web) and renders them natively on mobile!
+Lottie is a mobile library for Node.js that parses [Adobe After Effects](http://www.adobe.com/products/aftereffects.html) animations exported as json with [Bodymovin](https://github.com/airbnb/lottie-web) and renders them natively on mobile!
 
 For the first time, designers can create **and ship** beautiful animations without an engineer painstakingly recreating it by hand. They say a picture is worth 1,000 words so here are 13,000:
 
-
-
 # View documentation, FAQ, help, examples, and more at [airbnb.io/lottie](http://airbnb.io/lottie/)
-
-
-
-![Example1](gifs/Example1.gif)
-
-
-![Example2](gifs/Example2.gif)
-
-
-![Example3](gifs/Example3.gif)
-
-
-![Community](gifs/Community%202_3.gif)
-
 
 ![Example4](gifs/Example4.gif)
 
@@ -316,33 +300,3 @@ my email is **hernantorrisi@gmail.com**
 
 ## Issues
 - For missing mask in Safari browser, please call lottie.setLocationHref(locationHref) before animation is generated. It usually caused by usage of base tag in html. (see above for description of setLocationHref)
-
-## Contributors
-
-### Code Contributors
-
-This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.md)].
-<a href="https://github.com/airbnb/lottie-web/graphs/contributors"><img src="https://opencollective.com/lottie/contributors.svg?width=890&button=false" /></a>
-
-### Financial Contributors
-
-Become a financial contributor and help us sustain our community. [[Contribute](https://opencollective.com/lottie/contribute)]
-
-#### Individuals
-
-<a href="https://opencollective.com/lottie"><img src="https://opencollective.com/lottie/individuals.svg?width=890"></a>
-
-#### Organizations
-
-Support this project with your organization. Your logo will show up here with a link to your website. [[Contribute](https://opencollective.com/lottie/contribute)]
-
-<a href="https://opencollective.com/lottie/organization/0/website"><img src="https://opencollective.com/lottie/organization/0/avatar.svg"></a>
-<a href="https://opencollective.com/lottie/organization/1/website"><img src="https://opencollective.com/lottie/organization/1/avatar.svg"></a>
-<a href="https://opencollective.com/lottie/organization/2/website"><img src="https://opencollective.com/lottie/organization/2/avatar.svg"></a>
-<a href="https://opencollective.com/lottie/organization/3/website"><img src="https://opencollective.com/lottie/organization/3/avatar.svg"></a>
-<a href="https://opencollective.com/lottie/organization/4/website"><img src="https://opencollective.com/lottie/organization/4/avatar.svg"></a>
-<a href="https://opencollective.com/lottie/organization/5/website"><img src="https://opencollective.com/lottie/organization/5/avatar.svg"></a>
-<a href="https://opencollective.com/lottie/organization/6/website"><img src="https://opencollective.com/lottie/organization/6/avatar.svg"></a>
-<a href="https://opencollective.com/lottie/organization/7/website"><img src="https://opencollective.com/lottie/organization/7/avatar.svg"></a>
-<a href="https://opencollective.com/lottie/organization/8/website"><img src="https://opencollective.com/lottie/organization/8/avatar.svg"></a>
-<a href="https://opencollective.com/lottie/organization/9/website"><img src="https://opencollective.com/lottie/organization/9/avatar.svg"></a>
