@@ -35,9 +35,11 @@ AnimationItem.prototype.setParams = function (params) {
   if (params.context) {
     this.context = params.context;
   }
+
   if (params.wrapper || params.container) {
     this.wrapper = params.wrapper || params.container;
   }
+
   var animType = params.animType ? params.animType : params.renderer ? params.renderer : "svg";
   switch (animType) {
     case "canvas":
@@ -52,6 +54,7 @@ AnimationItem.prototype.setParams = function (params) {
       this.renderer = new HybridRenderer(this, params.rendererSettings);
       break;
   }
+
   this.renderer.setProjectInterface(this.projectInterface);
   this.animType = animType;
 
@@ -254,9 +257,8 @@ AnimationItem.prototype.preloadImages = function () {
 };
 
 AnimationItem.prototype.configAnimation = function (animData) {
-  if (!this.renderer) {
-    return;
-  }
+  if (!this.renderer) return;
+
   this.animationData = animData;
   this.totalFrames = Math.floor(this.animationData.op - this.animationData.ip);
   this.renderer.configAnimation(animData);
@@ -301,6 +303,7 @@ AnimationItem.prototype.checkLoaded = function () {
       expressionsPlugin.initExpressions(this);
     }
     this.renderer.initItems();
+
     setTimeout(
       function () {
         this.trigger("DOMLoaded");
@@ -320,6 +323,11 @@ AnimationItem.prototype.resize = function () {
 
 AnimationItem.prototype.setSubframe = function (flag) {
   this.subframeEnabled = flag ? true : false;
+};
+
+AnimationItem.prototype.nextFrame = function () {
+  this.currentRawFrame++;
+  this.gotoFrame();
 };
 
 AnimationItem.prototype.gotoFrame = function () {

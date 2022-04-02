@@ -6285,7 +6285,7 @@ CanvasRenderer.prototype.configAnimation = function(animData){
         tx:0,
         ty:0
     };
-    
+
     this.setupGlobalData(animData);
     this.globalData.canvasContext = this.canvasContext;
     this.globalData.renderer = this;
@@ -6440,14 +6440,6 @@ CanvasRenderer.prototype.checkPendingElements  = function(){
         var element = this.pendingElements.pop();
         element.checkParenting();
     }
-};
-
-CanvasRenderer.prototype.hide = function(){
-    this.animationItem.container.style.display = 'none';
-};
-
-CanvasRenderer.prototype.show = function(){
-    this.animationItem.container.style.display = 'block';
 };
 
 function MaskElement(data,element,globalData) {
@@ -7631,9 +7623,6 @@ extendPrototype([IImageElement], ISolidElement);
 ISolidElement.prototype.createContent = function(){
 
     var rect = createNS('rect');
-    ////rect.style.width = this.data.sw;
-    ////rect.style.height = this.data.sh;
-    ////rect.style.fill = this.data.sc;
     rect.setAttribute('width',this.data.sw);
     rect.setAttribute('height',this.data.sh);
     rect.setAttribute('fill',this.data.sc);
@@ -9058,36 +9047,6 @@ var animationManager = (function () {
     }
   }
 
-  function searchAnimations(animationData, standalone, renderer) {
-    var animElements = [].concat(
-      [].slice.call(document.getElementsByClassName("lottie")),
-      [].slice.call(document.getElementsByClassName("bodymovin"))
-    );
-    var i,
-      len = animElements.length;
-    for (i = 0; i < len; i += 1) {
-      if (renderer) {
-        animElements[i].setAttribute("data-bm-type", renderer);
-      }
-      registerAnimation(animElements[i], animationData);
-    }
-    
-    if (standalone && len === 0) {
-      if (!renderer) {
-        renderer = "svg";
-      }
-
-      var body = document.getElementsByTagName("body")[0];
-      body.innerHTML = "";
-      var div = createTag("div");
-      div.style.width = "100%";
-      div.style.height = "100%";
-      div.setAttribute("data-bm-type", renderer);
-      body.appendChild(div);
-      registerAnimation(div, animationData);
-    }
-  }
-
   function resize() {
     var i;
     for (i = 0; i < len; i += 1) {
@@ -9121,7 +9080,6 @@ var animationManager = (function () {
   moduleOb.pause = pause;
   moduleOb.stop = stop;
   moduleOb.togglePause = togglePause;
-  moduleOb.searchAnimations = searchAnimations;
   moduleOb.resize = resize;
   //moduleOb.start = start;
   moduleOb.goToAndStop = goToAndStop;
@@ -9169,9 +9127,11 @@ AnimationItem.prototype.setParams = function (params) {
   if (params.context) {
     this.context = params.context;
   }
+
   if (params.wrapper || params.container) {
     this.wrapper = params.wrapper || params.container;
   }
+
   var animType = params.animType ? params.animType : params.renderer ? params.renderer : "svg";
   switch (animType) {
     case "canvas":
@@ -9186,6 +9146,7 @@ AnimationItem.prototype.setParams = function (params) {
       this.renderer = new HybridRenderer(this, params.rendererSettings);
       break;
   }
+
   this.renderer.setProjectInterface(this.projectInterface);
   this.animType = animType;
 
@@ -9388,9 +9349,8 @@ AnimationItem.prototype.preloadImages = function () {
 };
 
 AnimationItem.prototype.configAnimation = function (animData) {
-  if (!this.renderer) {
-    return;
-  }
+  if (!this.renderer) return;
+
   this.animationData = animData;
   this.totalFrames = Math.floor(this.animationData.op - this.animationData.ip);
   this.renderer.configAnimation(animData);
@@ -9435,6 +9395,7 @@ AnimationItem.prototype.checkLoaded = function () {
       expressionsPlugin.initExpressions(this);
     }
     this.renderer.initItems();
+
     setTimeout(
       function () {
         this.trigger("DOMLoaded");
@@ -9454,6 +9415,11 @@ AnimationItem.prototype.resize = function () {
 
 AnimationItem.prototype.setSubframe = function (flag) {
   this.subframeEnabled = flag ? true : false;
+};
+
+AnimationItem.prototype.nextFrame = function () {
+  this.currentRawFrame++;
+  this.gotoFrame();
 };
 
 AnimationItem.prototype.gotoFrame = function () {
@@ -12167,14 +12133,6 @@ GroupEffect.prototype.init = function (data, element) {
     locationHref = href;
   }
 
-  function searchAnimations() {
-    if (standalone === true) {
-      animationManager.searchAnimations(animationData, standalone, renderer);
-    } else {
-      animationManager.searchAnimations();
-    }
-  }
-
   function setSubframeRendering(flag) {
     subframeEnabled = flag;
   }
@@ -12241,7 +12199,6 @@ GroupEffect.prototype.init = function (data, element) {
   lottiejs.setSpeed = animationManager.setSpeed;
   lottiejs.setDirection = animationManager.setDirection;
   lottiejs.stop = animationManager.stop;
-  lottiejs.searchAnimations = searchAnimations;
   lottiejs.registerAnimation = animationManager.registerAnimation;
   lottiejs.loadAnimation = loadAnimation;
   lottiejs.setSubframeRendering = setSubframeRendering;

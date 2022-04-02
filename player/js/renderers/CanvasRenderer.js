@@ -159,7 +159,7 @@ CanvasRenderer.prototype.configAnimation = function(animData){
         tx:0,
         ty:0
     };
-    
+
     this.setupGlobalData(animData);
     this.globalData.canvasContext = this.canvasContext;
     this.globalData.renderer = this;
@@ -314,12 +314,4 @@ CanvasRenderer.prototype.checkPendingElements  = function(){
         var element = this.pendingElements.pop();
         element.checkParenting();
     }
-};
-
-CanvasRenderer.prototype.hide = function(){
-    this.animationItem.container.style.display = 'none';
-};
-
-CanvasRenderer.prototype.show = function(){
-    this.animationItem.container.style.display = 'block';
 };
