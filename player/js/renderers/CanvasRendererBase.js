@@ -4,7 +4,7 @@ import {
 import {
   createSizedArray,
 } from '../utils/helpers/arrays';
-import createTag from '../utils/helpers/html_elements';
+import { createTag } from '../utils/helpers/html_elements';
 import SVGRenderer from './SVGRenderer';
 import Matrix from '../3rd_party/transformation-matrix';
 import BaseRenderer from './BaseRenderer';

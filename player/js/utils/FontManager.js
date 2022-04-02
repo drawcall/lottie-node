@@ -1,5 +1,5 @@
 import createNS from './helpers/svg_elements';
-import createTag from './helpers/html_elements';
+import { createTag } from './helpers/html_elements';
 import getFontProperties from './getFontProperties';
 
 const FontManager = (function () {

@@ -5,7 +5,7 @@ import {
   createSizedArray,
 } from '../../utils/helpers/arrays';
 import createNS from '../../utils/helpers/svg_elements';
-import createTag from '../../utils/helpers/html_elements';
+import { createTag } from '../../utils/helpers/html_elements';
 import BaseElement from '../BaseElement';
 import TransformElement from '../helpers/TransformElement';
 import HierarchyElement from '../helpers/HierarchyElement';

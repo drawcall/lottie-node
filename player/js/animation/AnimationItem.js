@@ -1,8 +1,6 @@
-import {
-  extendPrototype,
-} from '../utils/functionExtensions';
+import { extendPrototype } from "../utils/functionExtensions";
 
-import audioControllerFactory from '../utils/audio/AudioController';
+import audioControllerFactory from "../utils/audio/AudioController";
 import {
   getSubframeEnabled,
   BMEnterFrameEvent,
@@ -14,18 +12,18 @@ import {
   BMConfigErrorEvent,
   createElementID,
   getExpressionsPlugin,
-} from '../utils/common';
-import ImagePreloader from '../utils/imagePreloader';
-import BaseEvent from '../utils/BaseEvent';
-import dataManager from '../utils/DataManager';
-import markerParser from '../utils/markers/markerParser';
-import ProjectInterface from '../utils/expressions/ProjectInterface';
-import { getRenderer } from '../renderers/renderersManager';
+} from "../utils/common";
+import ImagePreloader from "../utils/imagePreloader";
+import BaseEvent from "../utils/BaseEvent";
+import dataManager from "../utils/DataManager";
+import markerParser from "../utils/markers/markerParser";
+import ProjectInterface from "../utils/expressions/ProjectInterface";
+import { getRenderer } from "../renderers/renderersManager";
 
 const AnimationItem = function () {
   this._cbs = [];
-  this.name = '';
-  this.path = '';
+  this.name = "";
+  this.path = "";
   this.isLoaded = false;
   this.currentFrame = 0;
   this.currentRawFrame = 0;
@@ -43,7 +41,7 @@ const AnimationItem = function () {
   this.loop = true;
   this.renderer = null;
   this.animationID = createElementID();
-  this.assetsPath = '';
+  this.assetsPath = "";
   this.timeCompleted = 0;
   this.segmentPos = 0;
   this.isSubframeEnabled = getSubframeEnabled();
@@ -65,30 +63,31 @@ AnimationItem.prototype.setParams = function (params) {
   if (params.wrapper || params.container) {
     this.wrapper = params.wrapper || params.container;
   }
-  var animType = 'svg';
+  var animType = "svg";
   if (params.animType) {
     animType = params.animType;
   } else if (params.renderer) {
     animType = params.renderer;
   }
+
   const RendererClass = getRenderer(animType);
   this.renderer = new RendererClass(this, params.rendererSettings);
   this.imagePreloader.setCacheType(animType, this.renderer.globalData.defs);
   this.renderer.setProjectInterface(this.projectInterface);
   this.animType = animType;
-  if (params.loop === ''
-        || params.loop === null
-        || params.loop === undefined
-        || params.loop === true) {
+
+  if (params.loop === "" || params.loop === null || params.loop === undefined || params.loop === true) {
     this.loop = true;
   } else if (params.loop === false) {
     this.loop = false;
   } else {
     this.loop = parseInt(params.loop, 10);
   }
-  this.autoplay = 'autoplay' in params ? params.autoplay : true;
-  this.name = params.name ? params.name : '';
-  this.autoloadSegments = Object.prototype.hasOwnProperty.call(params, 'autoloadSegments') ? params.autoloadSegments : true;
+  this.autoplay = "autoplay" in params ? params.autoplay : true;
+  this.name = params.name ? params.name : "";
+  this.autoloadSegments = Object.prototype.hasOwnProperty.call(params, "autoloadSegments")
+    ? params.autoloadSegments
+    : true;
   this.assetsPath = params.assetsPath;
   this.initialSegment = params.initialSegment;
   if (params.audioFactory) {
@@ -97,35 +96,28 @@ AnimationItem.prototype.setParams = function (params) {
   if (params.animationData) {
     this.setupAnimation(params.animationData);
   } else if (params.path) {
-    if (params.path.lastIndexOf('\\') !== -1) {
-      this.path = params.path.substr(0, params.path.lastIndexOf('\\') + 1);
+    if (params.path.lastIndexOf("\\") !== -1) {
+      this.path = params.path.substr(0, params.path.lastIndexOf("\\") + 1);
     } else {
-      this.path = params.path.substr(0, params.path.lastIndexOf('/') + 1);
+      this.path = params.path.substr(0, params.path.lastIndexOf("/") + 1);
     }
-    this.fileName = params.path.substr(params.path.lastIndexOf('/') + 1);
-    this.fileName = this.fileName.substr(0, this.fileName.lastIndexOf('.json'));
-    dataManager.loadAnimation(
-      params.path,
-      this.configAnimation,
-      this.onSetupError
-    );
+    this.fileName = params.path.substr(params.path.lastIndexOf("/") + 1);
+    this.fileName = this.fileName.substr(0, this.fileName.lastIndexOf(".json"));
+    dataManager.loadAnimation(params.path, this.configAnimation, this.onSetupError);
   }
 };
 
 AnimationItem.prototype.onSetupError = function () {
-  this.trigger('data_failed');
+  this.trigger("data_failed");
 };
 
 AnimationItem.prototype.setupAnimation = function (data) {
-  dataManager.completeAnimation(
-    data,
-    this.configAnimation
-  );
+  dataManager.completeAnimation(data, this.configAnimation);
 };
 
 AnimationItem.prototype.setData = function (wrapper, animationData) {
   if (animationData) {
-    if (typeof animationData !== 'object') {
+    if (typeof animationData !== "object") {
       animationData = JSON.parse(animationData);
     }
   }
@@ -135,64 +127,64 @@ AnimationItem.prototype.setData = function (wrapper, animationData) {
   };
   var wrapperAttributes = wrapper.attributes;
 
-  params.path = wrapperAttributes.getNamedItem('data-animation-path') // eslint-disable-line no-nested-ternary
-    ? wrapperAttributes.getNamedItem('data-animation-path').value
-    : wrapperAttributes.getNamedItem('data-bm-path') // eslint-disable-line no-nested-ternary
-      ? wrapperAttributes.getNamedItem('data-bm-path').value
-      : wrapperAttributes.getNamedItem('bm-path')
-        ? wrapperAttributes.getNamedItem('bm-path').value
-        : '';
-  params.animType = wrapperAttributes.getNamedItem('data-anim-type') // eslint-disable-line no-nested-ternary
-    ? wrapperAttributes.getNamedItem('data-anim-type').value
-    : wrapperAttributes.getNamedItem('data-bm-type') // eslint-disable-line no-nested-ternary
-      ? wrapperAttributes.getNamedItem('data-bm-type').value
-      : wrapperAttributes.getNamedItem('bm-type') // eslint-disable-line no-nested-ternary
-        ? wrapperAttributes.getNamedItem('bm-type').value
-        : wrapperAttributes.getNamedItem('data-bm-renderer') // eslint-disable-line no-nested-ternary
-          ? wrapperAttributes.getNamedItem('data-bm-renderer').value
-          : wrapperAttributes.getNamedItem('bm-renderer')
-            ? wrapperAttributes.getNamedItem('bm-renderer').value
-            : 'canvas';
+  params.path = wrapperAttributes.getNamedItem("data-animation-path") // eslint-disable-line no-nested-ternary
+    ? wrapperAttributes.getNamedItem("data-animation-path").value
+    : wrapperAttributes.getNamedItem("data-bm-path") // eslint-disable-line no-nested-ternary
+    ? wrapperAttributes.getNamedItem("data-bm-path").value
+    : wrapperAttributes.getNamedItem("bm-path")
+    ? wrapperAttributes.getNamedItem("bm-path").value
+    : "";
+  params.animType = wrapperAttributes.getNamedItem("data-anim-type") // eslint-disable-line no-nested-ternary
+    ? wrapperAttributes.getNamedItem("data-anim-type").value
+    : wrapperAttributes.getNamedItem("data-bm-type") // eslint-disable-line no-nested-ternary
+    ? wrapperAttributes.getNamedItem("data-bm-type").value
+    : wrapperAttributes.getNamedItem("bm-type") // eslint-disable-line no-nested-ternary
+    ? wrapperAttributes.getNamedItem("bm-type").value
+    : wrapperAttributes.getNamedItem("data-bm-renderer") // eslint-disable-line no-nested-ternary
+    ? wrapperAttributes.getNamedItem("data-bm-renderer").value
+    : wrapperAttributes.getNamedItem("bm-renderer")
+    ? wrapperAttributes.getNamedItem("bm-renderer").value
+    : "canvas";
 
-  var loop = wrapperAttributes.getNamedItem('data-anim-loop') // eslint-disable-line no-nested-ternary
-    ? wrapperAttributes.getNamedItem('data-anim-loop').value
-    : wrapperAttributes.getNamedItem('data-bm-loop') // eslint-disable-line no-nested-ternary
-      ? wrapperAttributes.getNamedItem('data-bm-loop').value
-      : wrapperAttributes.getNamedItem('bm-loop')
-        ? wrapperAttributes.getNamedItem('bm-loop').value
-        : '';
-  if (loop === 'false') {
+  var loop = wrapperAttributes.getNamedItem("data-anim-loop") // eslint-disable-line no-nested-ternary
+    ? wrapperAttributes.getNamedItem("data-anim-loop").value
+    : wrapperAttributes.getNamedItem("data-bm-loop") // eslint-disable-line no-nested-ternary
+    ? wrapperAttributes.getNamedItem("data-bm-loop").value
+    : wrapperAttributes.getNamedItem("bm-loop")
+    ? wrapperAttributes.getNamedItem("bm-loop").value
+    : "";
+  if (loop === "false") {
     params.loop = false;
-  } else if (loop === 'true') {
+  } else if (loop === "true") {
     params.loop = true;
-  } else if (loop !== '') {
+  } else if (loop !== "") {
     params.loop = parseInt(loop, 10);
   }
-  var autoplay = wrapperAttributes.getNamedItem('data-anim-autoplay') // eslint-disable-line no-nested-ternary
-    ? wrapperAttributes.getNamedItem('data-anim-autoplay').value
-    : wrapperAttributes.getNamedItem('data-bm-autoplay') // eslint-disable-line no-nested-ternary
-      ? wrapperAttributes.getNamedItem('data-bm-autoplay').value
-      : wrapperAttributes.getNamedItem('bm-autoplay')
-        ? wrapperAttributes.getNamedItem('bm-autoplay').value
-        : true;
-  params.autoplay = autoplay !== 'false';
+  var autoplay = wrapperAttributes.getNamedItem("data-anim-autoplay") // eslint-disable-line no-nested-ternary
+    ? wrapperAttributes.getNamedItem("data-anim-autoplay").value
+    : wrapperAttributes.getNamedItem("data-bm-autoplay") // eslint-disable-line no-nested-ternary
+    ? wrapperAttributes.getNamedItem("data-bm-autoplay").value
+    : wrapperAttributes.getNamedItem("bm-autoplay")
+    ? wrapperAttributes.getNamedItem("bm-autoplay").value
+    : true;
+  params.autoplay = autoplay !== "false";
 
-  params.name = wrapperAttributes.getNamedItem('data-name') // eslint-disable-line no-nested-ternary
-    ? wrapperAttributes.getNamedItem('data-name').value
-    : wrapperAttributes.getNamedItem('data-bm-name') // eslint-disable-line no-nested-ternary
-      ? wrapperAttributes.getNamedItem('data-bm-name').value
-      : wrapperAttributes.getNamedItem('bm-name')
-        ? wrapperAttributes.getNamedItem('bm-name').value
-        : '';
-  var prerender = wrapperAttributes.getNamedItem('data-anim-prerender') // eslint-disable-line no-nested-ternary
-    ? wrapperAttributes.getNamedItem('data-anim-prerender').value
-    : wrapperAttributes.getNamedItem('data-bm-prerender') // eslint-disable-line no-nested-ternary
-      ? wrapperAttributes.getNamedItem('data-bm-prerender').value
-      : wrapperAttributes.getNamedItem('bm-prerender')
-        ? wrapperAttributes.getNamedItem('bm-prerender').value
-        : '';
+  params.name = wrapperAttributes.getNamedItem("data-name") // eslint-disable-line no-nested-ternary
+    ? wrapperAttributes.getNamedItem("data-name").value
+    : wrapperAttributes.getNamedItem("data-bm-name") // eslint-disable-line no-nested-ternary
+    ? wrapperAttributes.getNamedItem("data-bm-name").value
+    : wrapperAttributes.getNamedItem("bm-name")
+    ? wrapperAttributes.getNamedItem("bm-name").value
+    : "";
+  var prerender = wrapperAttributes.getNamedItem("data-anim-prerender") // eslint-disable-line no-nested-ternary
+    ? wrapperAttributes.getNamedItem("data-anim-prerender").value
+    : wrapperAttributes.getNamedItem("data-bm-prerender") // eslint-disable-line no-nested-ternary
+    ? wrapperAttributes.getNamedItem("data-bm-prerender").value
+    : wrapperAttributes.getNamedItem("bm-prerender")
+    ? wrapperAttributes.getNamedItem("bm-prerender").value
+    : "";
 
-  if (prerender === 'false') {
+  if (prerender === "false") {
     params.prerender = false;
   }
   this.setParams(params);
@@ -230,10 +222,7 @@ AnimationItem.prototype.includeLayers = function (data) {
     }
   }
   this.animationData.__complete = false;
-  dataManager.completeAnimation(
-    this.animationData,
-    this.onSegmentComplete
-  );
+  dataManager.completeAnimation(this.animationData, this.onSegmentComplete);
 };
 
 AnimationItem.prototype.onSegmentComplete = function (data) {
@@ -248,17 +237,21 @@ AnimationItem.prototype.onSegmentComplete = function (data) {
 AnimationItem.prototype.loadNextSegment = function () {
   var segments = this.animationData.segments;
   if (!segments || segments.length === 0 || !this.autoloadSegments) {
-    this.trigger('data_ready');
+    this.trigger("data_ready");
     this.timeCompleted = this.totalFrames;
     return;
   }
   var segment = segments.shift();
   this.timeCompleted = segment.time * this.frameRate;
-  var segmentPath = this.path + this.fileName + '_' + this.segmentPos + '.json';
+  var segmentPath = this.path + this.fileName + "_" + this.segmentPos + ".json";
   this.segmentPos += 1;
-  dataManager.loadData(segmentPath, this.includeLayers.bind(this), function () {
-    this.trigger('data_failed');
-  }.bind(this));
+  dataManager.loadData(
+    segmentPath,
+    this.includeLayers.bind(this),
+    function () {
+      this.trigger("data_failed");
+    }.bind(this)
+  );
 };
 
 AnimationItem.prototype.loadSegments = function () {
@@ -270,7 +263,7 @@ AnimationItem.prototype.loadSegments = function () {
 };
 
 AnimationItem.prototype.imagesLoaded = function () {
-  this.trigger('loaded_images');
+  this.trigger("loaded_images");
   this.checkLoaded();
 };
 
@@ -303,7 +296,7 @@ AnimationItem.prototype.configAnimation = function (animData) {
     this.frameMult = this.animationData.fr / 1000;
     this.renderer.searchExtraCompositions(animData.assets);
     this.markers = markerParser(animData.markers || []);
-    this.trigger('config_ready');
+    this.trigger("config_ready");
     this.preloadImages();
     this.loadSegments();
     this.updaFrameModifier();
@@ -328,10 +321,11 @@ AnimationItem.prototype.waitForFontsLoaded = function () {
 };
 
 AnimationItem.prototype.checkLoaded = function () {
-  if (!this.isLoaded
-        && this.renderer.globalData.fontManager.isLoaded
-        && (this.imagePreloader.loadedImages() || this.renderer.rendererType !== 'canvas')
-        && (this.imagePreloader.loadedFootages())
+  if (
+    !this.isLoaded &&
+    this.renderer.globalData.fontManager.isLoaded &&
+    (this.imagePreloader.loadedImages() || this.renderer.rendererType !== "canvas") &&
+    this.imagePreloader.loadedFootages()
   ) {
     this.isLoaded = true;
     var expressionsPlugin = getExpressionsPlugin();
@@ -339,9 +333,12 @@ AnimationItem.prototype.checkLoaded = function () {
       expressionsPlugin.initExpressions(this);
     }
     this.renderer.initItems();
-    setTimeout(function () {
-      this.trigger('DOMLoaded');
-    }.bind(this), 0);
+    setTimeout(
+      function () {
+        this.trigger("DOMLoaded");
+      }.bind(this),
+      0
+    );
     this.gotoFrame();
     if (this.autoplay) {
       this.play();
@@ -363,9 +360,9 @@ AnimationItem.prototype.gotoFrame = function () {
   if (this.timeCompleted !== this.totalFrames && this.currentFrame > this.timeCompleted) {
     this.currentFrame = this.timeCompleted;
   }
-  this.trigger('enterFrame');
+  this.trigger("enterFrame");
   this.renderFrame();
-  this.trigger('drawnFrame');
+  this.trigger("drawnFrame");
 };
 
 AnimationItem.prototype.renderFrame = function () {
@@ -388,7 +385,7 @@ AnimationItem.prototype.play = function (name) {
     this.audioController.resume();
     if (this._idle) {
       this._idle = false;
-      this.trigger('_active');
+      this.trigger("_active");
     }
   }
 };
@@ -400,7 +397,7 @@ AnimationItem.prototype.pause = function (name) {
   if (this.isPaused === false) {
     this.isPaused = true;
     this._idle = true;
-    this.trigger('_idle');
+    this.trigger("_idle");
     this.audioController.pause();
   }
 };
@@ -494,19 +491,20 @@ AnimationItem.prototype.advanceTime = function (value) {
       if (!this.checkSegments(nextValue % this.totalFrames)) {
         this.setCurrentRawFrameValue(nextValue % this.totalFrames);
         this._completedLoop = true;
-        this.trigger('loopComplete');
+        this.trigger("loopComplete");
       }
     } else {
       this.setCurrentRawFrameValue(nextValue);
     }
   } else if (nextValue < 0) {
     if (!this.checkSegments(nextValue % this.totalFrames)) {
-      if (this.loop && !(this.playCount-- <= 0 && this.loop !== true)) { // eslint-disable-line no-plusplus
+      if (this.loop && !(this.playCount-- <= 0 && this.loop !== true)) {
+        // eslint-disable-line no-plusplus
         this.setCurrentRawFrameValue(this.totalFrames + (nextValue % this.totalFrames));
         if (!this._completedLoop) {
           this._completedLoop = true;
         } else {
-          this.trigger('loopComplete');
+          this.trigger("loopComplete");
         }
       } else {
         _isComplete = true;
@@ -519,7 +517,7 @@ AnimationItem.prototype.advanceTime = function (value) {
   if (_isComplete) {
     this.setCurrentRawFrameValue(nextValue);
     this.pause();
-    this.trigger('complete');
+    this.trigger("complete");
   }
 };
 
@@ -550,7 +548,7 @@ AnimationItem.prototype.adjustSegment = function (arr, offset) {
     this.firstFrame = arr[0];
     this.setCurrentRawFrameValue(0.001 + offset);
   }
-  this.trigger('segmentStart');
+  this.trigger("segmentStart");
 };
 AnimationItem.prototype.setSegment = function (init, end) {
   var pendingFrame = -1;
@@ -574,7 +572,7 @@ AnimationItem.prototype.playSegments = function (arr, forceFlag) {
   if (forceFlag) {
     this.segments.length = 0;
   }
-  if (typeof arr[0] === 'object') {
+  if (typeof arr[0] === "object") {
     var i;
     var len = arr.length;
     for (i = 0; i < len; i += 1) {
@@ -612,7 +610,7 @@ AnimationItem.prototype.destroy = function (name) {
   }
   this.renderer.destroy();
   this.imagePreloader.destroy();
-  this.trigger('destroy');
+  this.trigger("destroy");
   this._cbs = null;
   this.onEnterFrame = null;
   this.onLoopComplete = null;
@@ -675,18 +673,18 @@ AnimationItem.prototype.getPath = function () {
 };
 
 AnimationItem.prototype.getAssetsPath = function (assetData) {
-  var path = '';
+  var path = "";
   if (assetData.e) {
     path = assetData.p;
   } else if (this.assetsPath) {
     var imagePath = assetData.p;
-    if (imagePath.indexOf('images/') !== -1) {
-      imagePath = imagePath.split('/')[1];
+    if (imagePath.indexOf("images/") !== -1) {
+      imagePath = imagePath.split("/")[1];
     }
     path = this.assetsPath + imagePath;
   } else {
     path = this.path;
-    path += assetData.u ? assetData.u : '';
+    path += assetData.u ? assetData.u : "";
     path += assetData.p;
   }
   return path;
@@ -719,46 +717,46 @@ AnimationItem.prototype.getDuration = function (isFrame) {
 AnimationItem.prototype.trigger = function (name) {
   if (this._cbs && this._cbs[name]) {
     switch (name) {
-      case 'enterFrame':
-      case 'drawnFrame':
+      case "enterFrame":
+      case "drawnFrame":
         this.triggerEvent(name, new BMEnterFrameEvent(name, this.currentFrame, this.totalFrames, this.frameModifier));
         break;
-      case 'loopComplete':
+      case "loopComplete":
         this.triggerEvent(name, new BMCompleteLoopEvent(name, this.loop, this.playCount, this.frameMult));
         break;
-      case 'complete':
+      case "complete":
         this.triggerEvent(name, new BMCompleteEvent(name, this.frameMult));
         break;
-      case 'segmentStart':
+      case "segmentStart":
         this.triggerEvent(name, new BMSegmentStartEvent(name, this.firstFrame, this.totalFrames));
         break;
-      case 'destroy':
+      case "destroy":
         this.triggerEvent(name, new BMDestroyEvent(name, this));
         break;
       default:
         this.triggerEvent(name);
     }
   }
-  if (name === 'enterFrame' && this.onEnterFrame) {
+  if (name === "enterFrame" && this.onEnterFrame) {
     this.onEnterFrame.call(this, new BMEnterFrameEvent(name, this.currentFrame, this.totalFrames, this.frameMult));
   }
-  if (name === 'loopComplete' && this.onLoopComplete) {
+  if (name === "loopComplete" && this.onLoopComplete) {
     this.onLoopComplete.call(this, new BMCompleteLoopEvent(name, this.loop, this.playCount, this.frameMult));
   }
-  if (name === 'complete' && this.onComplete) {
+  if (name === "complete" && this.onComplete) {
     this.onComplete.call(this, new BMCompleteEvent(name, this.frameMult));
   }
-  if (name === 'segmentStart' && this.onSegmentStart) {
+  if (name === "segmentStart" && this.onSegmentStart) {
     this.onSegmentStart.call(this, new BMSegmentStartEvent(name, this.firstFrame, this.totalFrames));
   }
-  if (name === 'destroy' && this.onDestroy) {
+  if (name === "destroy" && this.onDestroy) {
     this.onDestroy.call(this, new BMDestroyEvent(name, this));
   }
 };
 
 AnimationItem.prototype.triggerRenderFrameError = function (nativeError) {
   var error = new BMRenderFrameErrorEvent(nativeError, this.currentFrame);
-  this.triggerEvent('error', error);
+  this.triggerEvent("error", error);
 
   if (this.onError) {
     this.onError.call(this, error);
@@ -767,7 +765,7 @@ AnimationItem.prototype.triggerRenderFrameError = function (nativeError) {
 
 AnimationItem.prototype.triggerConfigError = function (nativeError) {
   var error = new BMConfigErrorEvent(nativeError, this.currentFrame);
-  this.triggerEvent('error', error);
+  this.triggerEvent("error", error);
 
   if (this.onError) {
     this.onError.call(this, error);

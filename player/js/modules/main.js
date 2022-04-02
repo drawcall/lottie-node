@@ -9,6 +9,7 @@ import {
   setExpressionsPlugin,
 } from "../utils/common";
 import PropertyFactory from "../utils/PropertyFactory";
+import { setCanvasClass, setCreateCanvas } from "../utils/helpers/html_elements";
 import ShapePropertyFactory from "../utils/shapes/ShapeProperty";
 import Matrix from "../3rd_party/transformation-matrix";
 
@@ -43,6 +44,15 @@ function loadAnimation(params) {
   if (standalone === true) {
     params.animationData = JSON.parse(animationData);
   }
+
+  if (params.canvasClass) {
+    setCanvasClass(params.canvasClass);
+  }
+
+  if (params.createCanvas) {
+    setCreateCanvas(params.createCanvas);
+  }
+
   return animationManager.loadAnimation(params);
 }
 
@@ -93,6 +103,8 @@ function getFactory(name) {
   }
 }
 
+lottie.setCreateCanvas = setCreateCanvas;
+lottie.setCanvasClass = setCanvasClass;
 lottie.play = animationManager.play;
 lottie.pause = animationManager.pause;
 lottie.setLocationHref = setLocation;

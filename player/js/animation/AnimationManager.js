@@ -1,5 +1,5 @@
-import createTag from '../utils/helpers/html_elements';
-import AnimationItem from './AnimationItem';
+import { createTag } from "../utils/helpers/html_elements";
+import AnimationItem from "./AnimationItem";
 
 const animationManager = (function () {
   var moduleOb = {};
@@ -63,9 +63,9 @@ const animationManager = (function () {
   }
 
   function setupAnimation(animItem, element) {
-    animItem.addEventListener('destroy', removeElement);
-    animItem.addEventListener('_active', addPlayingCount);
-    animItem.addEventListener('_idle', subtractPlayingCount);
+    animItem.addEventListener("destroy", removeElement);
+    animItem.addEventListener("_active", addPlayingCount);
+    animItem.addEventListener("_idle", subtractPlayingCount);
     registeredAnimations.push({ elem: element, animation: animItem });
     len += 1;
   }
@@ -74,6 +74,7 @@ const animationManager = (function () {
     var animItem = new AnimationItem();
     setupAnimation(animItem, null);
     animItem.setParams(params);
+
     return animItem;
   }
 
@@ -146,32 +147,35 @@ const animationManager = (function () {
 
   function destroy(animation) {
     var i;
-    for (i = (len - 1); i >= 0; i -= 1) {
+    for (i = len - 1; i >= 0; i -= 1) {
       registeredAnimations[i].animation.destroy(animation);
     }
   }
 
   function searchAnimations(animationData, standalone, renderer) {
-    var animElements = [].concat([].slice.call(document.getElementsByClassName('lottie')),
-      [].slice.call(document.getElementsByClassName('bodymovin')));
+    var animElements = [].concat(
+      [].slice.call(document.getElementsByClassName("lottie")),
+      [].slice.call(document.getElementsByClassName("bodymovin"))
+    );
     var i;
     var lenAnims = animElements.length;
     for (i = 0; i < lenAnims; i += 1) {
       if (renderer) {
-        animElements[i].setAttribute('data-bm-type', renderer);
+        animElements[i].setAttribute("data-bm-type", renderer);
       }
       registerAnimation(animElements[i], animationData);
     }
+    console.log("-----");
     if (standalone && lenAnims === 0) {
       if (!renderer) {
-        renderer = 'svg';
+        renderer = "svg";
       }
-      var body = document.getElementsByTagName('body')[0];
-      body.innerText = '';
-      var div = createTag('div');
-      div.style.width = '100%';
-      div.style.height = '100%';
-      div.setAttribute('data-bm-type', renderer);
+      var body = document.getElementsByTagName("body")[0];
+      body.innerText = "";
+      var div = createTag("div");
+      div.style.width = "100%";
+      div.style.height = "100%";
+      div.setAttribute("data-bm-type", renderer);
       body.appendChild(div);
       registerAnimation(div, animationData);
     }
@@ -243,6 +247,6 @@ const animationManager = (function () {
   moduleOb.unmute = unmute;
   moduleOb.getRegisteredAnimations = getRegisteredAnimations;
   return moduleOb;
-}());
+})();
 
 export default animationManager;

@@ -1,7 +1,7 @@
 import {
   extendPrototype,
 } from '../../utils/functionExtensions';
-import createTag from '../../utils/helpers/html_elements';
+import { createTag } from '../../utils/helpers/html_elements';
 import RenderableElement from '../helpers/RenderableElement';
 import BaseElement from '../BaseElement';
 import TransformElement from '../helpers/TransformElement';
