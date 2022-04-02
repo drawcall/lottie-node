@@ -4,7 +4,9 @@ Lottie is a mobile library for Node.js that parses [Adobe After Effects](http://
 
 For the first time, designers can create **and ship** beautiful animations without an engineer painstakingly recreating it by hand. They say a picture is worth 1,000 words so here are 13,000:
 
-# View documentation, FAQ, help, examples, and more at [airbnb.io/lottie](http://airbnb.io/lottie/)
+# documentation
+
+View documentation, FAQ, help, examples, and more at [airbnb.io/lottie](http://airbnb.io/lottie/)
 
 ![Example4](gifs/Example4.gif)
 
@@ -97,12 +99,7 @@ Or get it directly from the AE plugin clicking on Get Player
 - Click Render
 - look for the exported json file (if you had images or AI layers on your animation, there will be an images folder with the exported files)
 
-### HTML
-- get the lottie.js file from the build/player/ folder for the latest build
-- include the .js file on your html (remember to gzip it for production)
-```html
-<script src="js/lottie.js" type="text/javascript"></script>
-```
+### UseAge
 You can call lottie.loadAnimation() to start an animation.
 It takes an object as a unique param with:
 - animationData: an Object with the exported animation data. **Note:** If your animation contains repeaters and you plan to call loadAnimation multiple times with the same animation, please deep clone the object before passing it (see [#1159](https://github.com/airbnb/lottie-web/issues/1159) and [#2151](https://github.com/airbnb/lottie-web/issues/2151).)
@@ -130,135 +127,6 @@ lottie.loadAnimation({
 Check this wiki page for an explanation for each setting.
 https://github.com/airbnb/lottie-web/wiki/Composition-Settings
 
-## Usage
-Animation instances have these main methods:
-### play
-
-***
-### stop
-
-***
-### pause
-
-***
-### setSpeed(speed)
-- `speed`: 1 is normal speed.
-
-***
-### goToAndStop(value, isFrame)
-- `value`: numeric value.
-- `isFrame`: defines if first argument is a time based value or a frame based (default false).
-
-***
-### goToAndPlay(value, isFrame)
-- `value`: numeric value.
-- `isFrame`: defines if first argument is a time based value or a frame based (default false).
-
-***
-### setDirection(direction)
-- `direction`: 1 is forward, -1 is reverse.
-
-***
-### playSegments(segments, forceFlag)
-- `segments`: array. Can contain 2 numeric values that will be used as first and last frame of the animation. Or can contain a sequence of arrays each with 2 numeric values.
-- `forceFlag`: boolean. If set to false, it will wait until the current segment is complete. If true, it will update values immediately.
-***
-### setSubframe(useSubFrames)
-- `useSubFrames`:  If false, it will respect the original AE fps. If true, it will update on every requestAnimationFrame with intermediate values. Default is true.
-***
-### destroy()
-***
-### getDuration(inFrames)
-- `inFrames`:  If true, returns duration in frames, if false, in seconds.
-***
-
-### Additional methods:
-- updateTextDocumentData -- updates a text layer's data
-[More Info](https://github.com/airbnb/lottie-web/wiki/TextLayer.updateDocumentData)
-***
-
-### Lottie has several global methods that will affect all animations:
-**lottie.play()** -- with 1 optional parameter **name** to target a specific animation <br/>
-**lottie.stop()** -- with 1 optional parameter **name** to target a specific animation <br/>
-**lottie.goToAndStop(value, isFrame, name)** -- Moves an animation with the specified name playback to the defined time. If name is omitted, moves all animation instances.<br />
-**lottie.setSpeed()** -- first argument speed (1 is normal speed) -- with 1 optional parameter **name** to target a specific animation <br/>
-**lottie.setDirection()** -- first argument direction (1 is normal direction.) -- with 1 optional parameter **name** to target a specific animation <br/>
-**lottie.searchAnimations()** -- looks for elements with class "lottie" or "bodymovin" <br/>
-**lottie.loadAnimation()** -- Explained above. returns an animation instance to control individually. <br/>
-**lottie.destroy(name)** -- Destroys an animation with the specified name. If name is omitted, destroys all animation instances. The DOM element will be emptied.<br />
-**lottie.registerAnimation()** -- you can register an element directly with registerAnimation. It must have the "data-animation-path" attribute pointing at the data.json url<br />
-**lottie.getRegisteredAnimations()** -- returns all animations instances<br />
-**lottie.setQuality()** -- default 'high', set 'high','medium','low', or a number > 1 to improve player performance. In some animations as low as 2 won't show any difference.<br />
-**lottie.setLocationHref()** -- Sets the relative location from where svg elements with ids are referenced. It's useful when you experience mask issues in Safari.<br />
-**lottie.freeze()** -- Freezes all playing animations or animations that will be loaded<br />
-**lottie.unfreeze()** -- Unfreezes all animations<br />
-**lottie.inBrowser()** -- true if the library is being run in a browser<br />
-**lottie.resize()** -- Resizes all animation instances<br />
-
-## Events
-- onComplete
-- onLoopComplete
-- onEnterFrame
-- onSegmentStart
-
-you can also use addEventListener with the following events:
-- complete
-- loopComplete
-- enterFrame
-- segmentStart
-- config_ready (when initial config is done)
-- data_ready (when all parts of the animation have been loaded)
-- data_failed (when part of the animation can not be loaded)
-- loaded_images (when all image loads have either succeeded or errored)
-- DOMLoaded (when elements have been added to the DOM)
-- destroy
-
-#### Other loading options
-- if you want to use an existing canvas to draw, you can pass an extra object: 'rendererSettings' with the following configuration:
-```js
-lottie.loadAnimation({
-  container: element, // the dom element
-  renderer: 'svg',
-  loop: true,
-  autoplay: true,
-  animationData: animationData, // the animation data
-  // ...or if your animation contains repeaters:
-  // animationData: cloneDeep(animationData), // e.g. lodash.clonedeep
-  rendererSettings: {
-    context: canvasContext, // the canvas context, only support "2d" context
-    preserveAspectRatio: 'xMinYMin slice', // Supports the same options as the svg element's preserveAspectRatio property
-    clearCanvas: false,
-    progressiveLoad: false, // Boolean, only svg renderer, loads dom elements when needed. Might speed up initialization for large number of elements.
-    hideOnTransparent: true, //Boolean, only svg renderer, hides elements when opacity reaches 0 (defaults to true)
-    className: 'some-css-class-name',
-    id: 'some-id',
-  }
-});
-```
-Doing this you will have to handle the canvas clearing after each frame
-<br/>
-Another way to load animations is adding specific attributes to a dom element.
-You have to include a div and set it's class to "lottie".
-If you do it before page load, it will automatically search for all tags with the class "lottie".
-Or you can call `lottie.searchAnimations()` after page load and it will search all elements with the class "lottie".
-<br/>
-- Add the data.json to a folder relative to the html
-- Create a div that will contain the animation.
-- **Required**
-  - A class called "lottie"
-  - A "data-animation-path" attribute with relative path to the data.json
-- **Optional**
-  - A "data-anim-loop" attribute
-  - A "data-name" attribute to specify a name to target play controls specifically
-
-**Example**
-
-```html
- <div style="width:1067px;height:600px"  class="lottie" data-animation-path="animation/" data-anim-loop="true" data-name="ninja"></div>
-```
-
-
-
 ## Preview
 You can preview or take an svg snapshot of the animation to use as poster. After you render your animation, you can take a snapshot of any frame in the animation and save it to your disk. I recommend to pass the svg through an svg optimizer like https://jakearchibald.github.io/svgomg/ and play around with their settings.<br/>
 
@@ -273,12 +141,6 @@ Beware not to overwrite an existing folder on that same location.
 This is real time rendering. Although it is pretty optimized, it always helps if you keep your AE project to what is necessary<br/>
 More optimizations are on their way, but try not to use huge shapes in AE only to mask a small part of it.<br/>
 Too many nodes will also affect performance.
-
-### Help
-If you have any animations that don't work or want me to export them, don't hesitate to write. <br/>
-I'm really interested in seeing what kind of problems the plugin has. <br/>
-my email is **hernantorrisi@gmail.com**
-
 
 ## AE Feature Support
 - The script supports precomps, shapes, solids, images, null objects, texts
