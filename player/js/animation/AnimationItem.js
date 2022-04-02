@@ -43,9 +43,11 @@ AnimationItem.prototype.setParams = function (params) {
     case "canvas":
       this.renderer = new CanvasRenderer(this, params.rendererSettings);
       break;
+
     case "svg":
       this.renderer = new SVGRenderer(this, params.rendererSettings);
       break;
+
     default:
       this.renderer = new HybridRenderer(this, params.rendererSettings);
       break;
@@ -61,10 +63,12 @@ AnimationItem.prototype.setParams = function (params) {
   } else {
     this.loop = parseInt(params.loop);
   }
+
   this.autoplay = "autoplay" in params ? params.autoplay : true;
   this.name = params.name ? params.name : "";
   this.autoloadSegments = params.hasOwnProperty("autoloadSegments") ? params.autoloadSegments : true;
   this.assetsPath = params.assetsPath;
+
   if (params.animationData) {
     this.configAnimation(params.animationData);
   } else if (params.path) {
@@ -130,6 +134,7 @@ AnimationItem.prototype.setData = function (wrapper, animationData) {
     : wrapperAttributes.getNamedItem("bm-loop")
     ? wrapperAttributes.getNamedItem("bm-loop").value
     : "";
+
   if (loop === "") {
   } else if (loop === "false") {
     params.loop = false;
@@ -165,6 +170,7 @@ AnimationItem.prototype.setData = function (wrapper, animationData) {
   if (prerender === "false") {
     params.prerender = false;
   }
+
   this.setParams(params);
 };
 

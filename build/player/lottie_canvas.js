@@ -217,45 +217,47 @@ var rgbToHex = (function(){
         return '#' + colorMap[r] + colorMap[g] + colorMap[b];
     };
 }());
-function BaseEvent(){}
+function BaseEvent() {}
 BaseEvent.prototype = {
-	triggerEvent: function (eventName, args) {
-	    if (this._cbs[eventName]) {
-	        var len = this._cbs[eventName].length;
-	        for (var i = 0; i < len; i++){
-	            this._cbs[eventName][i](args);
-	        }
-	    }
-	},
-	addEventListener: function (eventName, callback) {
-	    if (!this._cbs[eventName]){
-	        this._cbs[eventName] = [];
-	    }
-	    this._cbs[eventName].push(callback);
+  triggerEvent: function (eventName, args) {
+    if (this._cbs[eventName]) {
+      var len = this._cbs[eventName].length;
+      for (var i = 0; i < len; i++) {
+        this._cbs[eventName][i](args);
+      }
+    }
+  },
+  addEventListener: function (eventName, callback) {
+    if (!this._cbs[eventName]) {
+      this._cbs[eventName] = [];
+    }
+    this._cbs[eventName].push(callback);
 
-		return function() {
-			this.removeEventListener(eventName, callback);
-		}.bind(this);
-	},
-	removeEventListener: function (eventName,callback){
-	    if (!callback){
-	        this._cbs[eventName] = null;
-	    }else if(this._cbs[eventName]){
-	        var i = 0, len = this._cbs[eventName].length;
-	        while(i<len){
-	            if(this._cbs[eventName][i] === callback){
-	                this._cbs[eventName].splice(i,1);
-	                i -=1;
-	                len -= 1;
-	            }
-	            i += 1;
-	        }
-	        if(!this._cbs[eventName].length){
-	            this._cbs[eventName] = null;
-	        }
-	    }
-	}
+    return function () {
+      this.removeEventListener(eventName, callback);
+    }.bind(this);
+  },
+  removeEventListener: function (eventName, callback) {
+    if (!callback) {
+      this._cbs[eventName] = null;
+    } else if (this._cbs[eventName]) {
+      var i = 0,
+        len = this._cbs[eventName].length;
+      while (i < len) {
+        if (this._cbs[eventName][i] === callback) {
+          this._cbs[eventName].splice(i, 1);
+          i -= 1;
+          len -= 1;
+        }
+        i += 1;
+      }
+      if (!this._cbs[eventName].length) {
+        this._cbs[eventName] = null;
+      }
+    }
+  },
 };
+
 var createTypedArray = (function(){
 	function createRegularArray(type, len){
 		var i = 0, arr = [], value;
@@ -293,7 +295,7 @@ function createSizedArray(len) {
 	return Array.apply(null,{length:len});
 }
 function createTag(type) {
-	//return {appendChild:function(){},setAttribute:function(){},style:{}}
+	console.trace(1111);
 	return document.createElement(type);
 }
 function DynamicPropertyContainer(){};
@@ -4195,117 +4197,125 @@ var buildShapeString = function(pathNodes, length, closed, mat) {
         }
         return shapeString;
 }
-var ImagePreloader = (function(){
-
-    var proxyImage = (function(){
-        var canvas = createTag('canvas');
-        canvas.width = 1;
-        canvas.height = 1;
-        var ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#FF0000';
-        ctx.fillRect(0, 0, 1, 1);
-        return canvas;
-    }())
-
-    function imageLoaded(){
-        this.loadedAssets += 1;
-        if(this.loadedAssets === this.totalImages){
-            if(this.imagesLoadedCb) {
-                this.imagesLoadedCb(null);
-            }
-        }
+var onlyCanvas;
+var ImagePreloader = (function () {
+  var createOnlyFakeImg = function () {
+    if (!onlyCanvas) {
+      onlyCanvas = createTag("canvas");
+      onlyCanvas.width = 1;
+      onlyCanvas.height = 1;
+      var ctx = onlyCanvas.getContext("2d");
+      ctx.fillStyle = "#FF0000";
+      ctx.fillRect(0, 0, 1, 1);
     }
+    return onlyCanvas;
+  };
 
-    function getAssetsPath(assetData, assetsPath, original_path) {
-        var path = '';
-        if (assetData.e) {
-            path = assetData.p;
-        } else if(assetsPath) {
-            var imagePath = assetData.p;
-            if (imagePath.indexOf('images/') !== -1) {
-                imagePath = imagePath.split('/')[1];
-            }
-            path = assetsPath + imagePath;
-        } else {
-            path = original_path;
-            path += assetData.u ? assetData.u : '';
-            path += assetData.p;
-        }
-        return path;
+  function imageLoaded() {
+    this.loadedAssets += 1;
+    if (this.loadedAssets === this.totalImages) {
+      if (this.imagesLoadedCb) {
+        this.imagesLoadedCb(null);
+      }
     }
+  }
 
-    function createImageData(assetData) {
-        var path = getAssetsPath(assetData, this.assetsPath, this.path);
-        var img = createTag('img');
-        img.crossOrigin = 'anonymous';
-        img.addEventListener('load', this._imageLoaded.bind(this), false);
-        img.addEventListener('error', function() {
-            ob.img = proxyImage;
-            this._imageLoaded();
-        }.bind(this), false);
-        img.src = path;
-        var ob = {
-            img: img,
-            assetData: assetData
-        }
-        return ob;
+  function getAssetsPath(assetData, assetsPath, original_path) {
+    var path = "";
+    if (assetData.e) {
+      path = assetData.p;
+    } else if (assetsPath) {
+      var imagePath = assetData.p;
+      if (imagePath.indexOf("images/") !== -1) {
+        imagePath = imagePath.split("/")[1];
+      }
+      path = assetsPath + imagePath;
+    } else {
+      path = original_path;
+      path += assetData.u ? assetData.u : "";
+      path += assetData.p;
     }
+    return path;
+  }
 
-    function loadAssets(assets, cb){
-        this.imagesLoadedCb = cb;
-        var i, len = assets.length;
-        for (i = 0; i < len; i += 1) {
-            if(!assets[i].layers){
-                this.totalImages += 1;
-                this.images.push(this._createImageData(assets[i]));
-            }
-        }
-    }
-
-    function setPath(path){
-        this.path = path || '';
-    }
-
-    function setAssetsPath(path){
-        this.assetsPath = path || '';
-    }
-
-    function getImage(assetData) {
-        var i = 0, len = this.images.length;
-        while (i < len) {
-            if (this.images[i].assetData === assetData) {
-                return this.images[i].img;
-            }
-            i += 1;
-        }
-    }
-
-    function destroy() {
-        this.imagesLoadedCb = null;
-        this.images.length = 0;
-    }
-
-    function loaded() {
-        return this.totalImages === this.loadedAssets;
-    }
-
-    return function ImagePreloader(){
-        this.loadAssets = loadAssets;
-        this.setAssetsPath = setAssetsPath;
-        this.setPath = setPath;
-        this.loaded = loaded;
-        this.destroy = destroy;
-        this.getImage = getImage;
-        this._createImageData = createImageData;
-        this._imageLoaded = imageLoaded;
-        this.assetsPath = '';
-        this.path = '';
-        this.totalImages = 0;
-        this.loadedAssets = 0;
-        this.imagesLoadedCb = null;
-        this.images = [];
+  function createImageData(assetData) {
+    var path = getAssetsPath(assetData, this.assetsPath, this.path);
+    var img = createTag("img");
+    img.addEventListener("load", this._imageLoaded.bind(this), false);
+    img.addEventListener(
+      "error",
+      function () {
+        ob.img = createOnlyFakeImg();
+        this._imageLoaded();
+      }.bind(this),
+      false
+    );
+    img.src = path;
+    var ob = {
+      img: img,
+      assetData: assetData,
     };
-}());
+    return ob;
+  }
+
+  function loadAssets(assets, cb) {
+    this.imagesLoadedCb = cb;
+    var i,
+      len = assets.length;
+    for (i = 0; i < len; i += 1) {
+      if (!assets[i].layers) {
+        this.totalImages += 1;
+        this.images.push(this._createImageData(assets[i]));
+      }
+    }
+  }
+
+  function setPath(path) {
+    this.path = path || "";
+  }
+
+  function setAssetsPath(path) {
+    this.assetsPath = path || "";
+  }
+
+  function getImage(assetData) {
+    var i = 0,
+      len = this.images.length;
+    while (i < len) {
+      if (this.images[i].assetData === assetData) {
+        return this.images[i].img;
+      }
+      i += 1;
+    }
+  }
+
+  function destroy() {
+    this.imagesLoadedCb = null;
+    this.images.length = 0;
+  }
+
+  function loaded() {
+    return this.totalImages === this.loadedAssets;
+  }
+
+  return function ImagePreloader() {
+    this.loadAssets = loadAssets;
+    this.setAssetsPath = setAssetsPath;
+    this.setPath = setPath;
+    this.loaded = loaded;
+    this.destroy = destroy;
+    this.getImage = getImage;
+    this._createImageData = createImageData;
+    this._imageLoaded = imageLoaded;
+    this.assetsPath = "";
+    this.path = "";
+    this.totalImages = 0;
+    this.loadedAssets = 0;
+    this.imagesLoadedCb = null;
+    this.images = [];
+  };
+})();
+
 var featureSupport = (function(){
 	var ob = {
 		maskType: true
@@ -4339,47 +4349,23 @@ var filtersFactory = (function(){
 
 	return ob;
 }());
-var assetLoader = (function(){
+var fs = require("fs");
 
-	function formatResponse(xhr) {
-		if(xhr.response && typeof xhr.response === 'object') {
-			return xhr.response;
-		} else if(xhr.response && typeof xhr.response === 'string') {
-			return JSON.parse(xhr.response);
-		} else if(xhr.responseText) {
-			return JSON.parse(xhr.responseText);
-		}
-	}
-
-	function loadAsset(path, callback, errorCallback) {
-		var response;
-		var xhr = new XMLHttpRequest();
-		xhr.open('GET', path, true);
-		// set responseType after calling open or IE will break.
-		xhr.responseType = "json";
-	    xhr.send();
-	    xhr.onreadystatechange = function () {
-	        if (xhr.readyState == 4) {
-	            if(xhr.status == 200){
-	            	response = formatResponse(xhr);
-	            	callback(response);
-	            }else{
-	                try{
-	            		response = formatResponse(xhr);
-	            		callback(response);
-	                }catch(err){
-	                	if(errorCallback) {
-	                		errorCallback(err);
-	                	}
-	                }
-	            }
-	        }
-	    };
-	}
-	return {
-		load: loadAsset
-	}
-}())
+var assetLoader = (function () {
+  function loadAsset(path, callback, errorCallback) {
+    fs.readFile(path, (err, data) => {
+      if (err) {
+        errorCallback(err);
+      } else {
+        const body = JSON.parse(data);
+        callback(body);
+      }
+    });
+  }
+  return {
+    load: loadAsset,
+  };
+})();
 
 function TextAnimatorProperty(textData, renderType, elem){
     this._isFirstFrame = true;
@@ -6304,6 +6290,7 @@ CanvasRenderer.prototype.updateContainerSize = function () {
         elementWidth = this.canvasContext.canvas.width * this.renderConfig.dpr;
         elementHeight = this.canvasContext.canvas.height * this.renderConfig.dpr;
     }
+    
     var elementRel,animationRel;
     if(this.renderConfig.preserveAspectRatio.indexOf('meet') !== -1 || this.renderConfig.preserveAspectRatio.indexOf('slice') !== -1){
         var par = this.renderConfig.preserveAspectRatio.split(' ');
@@ -8651,994 +8638,1124 @@ CVSolidElement.prototype.renderInnerContent = function() {
     ctx.fillRect(0, 0, this.data.sw, this.data.sh);
     //
 };
-function CVTextElement(data, globalData, comp){
-    this.textSpans = [];
-    this.yOffset = 0;
-    this.fillColorAnim = false;
-    this.strokeColorAnim = false;
-    this.strokeWidthAnim = false;
-    this.stroke = false;
-    this.fill = false;
-    this.justifyOffset = 0;
-    this.currentRender = null;
-    this.renderType = 'canvas';
-    this.values = {
-        fill: 'rgba(0,0,0,0)',
-        stroke: 'rgba(0,0,0,0)',
-        sWidth: 0,
-        fValue: ''
-    };
-    this.initElement(data,globalData,comp);
+function CVTextElement(data, globalData, comp) {
+  this.textSpans = [];
+  this.yOffset = 0;
+  this.fillColorAnim = false;
+  this.strokeColorAnim = false;
+  this.strokeWidthAnim = false;
+  this.stroke = false;
+  this.fill = false;
+  this.justifyOffset = 0;
+  this.currentRender = null;
+  this.renderType = "canvas";
+  this.values = {
+    fill: "rgba(0,0,0,0)",
+    stroke: "rgba(0,0,0,0)",
+    sWidth: 0,
+    fValue: "",
+  };
+  this.initElement(data, globalData, comp);
 }
-extendPrototype([BaseElement,TransformElement,CVBaseElement,HierarchyElement,FrameElement,RenderableElement,ITextElement], CVTextElement);
+extendPrototype(
+  [BaseElement, TransformElement, CVBaseElement, HierarchyElement, FrameElement, RenderableElement, ITextElement],
+  CVTextElement
+);
 
-CVTextElement.prototype.tHelper = createTag('canvas').getContext('2d');
+CVTextElement.prototype.tHelper = () => createTag("canvas").getContext("2d");
 
-CVTextElement.prototype.buildNewText = function(){
-    var documentData = this.textProperty.currentData;
-    this.renderedLetters = createSizedArray(documentData.l ? documentData.l.length : 0);
+CVTextElement.prototype.buildNewText = function () {
+  var documentData = this.textProperty.currentData;
+  this.renderedLetters = createSizedArray(documentData.l ? documentData.l.length : 0);
 
-    var hasFill = false;
-    if(documentData.fc) {
-        hasFill = true;
-        this.values.fill = this.buildColor(documentData.fc);
-    }else{
-        this.values.fill = 'rgba(0,0,0,0)';
+  var hasFill = false;
+  if (documentData.fc) {
+    hasFill = true;
+    this.values.fill = this.buildColor(documentData.fc);
+  } else {
+    this.values.fill = "rgba(0,0,0,0)";
+  }
+  this.fill = hasFill;
+  var hasStroke = false;
+  if (documentData.sc) {
+    hasStroke = true;
+    this.values.stroke = this.buildColor(documentData.sc);
+    this.values.sWidth = documentData.sw;
+  }
+  var fontData = this.globalData.fontManager.getFontByName(documentData.f);
+  var i, len;
+  var letters = documentData.l;
+  var matrixHelper = this.mHelper;
+  this.stroke = hasStroke;
+  this.values.fValue =
+    documentData.finalSize + "px " + this.globalData.fontManager.getFontByName(documentData.f).fFamily;
+  len = documentData.finalText.length;
+
+  var charData,
+    shapeData,
+    k,
+    kLen,
+    shapes,
+    j,
+    jLen,
+    pathNodes,
+    commands,
+    pathArr,
+    singleShape = this.data.singleShape;
+  var trackingOffset = (documentData.tr / 1000) * documentData.finalSize;
+  var xPos = 0,
+    yPos = 0,
+    firstLine = true;
+  var cnt = 0;
+  for (i = 0; i < len; i += 1) {
+    charData = this.globalData.fontManager.getCharData(
+      documentData.finalText[i],
+      fontData.fStyle,
+      this.globalData.fontManager.getFontByName(documentData.f).fFamily
+    );
+    shapeData = (charData && charData.data) || {};
+    matrixHelper.reset();
+    if (singleShape && letters[i].n) {
+      xPos = -trackingOffset;
+      yPos += documentData.yOffset;
+      yPos += firstLine ? 1 : 0;
+      firstLine = false;
     }
-    this.fill = hasFill;
-    var hasStroke = false;
-    if(documentData.sc){
-        hasStroke = true;
-        this.values.stroke = this.buildColor(documentData.sc);
-        this.values.sWidth = documentData.sw;
-    }
-    var fontData = this.globalData.fontManager.getFontByName(documentData.f);
-    var i, len;
-    var letters = documentData.l;
-    var matrixHelper = this.mHelper;
-    this.stroke = hasStroke;
-    this.values.fValue = documentData.finalSize + 'px '+ this.globalData.fontManager.getFontByName(documentData.f).fFamily;
-    len = documentData.finalText.length;
-    //this.tHelper.font = this.values.fValue;
-    var charData, shapeData, k, kLen, shapes, j, jLen, pathNodes, commands, pathArr, singleShape = this.data.singleShape;
-    var trackingOffset = documentData.tr/1000*documentData.finalSize;
-    var xPos = 0, yPos = 0, firstLine = true;
-    var cnt = 0;
-    for (i = 0; i < len; i += 1) {
-        charData = this.globalData.fontManager.getCharData(documentData.finalText[i], fontData.fStyle, this.globalData.fontManager.getFontByName(documentData.f).fFamily);
-        shapeData = charData && charData.data || {};
-        matrixHelper.reset();
-        if(singleShape && letters[i].n) {
-            xPos = -trackingOffset;
-            yPos += documentData.yOffset;
-            yPos += firstLine ? 1 : 0;
-            firstLine = false;
-        }
 
-        shapes = shapeData.shapes ? shapeData.shapes[0].it : [];
-        jLen = shapes.length;
-        matrixHelper.scale(documentData.finalSize/100,documentData.finalSize/100);
-        if(singleShape){
-            this.applyTextPropertiesToMatrix(documentData, matrixHelper, letters[i].line, xPos, yPos);
-        }
-        commands = createSizedArray(jLen);
-        for(j=0;j<jLen;j+=1){
-            kLen = shapes[j].ks.k.i.length;
-            pathNodes = shapes[j].ks.k;
-            pathArr = [];
-            for(k=1;k<kLen;k+=1){
-                if(k==1){
-                    pathArr.push(matrixHelper.applyToX(pathNodes.v[0][0],pathNodes.v[0][1],0),matrixHelper.applyToY(pathNodes.v[0][0],pathNodes.v[0][1],0));
-                }
-                pathArr.push(matrixHelper.applyToX(pathNodes.o[k-1][0],pathNodes.o[k-1][1],0),matrixHelper.applyToY(pathNodes.o[k-1][0],pathNodes.o[k-1][1],0),matrixHelper.applyToX(pathNodes.i[k][0],pathNodes.i[k][1],0),matrixHelper.applyToY(pathNodes.i[k][0],pathNodes.i[k][1],0),matrixHelper.applyToX(pathNodes.v[k][0],pathNodes.v[k][1],0),matrixHelper.applyToY(pathNodes.v[k][0],pathNodes.v[k][1],0));
-            }
-            pathArr.push(matrixHelper.applyToX(pathNodes.o[k-1][0],pathNodes.o[k-1][1],0),matrixHelper.applyToY(pathNodes.o[k-1][0],pathNodes.o[k-1][1],0),matrixHelper.applyToX(pathNodes.i[0][0],pathNodes.i[0][1],0),matrixHelper.applyToY(pathNodes.i[0][0],pathNodes.i[0][1],0),matrixHelper.applyToX(pathNodes.v[0][0],pathNodes.v[0][1],0),matrixHelper.applyToY(pathNodes.v[0][0],pathNodes.v[0][1],0));
-            commands[j] = pathArr;
-        }
-        if(singleShape){
-            xPos += letters[i].l;
-            xPos += trackingOffset;
-        }
-        if(this.textSpans[cnt]){
-            this.textSpans[cnt].elem = commands;
-        } else {
-            this.textSpans[cnt] = {elem: commands};
-        }
-        cnt +=1;
+    shapes = shapeData.shapes ? shapeData.shapes[0].it : [];
+    jLen = shapes.length;
+    matrixHelper.scale(documentData.finalSize / 100, documentData.finalSize / 100);
+    if (singleShape) {
+      this.applyTextPropertiesToMatrix(documentData, matrixHelper, letters[i].line, xPos, yPos);
     }
+    commands = createSizedArray(jLen);
+    for (j = 0; j < jLen; j += 1) {
+      kLen = shapes[j].ks.k.i.length;
+      pathNodes = shapes[j].ks.k;
+      pathArr = [];
+      for (k = 1; k < kLen; k += 1) {
+        if (k == 1) {
+          pathArr.push(
+            matrixHelper.applyToX(pathNodes.v[0][0], pathNodes.v[0][1], 0),
+            matrixHelper.applyToY(pathNodes.v[0][0], pathNodes.v[0][1], 0)
+          );
+        }
+        pathArr.push(
+          matrixHelper.applyToX(pathNodes.o[k - 1][0], pathNodes.o[k - 1][1], 0),
+          matrixHelper.applyToY(pathNodes.o[k - 1][0], pathNodes.o[k - 1][1], 0),
+          matrixHelper.applyToX(pathNodes.i[k][0], pathNodes.i[k][1], 0),
+          matrixHelper.applyToY(pathNodes.i[k][0], pathNodes.i[k][1], 0),
+          matrixHelper.applyToX(pathNodes.v[k][0], pathNodes.v[k][1], 0),
+          matrixHelper.applyToY(pathNodes.v[k][0], pathNodes.v[k][1], 0)
+        );
+      }
+      pathArr.push(
+        matrixHelper.applyToX(pathNodes.o[k - 1][0], pathNodes.o[k - 1][1], 0),
+        matrixHelper.applyToY(pathNodes.o[k - 1][0], pathNodes.o[k - 1][1], 0),
+        matrixHelper.applyToX(pathNodes.i[0][0], pathNodes.i[0][1], 0),
+        matrixHelper.applyToY(pathNodes.i[0][0], pathNodes.i[0][1], 0),
+        matrixHelper.applyToX(pathNodes.v[0][0], pathNodes.v[0][1], 0),
+        matrixHelper.applyToY(pathNodes.v[0][0], pathNodes.v[0][1], 0)
+      );
+      commands[j] = pathArr;
+    }
+    if (singleShape) {
+      xPos += letters[i].l;
+      xPos += trackingOffset;
+    }
+    if (this.textSpans[cnt]) {
+      this.textSpans[cnt].elem = commands;
+    } else {
+      this.textSpans[cnt] = { elem: commands };
+    }
+    cnt += 1;
+  }
 };
 
-CVTextElement.prototype.renderInnerContent = function(){
-    var ctx = this.canvasContext;
-    var finalMat = this.finalTransform.mat.props;
-    ctx.font = this.values.fValue;
-    ctx.lineCap = 'butt';
-    ctx.lineJoin = 'miter';
-    ctx.miterLimit = 4;
+CVTextElement.prototype.renderInnerContent = function () {
+  var ctx = this.canvasContext;
+  var finalMat = this.finalTransform.mat.props;
+  ctx.font = this.values.fValue;
+  ctx.lineCap = "butt";
+  ctx.lineJoin = "miter";
+  ctx.miterLimit = 4;
 
-    if(!this.data.singleShape){
-        this.textAnimator.getMeasures(this.textProperty.currentData, this.lettersChangedFlag);
+  if (!this.data.singleShape) {
+    this.textAnimator.getMeasures(this.textProperty.currentData, this.lettersChangedFlag);
+  }
+
+  var i, len, j, jLen, k, kLen;
+  var renderedLetters = this.textAnimator.renderedLetters;
+
+  var letters = this.textProperty.currentData.l;
+
+  len = letters.length;
+  var renderedLetter;
+  var lastFill = null,
+    lastStroke = null,
+    lastStrokeW = null,
+    commands,
+    pathArr;
+  for (i = 0; i < len; i += 1) {
+    if (letters[i].n) {
+      continue;
     }
-
-    var  i,len, j, jLen, k, kLen;
-    var renderedLetters = this.textAnimator.renderedLetters;
-
-    var letters = this.textProperty.currentData.l;
-
-    len = letters.length;
-    var renderedLetter;
-    var lastFill = null, lastStroke = null, lastStrokeW = null, commands, pathArr;
-    for(i=0;i<len;i+=1){
-        if(letters[i].n){
-            continue;
-        }
-        renderedLetter = renderedLetters[i];
-        if(renderedLetter){
-            this.globalData.renderer.save();
-            this.globalData.renderer.ctxTransform(renderedLetter.p);
-            this.globalData.renderer.ctxOpacity(renderedLetter.o);
-        }
-        if(this.fill){
-            if(renderedLetter && renderedLetter.fc){
-                if(lastFill !== renderedLetter.fc){
-                    lastFill = renderedLetter.fc;
-                    ctx.fillStyle = renderedLetter.fc;
-                }
-            }else if(lastFill !== this.values.fill){
-                lastFill = this.values.fill;
-                ctx.fillStyle = this.values.fill;
-            }
-            commands = this.textSpans[i].elem;
-            jLen = commands.length;
-            this.globalData.canvasContext.beginPath();
-            for(j=0;j<jLen;j+=1) {
-                pathArr = commands[j];
-                kLen = pathArr.length;
-                this.globalData.canvasContext.moveTo(pathArr[0], pathArr[1]);
-                for (k = 2; k < kLen; k += 6) {
-                    this.globalData.canvasContext.bezierCurveTo(pathArr[k], pathArr[k + 1], pathArr[k + 2], pathArr[k + 3], pathArr[k + 4], pathArr[k + 5]);
-                }
-            }
-            this.globalData.canvasContext.closePath();
-            this.globalData.canvasContext.fill();
-            ///ctx.fillText(this.textSpans[i].val,0,0);
-        }
-        if(this.stroke){
-            if(renderedLetter && renderedLetter.sw){
-                if(lastStrokeW !== renderedLetter.sw){
-                    lastStrokeW = renderedLetter.sw;
-                    ctx.lineWidth = renderedLetter.sw;
-                }
-            }else if(lastStrokeW !== this.values.sWidth){
-                lastStrokeW = this.values.sWidth;
-                ctx.lineWidth = this.values.sWidth;
-            }
-            if(renderedLetter && renderedLetter.sc){
-                if(lastStroke !== renderedLetter.sc){
-                    lastStroke = renderedLetter.sc;
-                    ctx.strokeStyle = renderedLetter.sc;
-                }
-            }else if(lastStroke !== this.values.stroke){
-                lastStroke = this.values.stroke;
-                ctx.strokeStyle = this.values.stroke;
-            }
-            commands = this.textSpans[i].elem;
-            jLen = commands.length;
-            this.globalData.canvasContext.beginPath();
-            for(j=0;j<jLen;j+=1) {
-                pathArr = commands[j];
-                kLen = pathArr.length;
-                this.globalData.canvasContext.moveTo(pathArr[0], pathArr[1]);
-                for (k = 2; k < kLen; k += 6) {
-                    this.globalData.canvasContext.bezierCurveTo(pathArr[k], pathArr[k + 1], pathArr[k + 2], pathArr[k + 3], pathArr[k + 4], pathArr[k + 5]);
-                }
-            }
-            this.globalData.canvasContext.closePath();
-            this.globalData.canvasContext.stroke();
-            ///ctx.strokeText(letters[i].val,0,0);
-        }
-        if(renderedLetter) {
-            this.globalData.renderer.restore();
-        }
+    renderedLetter = renderedLetters[i];
+    if (renderedLetter) {
+      this.globalData.renderer.save();
+      this.globalData.renderer.ctxTransform(renderedLetter.p);
+      this.globalData.renderer.ctxOpacity(renderedLetter.o);
     }
+    if (this.fill) {
+      if (renderedLetter && renderedLetter.fc) {
+        if (lastFill !== renderedLetter.fc) {
+          lastFill = renderedLetter.fc;
+          ctx.fillStyle = renderedLetter.fc;
+        }
+      } else if (lastFill !== this.values.fill) {
+        lastFill = this.values.fill;
+        ctx.fillStyle = this.values.fill;
+      }
+      commands = this.textSpans[i].elem;
+      jLen = commands.length;
+      this.globalData.canvasContext.beginPath();
+      for (j = 0; j < jLen; j += 1) {
+        pathArr = commands[j];
+        kLen = pathArr.length;
+        this.globalData.canvasContext.moveTo(pathArr[0], pathArr[1]);
+        for (k = 2; k < kLen; k += 6) {
+          this.globalData.canvasContext.bezierCurveTo(
+            pathArr[k],
+            pathArr[k + 1],
+            pathArr[k + 2],
+            pathArr[k + 3],
+            pathArr[k + 4],
+            pathArr[k + 5]
+          );
+        }
+      }
+      this.globalData.canvasContext.closePath();
+      this.globalData.canvasContext.fill();
+      ///ctx.fillText(this.textSpans[i].val,0,0);
+    }
+    if (this.stroke) {
+      if (renderedLetter && renderedLetter.sw) {
+        if (lastStrokeW !== renderedLetter.sw) {
+          lastStrokeW = renderedLetter.sw;
+          ctx.lineWidth = renderedLetter.sw;
+        }
+      } else if (lastStrokeW !== this.values.sWidth) {
+        lastStrokeW = this.values.sWidth;
+        ctx.lineWidth = this.values.sWidth;
+      }
+      if (renderedLetter && renderedLetter.sc) {
+        if (lastStroke !== renderedLetter.sc) {
+          lastStroke = renderedLetter.sc;
+          ctx.strokeStyle = renderedLetter.sc;
+        }
+      } else if (lastStroke !== this.values.stroke) {
+        lastStroke = this.values.stroke;
+        ctx.strokeStyle = this.values.stroke;
+      }
+      commands = this.textSpans[i].elem;
+      jLen = commands.length;
+      this.globalData.canvasContext.beginPath();
+      for (j = 0; j < jLen; j += 1) {
+        pathArr = commands[j];
+        kLen = pathArr.length;
+        this.globalData.canvasContext.moveTo(pathArr[0], pathArr[1]);
+        for (k = 2; k < kLen; k += 6) {
+          this.globalData.canvasContext.bezierCurveTo(
+            pathArr[k],
+            pathArr[k + 1],
+            pathArr[k + 2],
+            pathArr[k + 3],
+            pathArr[k + 4],
+            pathArr[k + 5]
+          );
+        }
+      }
+      this.globalData.canvasContext.closePath();
+      this.globalData.canvasContext.stroke();
+      ///ctx.strokeText(letters[i].val,0,0);
+    }
+    if (renderedLetter) {
+      this.globalData.renderer.restore();
+    }
+  }
 };
+
 function CVEffects() {
 
 }
 CVEffects.prototype.renderFrame = function(){};
-var animationManager = (function(){
-    var moduleOb = {};
-    var registeredAnimations = [];
-    var initTime = 0;
-    var len = 0;
-    var playingAnimationsNum = 0;
-    var _stopped = true;
-    var _isFrozen = false;
+var animationManager = (function () {
+  var moduleOb = {};
+  var registeredAnimations = [];
+  var initTime = 0;
+  var len = 0;
+  var playingAnimationsNum = 0;
+  var _stopped = true;
+  var _isFrozen = false;
 
-    function removeElement(ev){
-        var i = 0;
-        var animItem = ev.target;
-        while(i<len) {
-            if (registeredAnimations[i].animation === animItem) {
-                registeredAnimations.splice(i, 1);
-                i -= 1;
-                len -= 1;
-                if(!animItem.isPaused){
-                    subtractPlayingCount();
-                }
-            }
-            i += 1;
+  function removeElement(ev) {
+    var i = 0;
+    var animItem = ev.target;
+    while (i < len) {
+      if (registeredAnimations[i].animation === animItem) {
+        registeredAnimations.splice(i, 1);
+        i -= 1;
+        len -= 1;
+        if (!animItem.isPaused) {
+          subtractPlayingCount();
         }
+      }
+      i += 1;
     }
+  }
 
-    function registerAnimation(element, animationData){
-        if(!element){
-            return null;
-        }
-        var i=0;
-        while(i<len){
-            if(registeredAnimations[i].elem == element && registeredAnimations[i].elem !== null ){
-                return registeredAnimations[i].animation;
-            }
-            i+=1;
-        }
-        var animItem = new AnimationItem();
-        setupAnimation(animItem, element);
-        animItem.setData(element, animationData);
-        return animItem;
+  function registerAnimation(element, animationData) {
+    if (!element) {
+      return null;
     }
-
-    function getRegisteredAnimations() {
-        var i, len = registeredAnimations.length;
-        var animations = [];
-        for(i = 0; i < len; i += 1) {
-            animations.push(registeredAnimations[i].animation);
-        }
-        return animations;
+    var i = 0;
+    while (i < len) {
+      if (registeredAnimations[i].elem == element && registeredAnimations[i].elem !== null) {
+        return registeredAnimations[i].animation;
+      }
+      i += 1;
     }
+    var animItem = new AnimationItem();
+    setupAnimation(animItem, element);
+    animItem.setData(element, animationData);
+    return animItem;
+  }
 
-    function addPlayingCount(){
-        playingAnimationsNum += 1;
-        activate();
+  function getRegisteredAnimations() {
+    var i,
+      len = registeredAnimations.length;
+    var animations = [];
+    for (i = 0; i < len; i += 1) {
+      animations.push(registeredAnimations[i].animation);
     }
+    return animations;
+  }
 
-    function subtractPlayingCount(){
-        playingAnimationsNum -= 1;
+  function addPlayingCount() {
+    playingAnimationsNum += 1;
+    activate();
+  }
+
+  function subtractPlayingCount() {
+    playingAnimationsNum -= 1;
+  }
+
+  function setupAnimation(animItem, element) {
+    animItem.addEventListener("destroy", removeElement);
+    animItem.addEventListener("_active", addPlayingCount);
+    animItem.addEventListener("_idle", subtractPlayingCount);
+    registeredAnimations.push({ elem: element, animation: animItem });
+    len += 1;
+  }
+
+  function loadAnimation(params) {
+    var animItem = new AnimationItem();
+    setupAnimation(animItem, null);
+    animItem.setParams(params);
+    return animItem;
+  }
+
+  function setSpeed(val, animation) {
+    var i;
+    for (i = 0; i < len; i += 1) {
+      registeredAnimations[i].animation.setSpeed(val, animation);
     }
+  }
 
-    function setupAnimation(animItem, element){
-        animItem.addEventListener('destroy',removeElement);
-        animItem.addEventListener('_active',addPlayingCount);
-        animItem.addEventListener('_idle',subtractPlayingCount);
-        registeredAnimations.push({elem: element,animation:animItem});
-        len += 1;
+  function setDirection(val, animation) {
+    var i;
+    for (i = 0; i < len; i += 1) {
+      registeredAnimations[i].animation.setDirection(val, animation);
     }
+  }
 
-    function loadAnimation(params){
-        var animItem = new AnimationItem();
-        setupAnimation(animItem, null);
-        animItem.setParams(params);
-        return animItem;
+  function play(animation) {
+    var i;
+    for (i = 0; i < len; i += 1) {
+      registeredAnimations[i].animation.play(animation);
     }
-
-
-    function setSpeed(val,animation){
-        var i;
-        for(i=0;i<len;i+=1){
-            registeredAnimations[i].animation.setSpeed(val, animation);
-        }
+  }
+  function resume(nowTime) {
+    var elapsedTime = nowTime - initTime;
+    var i;
+    for (i = 0; i < len; i += 1) {
+      registeredAnimations[i].animation.advanceTime(elapsedTime);
     }
-
-    function setDirection(val, animation){
-        var i;
-        for(i=0;i<len;i+=1){
-            registeredAnimations[i].animation.setDirection(val, animation);
-        }
+    initTime = nowTime;
+    if (playingAnimationsNum && !_isFrozen) {
+      global.requestAnimationFrame(resume);
+    } else {
+      _stopped = true;
     }
+  }
 
-    function play(animation){
-        var i;
-        for(i=0;i<len;i+=1){
-            registeredAnimations[i].animation.play(animation);
-        }
-    }
-    function resume(nowTime) {
-        var elapsedTime = nowTime - initTime;
-        var i;
-        for(i=0;i<len;i+=1){
-            registeredAnimations[i].animation.advanceTime(elapsedTime);
-        }
-        initTime = nowTime;
-        if(playingAnimationsNum && !_isFrozen) {
-            global.requestAnimationFrame(resume);
-        } else {
-            _stopped = true;
-        }
-    }
+  function first(nowTime) {
+    initTime = nowTime;
+    global.requestAnimationFrame(resume);
+  }
 
-    function first(nowTime){
-        initTime = nowTime;
-        global.requestAnimationFrame(resume);
+  function pause(animation) {
+    var i;
+    for (i = 0; i < len; i += 1) {
+      registeredAnimations[i].animation.pause(animation);
     }
+  }
 
-    function pause(animation) {
-        var i;
-        for(i=0;i<len;i+=1){
-            registeredAnimations[i].animation.pause(animation);
-        }
+  function goToAndStop(value, isFrame, animation) {
+    var i;
+    for (i = 0; i < len; i += 1) {
+      registeredAnimations[i].animation.goToAndStop(value, isFrame, animation);
     }
+  }
 
-    function goToAndStop(value,isFrame,animation) {
-        var i;
-        for(i=0;i<len;i+=1){
-            registeredAnimations[i].animation.goToAndStop(value,isFrame,animation);
-        }
+  function stop(animation) {
+    var i;
+    for (i = 0; i < len; i += 1) {
+      registeredAnimations[i].animation.stop(animation);
     }
+  }
 
-    function stop(animation) {
-        var i;
-        for(i=0;i<len;i+=1){
-            registeredAnimations[i].animation.stop(animation);
-        }
+  function togglePause(animation) {
+    var i;
+    for (i = 0; i < len; i += 1) {
+      registeredAnimations[i].animation.togglePause(animation);
     }
+  }
 
-    function togglePause(animation) {
-        var i;
-        for(i=0;i<len;i+=1){
-            registeredAnimations[i].animation.togglePause(animation);
-        }
+  function destroy(animation) {
+    var i;
+    for (i = len - 1; i >= 0; i -= 1) {
+      registeredAnimations[i].animation.destroy(animation);
     }
+  }
 
-    function destroy(animation) {
-        var i;
-        for(i=(len-1);i>=0;i-=1){
-            registeredAnimations[i].animation.destroy(animation);
-        }
+  function searchAnimations(animationData, standalone, renderer) {
+    var animElements = [].concat(
+      [].slice.call(document.getElementsByClassName("lottie")),
+      [].slice.call(document.getElementsByClassName("bodymovin"))
+    );
+    var i,
+      len = animElements.length;
+    for (i = 0; i < len; i += 1) {
+      if (renderer) {
+        animElements[i].setAttribute("data-bm-type", renderer);
+      }
+      registerAnimation(animElements[i], animationData);
     }
+    
+    if (standalone && len === 0) {
+      if (!renderer) {
+        renderer = "svg";
+      }
 
-    function searchAnimations(animationData, standalone, renderer){
-        var animElements = [].concat([].slice.call(document.getElementsByClassName('lottie')),
-                  [].slice.call(document.getElementsByClassName('bodymovin')));
-        var i, len = animElements.length;
-        for(i=0;i<len;i+=1){
-            if(renderer){
-                animElements[i].setAttribute('data-bm-type',renderer);
-            }
-            registerAnimation(animElements[i], animationData);
-        }
-        if(standalone && len === 0){
-            if(!renderer){
-                renderer = 'svg';
-            }
-            var body = document.getElementsByTagName('body')[0];
-            body.innerHTML = '';
-            var div = createTag('div');
-            div.style.width = '100%';
-            div.style.height = '100%';
-            div.setAttribute('data-bm-type',renderer);
-            body.appendChild(div);
-            registerAnimation(div, animationData);
-        }
+      var body = document.getElementsByTagName("body")[0];
+      body.innerHTML = "";
+      var div = createTag("div");
+      div.style.width = "100%";
+      div.style.height = "100%";
+      div.setAttribute("data-bm-type", renderer);
+      body.appendChild(div);
+      registerAnimation(div, animationData);
     }
+  }
 
-    function resize(){
-        var i;
-        for(i=0;i<len;i+=1){
-            registeredAnimations[i].animation.resize();
-        }
+  function resize() {
+    var i;
+    for (i = 0; i < len; i += 1) {
+      registeredAnimations[i].animation.resize();
     }
+  }
 
-    function activate(){
-        if(!_isFrozen && playingAnimationsNum){
-            if(_stopped) {
-                global.requestAnimationFrame(first);
-                _stopped = false;
-            }
-        }
+  function activate() {
+    if (!_isFrozen && playingAnimationsNum) {
+      if (_stopped) {
+        global.requestAnimationFrame(first);
+        _stopped = false;
+      }
     }
+  }
 
-    function freeze() {
-        _isFrozen = true;
-    }
+  function freeze() {
+    _isFrozen = true;
+  }
 
-    function unfreeze() {
-        _isFrozen = false;
-        activate();
-    }
+  function unfreeze() {
+    _isFrozen = false;
+    activate();
+  }
 
-    moduleOb.registerAnimation = registerAnimation;
-    moduleOb.loadAnimation = loadAnimation;
-    moduleOb.setSpeed = setSpeed;
-    moduleOb.setDirection = setDirection;
-    moduleOb.play = play;
-    moduleOb.pause = pause;
-    moduleOb.stop = stop;
-    moduleOb.togglePause = togglePause;
-    moduleOb.searchAnimations = searchAnimations;
-    moduleOb.resize = resize;
-    //moduleOb.start = start;
-    moduleOb.goToAndStop = goToAndStop;
-    moduleOb.destroy = destroy;
-    moduleOb.freeze = freeze;
-    moduleOb.unfreeze = unfreeze;
-    moduleOb.getRegisteredAnimations = getRegisteredAnimations;
-    return moduleOb;
-}());
+  moduleOb.registerAnimation = registerAnimation;
+  moduleOb.loadAnimation = loadAnimation;
+  moduleOb.setSpeed = setSpeed;
+  moduleOb.setDirection = setDirection;
+  moduleOb.play = play;
+  moduleOb.pause = pause;
+  moduleOb.stop = stop;
+  moduleOb.togglePause = togglePause;
+  moduleOb.searchAnimations = searchAnimations;
+  moduleOb.resize = resize;
+  //moduleOb.start = start;
+  moduleOb.goToAndStop = goToAndStop;
+  moduleOb.destroy = destroy;
+  moduleOb.freeze = freeze;
+  moduleOb.unfreeze = unfreeze;
+  moduleOb.getRegisteredAnimations = getRegisteredAnimations;
+  return moduleOb;
+})();
 
 var AnimationItem = function () {
-    this._cbs = [];
-    this.name = '';
-    this.path = '';
-    this.isLoaded = false;
-    this.currentFrame = 0;
-    this.currentRawFrame = 0;
-    this.totalFrames = 0;
-    this.frameRate = 0;
-    this.frameMult = 0;
-    this.playSpeed = 1;
-    this.playDirection = 1;
-    this.playCount = 0;
-    this.animationData = {};
-    this.assets = [];
-    this.isPaused = true;
-    this.autoplay = false;
-    this.loop = true;
-    this.renderer = null;
-    this.animationID = createElementID();
-    this.assetsPath = '';
-    this.timeCompleted = 0;
-    this.segmentPos = 0;
-    this.subframeEnabled = subframeEnabled;
-    this.segments = [];
-    this._idle = true;
-    this._completedLoop = false;
-    this.projectInterface = ProjectInterface();
-    this.imagePreloader = new ImagePreloader();
+  this._cbs = [];
+  this.name = "";
+  this.path = "";
+  this.isLoaded = false;
+  this.currentFrame = 0;
+  this.currentRawFrame = 0;
+  this.totalFrames = 0;
+  this.frameRate = 0;
+  this.frameMult = 0;
+  this.playSpeed = 1;
+  this.playDirection = 1;
+  this.playCount = 0;
+  this.animationData = {};
+  this.assets = [];
+  this.isPaused = true;
+  this.autoplay = false;
+  this.loop = true;
+  this.renderer = null;
+  this.animationID = createElementID();
+  this.assetsPath = "";
+  this.timeCompleted = 0;
+  this.segmentPos = 0;
+  this.subframeEnabled = subframeEnabled;
+  this.segments = [];
+  this._idle = true;
+  this._completedLoop = false;
+  this.projectInterface = ProjectInterface();
+  this.imagePreloader = new ImagePreloader();
 };
 
 extendPrototype([BaseEvent], AnimationItem);
 
-AnimationItem.prototype.setParams = function(params) {
-    if(params.context){
-        this.context = params.context;
-    }
-    if(params.wrapper || params.container){
-        this.wrapper = params.wrapper || params.container;
-    }
-    var animType = params.animType ? params.animType : params.renderer ? params.renderer : 'svg';
-    switch(animType){
-        case 'canvas':
-            this.renderer = new CanvasRenderer(this, params.rendererSettings);
-            break;
-        case 'svg':
-            this.renderer = new SVGRenderer(this, params.rendererSettings);
-            break;
-        default:
-            this.renderer = new HybridRenderer(this, params.rendererSettings);
-            break;
-    }
-    this.renderer.setProjectInterface(this.projectInterface);
-    this.animType = animType;
+AnimationItem.prototype.setParams = function (params) {
+  if (params.context) {
+    this.context = params.context;
+  }
+  if (params.wrapper || params.container) {
+    this.wrapper = params.wrapper || params.container;
+  }
+  var animType = params.animType ? params.animType : params.renderer ? params.renderer : "svg";
+  switch (animType) {
+    case "canvas":
+      this.renderer = new CanvasRenderer(this, params.rendererSettings);
+      break;
 
-    if(params.loop === '' || params.loop === null){
-    }else if(params.loop === false){
-        this.loop = false;
-    }else if(params.loop === true){
-        this.loop = true;
-    }else{
-        this.loop = parseInt(params.loop);
-    }
-    this.autoplay = 'autoplay' in params ? params.autoplay : true;
-    this.name = params.name ? params.name :  '';
-    this.autoloadSegments = params.hasOwnProperty('autoloadSegments') ? params.autoloadSegments :  true;
-    this.assetsPath = params.assetsPath;
-    if(params.animationData){
-        this.configAnimation(params.animationData);
-    }else if(params.path){
-        if(params.path.substr(-4) != 'json'){
-            if (params.path.substr(-1, 1) != '/') {
-                params.path += '/';
-            }
-            params.path += 'data.json';
-        }
+    case "svg":
+      this.renderer = new SVGRenderer(this, params.rendererSettings);
+      break;
 
-        if(params.path.lastIndexOf('\\') != -1){
-            this.path = params.path.substr(0,params.path.lastIndexOf('\\')+1);
-        }else{
-            this.path = params.path.substr(0,params.path.lastIndexOf('/')+1);
-        }
-        this.fileName = params.path.substr(params.path.lastIndexOf('/')+1);
-        this.fileName = this.fileName.substr(0,this.fileName.lastIndexOf('.json'));
+    default:
+      this.renderer = new HybridRenderer(this, params.rendererSettings);
+      break;
+  }
+  this.renderer.setProjectInterface(this.projectInterface);
+  this.animType = animType;
 
-        assetLoader.load(params.path, this.configAnimation.bind(this), function() {
-            this.trigger('data_failed');
-        }.bind(this));
+  if (params.loop === "" || params.loop === null) {
+  } else if (params.loop === false) {
+    this.loop = false;
+  } else if (params.loop === true) {
+    this.loop = true;
+  } else {
+    this.loop = parseInt(params.loop);
+  }
+
+  this.autoplay = "autoplay" in params ? params.autoplay : true;
+  this.name = params.name ? params.name : "";
+  this.autoloadSegments = params.hasOwnProperty("autoloadSegments") ? params.autoloadSegments : true;
+  this.assetsPath = params.assetsPath;
+
+  if (params.animationData) {
+    this.configAnimation(params.animationData);
+  } else if (params.path) {
+    if (params.path.substr(-4) != "json") {
+      if (params.path.substr(-1, 1) != "/") {
+        params.path += "/";
+      }
+      params.path += "data.json";
     }
+
+    if (params.path.lastIndexOf("\\") != -1) {
+      this.path = params.path.substr(0, params.path.lastIndexOf("\\") + 1);
+    } else {
+      this.path = params.path.substr(0, params.path.lastIndexOf("/") + 1);
+    }
+    this.fileName = params.path.substr(params.path.lastIndexOf("/") + 1);
+    this.fileName = this.fileName.substr(0, this.fileName.lastIndexOf(".json"));
+
+    assetLoader.load(
+      params.path,
+      this.configAnimation.bind(this),
+      function () {
+        this.trigger("data_failed");
+      }.bind(this)
+    );
+  }
 };
 
 AnimationItem.prototype.setData = function (wrapper, animationData) {
-    var params = {
-        wrapper: wrapper,
-        animationData: animationData ? (typeof animationData  === "object") ? animationData : JSON.parse(animationData) : null
-    };
-    var wrapperAttributes = wrapper.attributes;
+  var params = {
+    wrapper: wrapper,
+    animationData: animationData
+      ? typeof animationData === "object"
+        ? animationData
+        : JSON.parse(animationData)
+      : null,
+  };
+  var wrapperAttributes = wrapper.attributes;
 
-    params.path = wrapperAttributes.getNamedItem('data-animation-path') ? wrapperAttributes.getNamedItem('data-animation-path').value : wrapperAttributes.getNamedItem('data-bm-path') ? wrapperAttributes.getNamedItem('data-bm-path').value :  wrapperAttributes.getNamedItem('bm-path') ? wrapperAttributes.getNamedItem('bm-path').value : '';
-    params.animType = wrapperAttributes.getNamedItem('data-anim-type') ? wrapperAttributes.getNamedItem('data-anim-type').value : wrapperAttributes.getNamedItem('data-bm-type') ? wrapperAttributes.getNamedItem('data-bm-type').value : wrapperAttributes.getNamedItem('bm-type') ? wrapperAttributes.getNamedItem('bm-type').value :  wrapperAttributes.getNamedItem('data-bm-renderer') ? wrapperAttributes.getNamedItem('data-bm-renderer').value : wrapperAttributes.getNamedItem('bm-renderer') ? wrapperAttributes.getNamedItem('bm-renderer').value : 'canvas';
+  params.path = wrapperAttributes.getNamedItem("data-animation-path")
+    ? wrapperAttributes.getNamedItem("data-animation-path").value
+    : wrapperAttributes.getNamedItem("data-bm-path")
+    ? wrapperAttributes.getNamedItem("data-bm-path").value
+    : wrapperAttributes.getNamedItem("bm-path")
+    ? wrapperAttributes.getNamedItem("bm-path").value
+    : "";
+  params.animType = wrapperAttributes.getNamedItem("data-anim-type")
+    ? wrapperAttributes.getNamedItem("data-anim-type").value
+    : wrapperAttributes.getNamedItem("data-bm-type")
+    ? wrapperAttributes.getNamedItem("data-bm-type").value
+    : wrapperAttributes.getNamedItem("bm-type")
+    ? wrapperAttributes.getNamedItem("bm-type").value
+    : wrapperAttributes.getNamedItem("data-bm-renderer")
+    ? wrapperAttributes.getNamedItem("data-bm-renderer").value
+    : wrapperAttributes.getNamedItem("bm-renderer")
+    ? wrapperAttributes.getNamedItem("bm-renderer").value
+    : "canvas";
 
-    var loop = wrapperAttributes.getNamedItem('data-anim-loop') ? wrapperAttributes.getNamedItem('data-anim-loop').value :  wrapperAttributes.getNamedItem('data-bm-loop') ? wrapperAttributes.getNamedItem('data-bm-loop').value :  wrapperAttributes.getNamedItem('bm-loop') ? wrapperAttributes.getNamedItem('bm-loop').value : '';
-    if(loop === ''){
-    }else if(loop === 'false'){
-        params.loop = false;
-    }else if(loop === 'true'){
-        params.loop = true;
-    }else{
-        params.loop = parseInt(loop);
-    }
-    var autoplay = wrapperAttributes.getNamedItem('data-anim-autoplay') ? wrapperAttributes.getNamedItem('data-anim-autoplay').value :  wrapperAttributes.getNamedItem('data-bm-autoplay') ? wrapperAttributes.getNamedItem('data-bm-autoplay').value :  wrapperAttributes.getNamedItem('bm-autoplay') ? wrapperAttributes.getNamedItem('bm-autoplay').value : true;
-    params.autoplay = autoplay !== "false";
+  var loop = wrapperAttributes.getNamedItem("data-anim-loop")
+    ? wrapperAttributes.getNamedItem("data-anim-loop").value
+    : wrapperAttributes.getNamedItem("data-bm-loop")
+    ? wrapperAttributes.getNamedItem("data-bm-loop").value
+    : wrapperAttributes.getNamedItem("bm-loop")
+    ? wrapperAttributes.getNamedItem("bm-loop").value
+    : "";
 
-    params.name = wrapperAttributes.getNamedItem('data-name') ? wrapperAttributes.getNamedItem('data-name').value :  wrapperAttributes.getNamedItem('data-bm-name') ? wrapperAttributes.getNamedItem('data-bm-name').value : wrapperAttributes.getNamedItem('bm-name') ? wrapperAttributes.getNamedItem('bm-name').value :  '';
-    var prerender = wrapperAttributes.getNamedItem('data-anim-prerender') ? wrapperAttributes.getNamedItem('data-anim-prerender').value :  wrapperAttributes.getNamedItem('data-bm-prerender') ? wrapperAttributes.getNamedItem('data-bm-prerender').value :  wrapperAttributes.getNamedItem('bm-prerender') ? wrapperAttributes.getNamedItem('bm-prerender').value : '';
+  if (loop === "") {
+  } else if (loop === "false") {
+    params.loop = false;
+  } else if (loop === "true") {
+    params.loop = true;
+  } else {
+    params.loop = parseInt(loop);
+  }
+  var autoplay = wrapperAttributes.getNamedItem("data-anim-autoplay")
+    ? wrapperAttributes.getNamedItem("data-anim-autoplay").value
+    : wrapperAttributes.getNamedItem("data-bm-autoplay")
+    ? wrapperAttributes.getNamedItem("data-bm-autoplay").value
+    : wrapperAttributes.getNamedItem("bm-autoplay")
+    ? wrapperAttributes.getNamedItem("bm-autoplay").value
+    : true;
+  params.autoplay = autoplay !== "false";
 
-    if(prerender === 'false'){
-        params.prerender = false;
-    }
-    this.setParams(params);
+  params.name = wrapperAttributes.getNamedItem("data-name")
+    ? wrapperAttributes.getNamedItem("data-name").value
+    : wrapperAttributes.getNamedItem("data-bm-name")
+    ? wrapperAttributes.getNamedItem("data-bm-name").value
+    : wrapperAttributes.getNamedItem("bm-name")
+    ? wrapperAttributes.getNamedItem("bm-name").value
+    : "";
+  var prerender = wrapperAttributes.getNamedItem("data-anim-prerender")
+    ? wrapperAttributes.getNamedItem("data-anim-prerender").value
+    : wrapperAttributes.getNamedItem("data-bm-prerender")
+    ? wrapperAttributes.getNamedItem("data-bm-prerender").value
+    : wrapperAttributes.getNamedItem("bm-prerender")
+    ? wrapperAttributes.getNamedItem("bm-prerender").value
+    : "";
+
+  if (prerender === "false") {
+    params.prerender = false;
+  }
+
+  this.setParams(params);
 };
 
-AnimationItem.prototype.includeLayers = function(data) {
-    if(data.op > this.animationData.op){
-        this.animationData.op = data.op;
-        this.totalFrames = Math.floor(data.op - this.animationData.ip);
+AnimationItem.prototype.includeLayers = function (data) {
+  if (data.op > this.animationData.op) {
+    this.animationData.op = data.op;
+    this.totalFrames = Math.floor(data.op - this.animationData.ip);
+  }
+  var layers = this.animationData.layers;
+  var i,
+    len = layers.length;
+  var newLayers = data.layers;
+  var j,
+    jLen = newLayers.length;
+  for (j = 0; j < jLen; j += 1) {
+    i = 0;
+    while (i < len) {
+      if (layers[i].id == newLayers[j].id) {
+        layers[i] = newLayers[j];
+        break;
+      }
+      i += 1;
     }
-    var layers = this.animationData.layers;
-    var i, len = layers.length;
-    var newLayers = data.layers;
-    var j, jLen = newLayers.length;
-    for(j=0;j<jLen;j+=1){
-        i = 0;
-        while(i<len){
-            if(layers[i].id == newLayers[j].id){
-                layers[i] = newLayers[j];
-                break;
-            }
-            i += 1;
-        }
+  }
+  if (data.chars || data.fonts) {
+    this.renderer.globalData.fontManager.addChars(data.chars);
+    this.renderer.globalData.fontManager.addFonts(data.fonts, this.renderer.globalData.defs);
+  }
+  if (data.assets) {
+    len = data.assets.length;
+    for (i = 0; i < len; i += 1) {
+      this.animationData.assets.push(data.assets[i]);
     }
-    if(data.chars || data.fonts){
-        this.renderer.globalData.fontManager.addChars(data.chars);
-        this.renderer.globalData.fontManager.addFonts(data.fonts, this.renderer.globalData.defs);
-    }
-    if(data.assets){
-        len = data.assets.length;
-        for(i = 0; i < len; i += 1){
-            this.animationData.assets.push(data.assets[i]);
-        }
-    }
-    this.animationData.__complete = false;
-    dataManager.completeData(this.animationData,this.renderer.globalData.fontManager);
-    this.renderer.includeLayers(data.layers);
-    if(expressionsPlugin){
-        expressionsPlugin.initExpressions(this);
-    }
-    this.loadNextSegment();
+  }
+  this.animationData.__complete = false;
+  dataManager.completeData(this.animationData, this.renderer.globalData.fontManager);
+  this.renderer.includeLayers(data.layers);
+  if (expressionsPlugin) {
+    expressionsPlugin.initExpressions(this);
+  }
+  this.loadNextSegment();
 };
 
-AnimationItem.prototype.loadNextSegment = function() {
-    var segments = this.animationData.segments;
-    if(!segments || segments.length === 0 || !this.autoloadSegments){
-        this.trigger('data_ready');
-        this.timeCompleted = this.totalFrames;
-        return;
-    }
-    var segment = segments.shift();
-    this.timeCompleted = segment.time * this.frameRate;
-    var segmentPath = this.path+this.fileName+'_' + this.segmentPos + '.json';
-    this.segmentPos += 1;
-    assetLoader.load(segmentPath, this.includeLayers.bind(this), function() {
-        this.trigger('data_failed');
-    }.bind(this));
+AnimationItem.prototype.loadNextSegment = function () {
+  var segments = this.animationData.segments;
+  if (!segments || segments.length === 0 || !this.autoloadSegments) {
+    this.trigger("data_ready");
+    this.timeCompleted = this.totalFrames;
+    return;
+  }
+  var segment = segments.shift();
+  this.timeCompleted = segment.time * this.frameRate;
+  var segmentPath = this.path + this.fileName + "_" + this.segmentPos + ".json";
+  this.segmentPos += 1;
+  assetLoader.load(
+    segmentPath,
+    this.includeLayers.bind(this),
+    function () {
+      this.trigger("data_failed");
+    }.bind(this)
+  );
 };
 
-AnimationItem.prototype.loadSegments = function() {
-    var segments = this.animationData.segments;
-    if(!segments) {
-        this.timeCompleted = this.totalFrames;
-    }
-    this.loadNextSegment();
+AnimationItem.prototype.loadSegments = function () {
+  var segments = this.animationData.segments;
+  if (!segments) {
+    this.timeCompleted = this.totalFrames;
+  }
+  this.loadNextSegment();
 };
 
-AnimationItem.prototype.imagesLoaded = function() {
-    this.trigger('loaded_images');
-    this.checkLoaded()
-}
+AnimationItem.prototype.imagesLoaded = function () {
+  this.trigger("loaded_images");
+  this.checkLoaded();
+};
 
-AnimationItem.prototype.preloadImages = function() {
-    this.imagePreloader.setAssetsPath(this.assetsPath);
-    this.imagePreloader.setPath(this.path);
-    this.imagePreloader.loadAssets(this.animationData.assets, this.imagesLoaded.bind(this));
-}
+AnimationItem.prototype.preloadImages = function () {
+  this.imagePreloader.setAssetsPath(this.assetsPath);
+  this.imagePreloader.setPath(this.path);
+  this.imagePreloader.loadAssets(this.animationData.assets, this.imagesLoaded.bind(this));
+};
 
 AnimationItem.prototype.configAnimation = function (animData) {
-    if(!this.renderer){
-        return;
-    }
-    this.animationData = animData;
-    this.totalFrames = Math.floor(this.animationData.op - this.animationData.ip);
-    this.renderer.configAnimation(animData);
-    if(!animData.assets){
-        animData.assets = [];
-    }
-    this.renderer.searchExtraCompositions(animData.assets);
+  if (!this.renderer) {
+    return;
+  }
+  this.animationData = animData;
+  this.totalFrames = Math.floor(this.animationData.op - this.animationData.ip);
+  this.renderer.configAnimation(animData);
+  if (!animData.assets) {
+    animData.assets = [];
+  }
+  this.renderer.searchExtraCompositions(animData.assets);
 
-    this.assets = this.animationData.assets;
-    this.frameRate = this.animationData.fr;
-    this.firstFrame = Math.round(this.animationData.ip);
-    this.frameMult = this.animationData.fr / 1000;
-    this.trigger('config_ready');
-    this.preloadImages();
-    this.loadSegments();
-    this.updaFrameModifier();
-    this.waitForFontsLoaded();
+  this.assets = this.animationData.assets;
+  this.frameRate = this.animationData.fr;
+  this.firstFrame = Math.round(this.animationData.ip);
+  this.frameMult = this.animationData.fr / 1000;
+  this.trigger("config_ready");
+  this.preloadImages();
+  this.loadSegments();
+  this.updaFrameModifier();
+  this.waitForFontsLoaded();
 };
 
-AnimationItem.prototype.waitForFontsLoaded = function(){
-    if(!this.renderer) {
-        return;
-    }
-    if(this.renderer.globalData.fontManager.loaded()){
-        this.checkLoaded();
-    }else{
-        setTimeout(this.waitForFontsLoaded.bind(this),20);
-    }
-}
+AnimationItem.prototype.waitForFontsLoaded = function () {
+  if (!this.renderer) {
+    return;
+  }
+  if (this.renderer.globalData.fontManager.loaded()) {
+    this.checkLoaded();
+  } else {
+    setTimeout(this.waitForFontsLoaded.bind(this), 20);
+  }
+};
 
 AnimationItem.prototype.checkLoaded = function () {
-    if (!this.isLoaded && this.renderer.globalData.fontManager.loaded() && (this.imagePreloader.loaded() || this.renderer.rendererType !== 'canvas')) {
-        this.isLoaded = true;
-        dataManager.completeData(this.animationData, this.renderer.globalData.fontManager);
-        if(expressionsPlugin){
-            expressionsPlugin.initExpressions(this);
-        }
-        this.renderer.initItems();
-        setTimeout(function() {
-            this.trigger('DOMLoaded');
-        }.bind(this), 0);
-        this.gotoFrame();
-        if(this.autoplay){
-            this.play();
-        }
+  if (
+    !this.isLoaded &&
+    this.renderer.globalData.fontManager.loaded() &&
+    (this.imagePreloader.loaded() || this.renderer.rendererType !== "canvas")
+  ) {
+    this.isLoaded = true;
+    dataManager.completeData(this.animationData, this.renderer.globalData.fontManager);
+    if (expressionsPlugin) {
+      expressionsPlugin.initExpressions(this);
     }
+    this.renderer.initItems();
+    setTimeout(
+      function () {
+        this.trigger("DOMLoaded");
+      }.bind(this),
+      0
+    );
+    this.gotoFrame();
+    if (this.autoplay) {
+      this.play();
+    }
+  }
 };
 
 AnimationItem.prototype.resize = function () {
-    this.renderer.updateContainerSize();
+  this.renderer.updateContainerSize();
 };
 
-AnimationItem.prototype.setSubframe = function(flag){
-    this.subframeEnabled = flag ? true : false;
+AnimationItem.prototype.setSubframe = function (flag) {
+  this.subframeEnabled = flag ? true : false;
 };
 
 AnimationItem.prototype.gotoFrame = function () {
-    this.currentFrame = this.subframeEnabled ? this.currentRawFrame : ~~this.currentRawFrame;
+  this.currentFrame = this.subframeEnabled ? this.currentRawFrame : ~~this.currentRawFrame;
 
-    if(this.timeCompleted !== this.totalFrames && this.currentFrame > this.timeCompleted){
-        this.currentFrame = this.timeCompleted;
-    }
-    this.trigger('enterFrame');
-    this.renderFrame();
+  if (this.timeCompleted !== this.totalFrames && this.currentFrame > this.timeCompleted) {
+    this.currentFrame = this.timeCompleted;
+  }
+  this.trigger("enterFrame");
+  this.renderFrame();
 };
 
 AnimationItem.prototype.renderFrame = function () {
-    if(this.isLoaded === false){
-        return;
-    }
-    this.renderer.renderFrame(this.currentFrame + this.firstFrame);
+  if (this.isLoaded === false) {
+    return;
+  }
+  this.renderer.renderFrame(this.currentFrame + this.firstFrame);
 };
 
 AnimationItem.prototype.play = function (name) {
-    if(name && this.name != name){
-        return;
+  if (name && this.name != name) {
+    return;
+  }
+  if (this.isPaused === true) {
+    this.isPaused = false;
+    if (this._idle) {
+      this._idle = false;
+      this.trigger("_active");
     }
-    if(this.isPaused === true){
-        this.isPaused = false;
-        if(this._idle){
-            this._idle = false;
-            this.trigger('_active');
-        }
-    }
+  }
 };
 
 AnimationItem.prototype.pause = function (name) {
-    if(name && this.name != name){
-        return;
-    }
-    if(this.isPaused === false){
-        this.isPaused = true;
-        this._idle = true;
-        this.trigger('_idle');
-    }
+  if (name && this.name != name) {
+    return;
+  }
+  if (this.isPaused === false) {
+    this.isPaused = true;
+    this._idle = true;
+    this.trigger("_idle");
+  }
 };
 
 AnimationItem.prototype.togglePause = function (name) {
-    if(name && this.name != name){
-        return;
-    }
-    if(this.isPaused === true){
-        this.play();
-    }else{
-        this.pause();
-    }
+  if (name && this.name != name) {
+    return;
+  }
+  if (this.isPaused === true) {
+    this.play();
+  } else {
+    this.pause();
+  }
 };
 
 AnimationItem.prototype.stop = function (name) {
-    if(name && this.name != name){
-        return;
-    }
-    this.pause();
-    this.playCount = 0;
-    this._completedLoop = false;
-    this.setCurrentRawFrameValue(0);
+  if (name && this.name != name) {
+    return;
+  }
+  this.pause();
+  this.playCount = 0;
+  this._completedLoop = false;
+  this.setCurrentRawFrameValue(0);
 };
 
 AnimationItem.prototype.goToAndStop = function (value, isFrame, name) {
-    if(name && this.name != name){
-        return;
-    }
-    if(isFrame){
-        this.setCurrentRawFrameValue(value);
-    }else{
-        this.setCurrentRawFrameValue(value * this.frameModifier);
-    }
-    this.pause();
+  if (name && this.name != name) {
+    return;
+  }
+  if (isFrame) {
+    this.setCurrentRawFrameValue(value);
+  } else {
+    this.setCurrentRawFrameValue(value * this.frameModifier);
+  }
+  this.pause();
 };
 
 AnimationItem.prototype.goToAndPlay = function (value, isFrame, name) {
-    this.goToAndStop(value, isFrame, name);
-    this.play();
+  this.goToAndStop(value, isFrame, name);
+  this.play();
 };
 
 AnimationItem.prototype.advanceTime = function (value) {
-    if (this.isPaused === true || this.isLoaded === false) {
-        return;
-    }
-    var nextValue = this.currentRawFrame + value * this.frameModifier;
-    var _isComplete = false;
-    // Checking if nextValue > totalFrames - 1 for addressing non looping and looping animations.
-    // If animation won't loop, it should stop at totalFrames - 1. If it will loop it should complete the last frame and then loop.
-    if (nextValue >= this.totalFrames - 1 && this.frameModifier > 0) {
-        if (!this.loop || this.playCount === this.loop) {
-            if (!this.checkSegments(nextValue >  this.totalFrames ? nextValue % this.totalFrames : 0)) {
-                _isComplete = true;
-                nextValue = this.totalFrames - 1;
-            }
-        } else if (nextValue >= this.totalFrames) {
-            this.playCount += 1;
-            if (!this.checkSegments(nextValue % this.totalFrames)) {
-                this.setCurrentRawFrameValue(nextValue % this.totalFrames);
-                this._completedLoop = true;
-                this.trigger('loopComplete');
-            }
-        } else {
-            this.setCurrentRawFrameValue(nextValue);
-        }
-    } else if(nextValue < 0) {
-        if (!this.checkSegments(nextValue % this.totalFrames)) {
-            if (this.loop && !(this.playCount-- <= 0 && this.loop !== true)) {
-                this.setCurrentRawFrameValue(this.totalFrames + (nextValue % this.totalFrames));
-                if(!this._completedLoop) {
-                    this._completedLoop = true;
-                } else {
-                    this.trigger('loopComplete');
-                }
-            } else {
-                _isComplete = true;
-                nextValue = 0;
-            }
-        }
+  if (this.isPaused === true || this.isLoaded === false) {
+    return;
+  }
+  var nextValue = this.currentRawFrame + value * this.frameModifier;
+  var _isComplete = false;
+  // Checking if nextValue > totalFrames - 1 for addressing non looping and looping animations.
+  // If animation won't loop, it should stop at totalFrames - 1. If it will loop it should complete the last frame and then loop.
+  if (nextValue >= this.totalFrames - 1 && this.frameModifier > 0) {
+    if (!this.loop || this.playCount === this.loop) {
+      if (!this.checkSegments(nextValue > this.totalFrames ? nextValue % this.totalFrames : 0)) {
+        _isComplete = true;
+        nextValue = this.totalFrames - 1;
+      }
+    } else if (nextValue >= this.totalFrames) {
+      this.playCount += 1;
+      if (!this.checkSegments(nextValue % this.totalFrames)) {
+        this.setCurrentRawFrameValue(nextValue % this.totalFrames);
+        this._completedLoop = true;
+        this.trigger("loopComplete");
+      }
     } else {
-        this.setCurrentRawFrameValue(nextValue);
+      this.setCurrentRawFrameValue(nextValue);
     }
-    if (_isComplete) {
-        this.setCurrentRawFrameValue(nextValue);
-        this.pause();
-        this.trigger('complete');
+  } else if (nextValue < 0) {
+    if (!this.checkSegments(nextValue % this.totalFrames)) {
+      if (this.loop && !(this.playCount-- <= 0 && this.loop !== true)) {
+        this.setCurrentRawFrameValue(this.totalFrames + (nextValue % this.totalFrames));
+        if (!this._completedLoop) {
+          this._completedLoop = true;
+        } else {
+          this.trigger("loopComplete");
+        }
+      } else {
+        _isComplete = true;
+        nextValue = 0;
+      }
     }
+  } else {
+    this.setCurrentRawFrameValue(nextValue);
+  }
+  if (_isComplete) {
+    this.setCurrentRawFrameValue(nextValue);
+    this.pause();
+    this.trigger("complete");
+  }
 };
 
-AnimationItem.prototype.adjustSegment = function(arr, offset){
-    this.playCount = 0;
-    if(arr[1] < arr[0]){
-        if(this.frameModifier > 0){
-            if(this.playSpeed < 0){
-                this.setSpeed(-this.playSpeed);
-            } else {
-                this.setDirection(-1);
-            }
-        }
-        this.timeCompleted = this.totalFrames = arr[0] - arr[1];
-        this.firstFrame = arr[1];
-        this.setCurrentRawFrameValue(this.totalFrames - 0.001 - offset);
-    } else if(arr[1] > arr[0]){
-        if(this.frameModifier < 0){
-            if(this.playSpeed < 0){
-                this.setSpeed(-this.playSpeed);
-            } else {
-                this.setDirection(1);
-            }
-        }
-        this.timeCompleted = this.totalFrames = arr[1] - arr[0];
-        this.firstFrame = arr[0];
-        this.setCurrentRawFrameValue(0.001 + offset);
+AnimationItem.prototype.adjustSegment = function (arr, offset) {
+  this.playCount = 0;
+  if (arr[1] < arr[0]) {
+    if (this.frameModifier > 0) {
+      if (this.playSpeed < 0) {
+        this.setSpeed(-this.playSpeed);
+      } else {
+        this.setDirection(-1);
+      }
     }
-    this.trigger('segmentStart');
+    this.timeCompleted = this.totalFrames = arr[0] - arr[1];
+    this.firstFrame = arr[1];
+    this.setCurrentRawFrameValue(this.totalFrames - 0.001 - offset);
+  } else if (arr[1] > arr[0]) {
+    if (this.frameModifier < 0) {
+      if (this.playSpeed < 0) {
+        this.setSpeed(-this.playSpeed);
+      } else {
+        this.setDirection(1);
+      }
+    }
+    this.timeCompleted = this.totalFrames = arr[1] - arr[0];
+    this.firstFrame = arr[0];
+    this.setCurrentRawFrameValue(0.001 + offset);
+  }
+  this.trigger("segmentStart");
 };
-AnimationItem.prototype.setSegment = function (init,end) {
-    var pendingFrame = -1;
-    if(this.isPaused) {
-        if (this.currentRawFrame + this.firstFrame < init) {
-            pendingFrame = init;
-        } else if (this.currentRawFrame + this.firstFrame > end) {
-            pendingFrame = end - init;
-        }
+AnimationItem.prototype.setSegment = function (init, end) {
+  var pendingFrame = -1;
+  if (this.isPaused) {
+    if (this.currentRawFrame + this.firstFrame < init) {
+      pendingFrame = init;
+    } else if (this.currentRawFrame + this.firstFrame > end) {
+      pendingFrame = end - init;
     }
+  }
 
-    this.firstFrame = init;
-    this.timeCompleted = this.totalFrames = end - init;
-    if(pendingFrame !== -1) {
-        this.goToAndStop(pendingFrame,true);
-    }
+  this.firstFrame = init;
+  this.timeCompleted = this.totalFrames = end - init;
+  if (pendingFrame !== -1) {
+    this.goToAndStop(pendingFrame, true);
+  }
 };
 
 AnimationItem.prototype.playSegments = function (arr, forceFlag) {
-    if (forceFlag) {
-        this.segments.length = 0;
+  if (forceFlag) {
+    this.segments.length = 0;
+  }
+  if (typeof arr[0] === "object") {
+    var i,
+      len = arr.length;
+    for (i = 0; i < len; i += 1) {
+      this.segments.push(arr[i]);
     }
-    if (typeof arr[0] === 'object') {
-        var i, len = arr.length;
-        for (i = 0; i < len; i += 1) {
-            this.segments.push(arr[i]);
-        }
-    } else {
-        this.segments.push(arr);
-    }
-    if (this.segments.length) {
-        this.adjustSegment(this.segments.shift(), 0);
-    }
-    if (this.isPaused) {
-        this.play();
-    }
+  } else {
+    this.segments.push(arr);
+  }
+  if (this.segments.length) {
+    this.adjustSegment(this.segments.shift(), 0);
+  }
+  if (this.isPaused) {
+    this.play();
+  }
 };
 
 AnimationItem.prototype.resetSegments = function (forceFlag) {
-    this.segments.length = 0;
-    this.segments.push([this.animationData.ip,this.animationData.op]);
-    //this.segments.push([this.animationData.ip*this.frameRate,Math.floor(this.animationData.op - this.animationData.ip+this.animationData.ip*this.frameRate)]);
-    if (forceFlag) {
-        this.checkSegments(0);
-    }
+  this.segments.length = 0;
+  this.segments.push([this.animationData.ip, this.animationData.op]);
+  //this.segments.push([this.animationData.ip*this.frameRate,Math.floor(this.animationData.op - this.animationData.ip+this.animationData.ip*this.frameRate)]);
+  if (forceFlag) {
+    this.checkSegments(0);
+  }
 };
-AnimationItem.prototype.checkSegments = function(offset) {
-    if (this.segments.length) {
-        this.adjustSegment(this.segments.shift(), offset);
-        return true;
-    }
-    return false;
+AnimationItem.prototype.checkSegments = function (offset) {
+  if (this.segments.length) {
+    this.adjustSegment(this.segments.shift(), offset);
+    return true;
+  }
+  return false;
 };
 
 AnimationItem.prototype.destroy = function (name) {
-    if ((name && this.name != name) || !this.renderer) {
-        return;
-    }
-    this.renderer.destroy();
-    this.imagePreloader.destroy();
-    this.trigger('destroy');
-    this._cbs = null;
-    this.onEnterFrame = this.onLoopComplete = this.onComplete = this.onSegmentStart = this.onDestroy = null;
-    this.renderer = null;
+  if ((name && this.name != name) || !this.renderer) {
+    return;
+  }
+  this.renderer.destroy();
+  this.imagePreloader.destroy();
+  this.trigger("destroy");
+  this._cbs = null;
+  this.onEnterFrame = this.onLoopComplete = this.onComplete = this.onSegmentStart = this.onDestroy = null;
+  this.renderer = null;
 };
 
-AnimationItem.prototype.setCurrentRawFrameValue = function(value){
-    this.currentRawFrame = value;
-    this.gotoFrame();
+AnimationItem.prototype.setCurrentRawFrameValue = function (value) {
+  this.currentRawFrame = value;
+  this.gotoFrame();
 };
 
 AnimationItem.prototype.setSpeed = function (val) {
-    this.playSpeed = val;
-    this.updaFrameModifier();
+  this.playSpeed = val;
+  this.updaFrameModifier();
 };
 
 AnimationItem.prototype.setDirection = function (val) {
-    this.playDirection = val < 0 ? -1 : 1;
-    this.updaFrameModifier();
+  this.playDirection = val < 0 ? -1 : 1;
+  this.updaFrameModifier();
 };
 
 AnimationItem.prototype.updaFrameModifier = function () {
-    this.frameModifier = this.frameMult * this.playSpeed * this.playDirection;
+  this.frameModifier = this.frameMult * this.playSpeed * this.playDirection;
 };
 
 AnimationItem.prototype.getPath = function () {
-    return this.path;
+  return this.path;
 };
 
 AnimationItem.prototype.getAssetsPath = function (assetData) {
-    var path = '';
-    if(assetData.e) {
-        path = assetData.p;
-    } else if(this.assetsPath){
-        var imagePath = assetData.p;
-        if(imagePath.indexOf('images/') !== -1){
-            imagePath = imagePath.split('/')[1];
-        }
-        path = this.assetsPath + imagePath;
-    } else {
-        path = this.path;
-        path += assetData.u ? assetData.u : '';
-        path += assetData.p;
+  var path = "";
+  if (assetData.e) {
+    path = assetData.p;
+  } else if (this.assetsPath) {
+    var imagePath = assetData.p;
+    if (imagePath.indexOf("images/") !== -1) {
+      imagePath = imagePath.split("/")[1];
     }
-    return path;
+    path = this.assetsPath + imagePath;
+  } else {
+    path = this.path;
+    path += assetData.u ? assetData.u : "";
+    path += assetData.p;
+  }
+  return path;
 };
 
 AnimationItem.prototype.getAssetData = function (id) {
-    var i = 0, len = this.assets.length;
-    while (i < len) {
-        if(id == this.assets[i].id){
-            return this.assets[i];
-        }
-        i += 1;
+  var i = 0,
+    len = this.assets.length;
+  while (i < len) {
+    if (id == this.assets[i].id) {
+      return this.assets[i];
     }
+    i += 1;
+  }
 };
 
 AnimationItem.prototype.hide = function () {
-    this.renderer.hide();
+  this.renderer.hide();
 };
 
 AnimationItem.prototype.show = function () {
-    this.renderer.show();
+  this.renderer.show();
 };
 
 AnimationItem.prototype.getDuration = function (isFrame) {
-    return isFrame ? this.totalFrames : this.totalFrames / this.frameRate;
+  return isFrame ? this.totalFrames : this.totalFrames / this.frameRate;
 };
 
-AnimationItem.prototype.trigger = function(name){
-    if(this._cbs && this._cbs[name]){
-        switch(name){
-            case 'enterFrame':
-                this.triggerEvent(name,new BMEnterFrameEvent(name,this.currentFrame,this.totalFrames,this.frameMult));
-                break;
-            case 'loopComplete':
-                this.triggerEvent(name,new BMCompleteLoopEvent(name,this.loop,this.playCount,this.frameMult));
-                break;
-            case 'complete':
-                this.triggerEvent(name,new BMCompleteEvent(name,this.frameMult));
-                break;
-            case 'segmentStart':
-                this.triggerEvent(name,new BMSegmentStartEvent(name,this.firstFrame,this.totalFrames));
-                break;
-            case 'destroy':
-                this.triggerEvent(name,new BMDestroyEvent(name,this));
-                break;
-            default:
-                this.triggerEvent(name);
-        }
+AnimationItem.prototype.trigger = function (name) {
+  if (this._cbs && this._cbs[name]) {
+    switch (name) {
+      case "enterFrame":
+        this.triggerEvent(name, new BMEnterFrameEvent(name, this.currentFrame, this.totalFrames, this.frameMult));
+        break;
+      case "loopComplete":
+        this.triggerEvent(name, new BMCompleteLoopEvent(name, this.loop, this.playCount, this.frameMult));
+        break;
+      case "complete":
+        this.triggerEvent(name, new BMCompleteEvent(name, this.frameMult));
+        break;
+      case "segmentStart":
+        this.triggerEvent(name, new BMSegmentStartEvent(name, this.firstFrame, this.totalFrames));
+        break;
+      case "destroy":
+        this.triggerEvent(name, new BMDestroyEvent(name, this));
+        break;
+      default:
+        this.triggerEvent(name);
     }
-    if(name === 'enterFrame' && this.onEnterFrame){
-        this.onEnterFrame.call(this,new BMEnterFrameEvent(name,this.currentFrame,this.totalFrames,this.frameMult));
-    }
-    if(name === 'loopComplete' && this.onLoopComplete){
-        this.onLoopComplete.call(this,new BMCompleteLoopEvent(name,this.loop,this.playCount,this.frameMult));
-    }
-    if(name === 'complete' && this.onComplete){
-        this.onComplete.call(this,new BMCompleteEvent(name,this.frameMult));
-    }
-    if(name === 'segmentStart' && this.onSegmentStart){
-        this.onSegmentStart.call(this,new BMSegmentStartEvent(name,this.firstFrame,this.totalFrames));
-    }
-    if(name === 'destroy' && this.onDestroy){
-        this.onDestroy.call(this,new BMDestroyEvent(name,this));
-    }
+  }
+  if (name === "enterFrame" && this.onEnterFrame) {
+    this.onEnterFrame.call(this, new BMEnterFrameEvent(name, this.currentFrame, this.totalFrames, this.frameMult));
+  }
+  if (name === "loopComplete" && this.onLoopComplete) {
+    this.onLoopComplete.call(this, new BMCompleteLoopEvent(name, this.loop, this.playCount, this.frameMult));
+  }
+  if (name === "complete" && this.onComplete) {
+    this.onComplete.call(this, new BMCompleteEvent(name, this.frameMult));
+  }
+  if (name === "segmentStart" && this.onSegmentStart) {
+    this.onSegmentStart.call(this, new BMSegmentStartEvent(name, this.firstFrame, this.totalFrames));
+  }
+  if (name === "destroy" && this.onDestroy) {
+    this.onDestroy.call(this, new BMDestroyEvent(name, this));
+  }
 };
 
 var Expressions = (function(){
@@ -11951,69 +12068,73 @@ function NoValueEffect(){
     this.p = {};
 }
 function EffectsManager(){}
-function EffectsManager(data,element){
-    var effects = data.ef || [];
-    this.effectElements = [];
-    var i,len = effects.length;
-    var effectItem;
-    for(i=0;i<len;i++) {
-        effectItem = new GroupEffect(effects[i],element);
-        this.effectElements.push(effectItem);
-    }
+function EffectsManager(data, element) {
+  var effects = data.ef || [];
+  this.effectElements = [];
+  var i,
+    len = effects.length;
+  var effectItem;
+  for (i = 0; i < len; i++) {
+    effectItem = new GroupEffect(effects[i], element);
+    this.effectElements.push(effectItem);
+  }
 }
 
-function GroupEffect(data,element){
-    this.init(data,element);
+function GroupEffect(data, element) {
+  this.init(data, element);
 }
 
 extendPrototype([DynamicPropertyContainer], GroupEffect);
 
 GroupEffect.prototype.getValue = GroupEffect.prototype.iterateDynamicProperties;
 
-GroupEffect.prototype.init = function(data,element){
-    this.data = data;
-    this.effectElements = [];
-    this.initDynamicPropertyContainer(element);
-    var i, len = this.data.ef.length;
-    var eff, effects = this.data.ef;
-    for(i=0;i<len;i+=1){
-        eff = null;
-        switch(effects[i].ty){
-            case 0:
-                eff = new SliderEffect(effects[i],element,this);
-                break;
-            case 1:
-                eff = new AngleEffect(effects[i],element,this);
-                break;
-            case 2:
-                eff = new ColorEffect(effects[i],element,this);
-                break;
-            case 3:
-                eff = new PointEffect(effects[i],element,this);
-                break;
-            case 4:
-            case 7:
-                eff = new CheckboxEffect(effects[i],element,this);
-                break;
-            case 10:
-                eff = new LayerIndexEffect(effects[i],element,this);
-                break;
-            case 11:
-                eff = new MaskIndexEffect(effects[i],element,this);
-                break;
-            case 5:
-                eff = new EffectsManager(effects[i],element,this);
-                break;
-            //case 6:
-            default:
-                eff = new NoValueEffect(effects[i],element,this);
-                break;
-        }
-        if(eff) {
-            this.effectElements.push(eff);
-        }
+GroupEffect.prototype.init = function (data, element) {
+  this.data = data;
+  this.effectElements = [];
+  this.initDynamicPropertyContainer(element);
+  var i,
+    len = this.data.ef.length;
+  var eff,
+    effects = this.data.ef;
+  for (i = 0; i < len; i += 1) {
+    eff = null;
+    switch (effects[i].ty) {
+      case 0:
+        eff = new SliderEffect(effects[i], element, this);
+        break;
+      case 1:
+        eff = new AngleEffect(effects[i], element, this);
+        break;
+      case 2:
+        eff = new ColorEffect(effects[i], element, this);
+        break;
+      case 3:
+        eff = new PointEffect(effects[i], element, this);
+        break;
+      case 4:
+      case 7:
+        eff = new CheckboxEffect(effects[i], element, this);
+        break;
+      case 10:
+        eff = new LayerIndexEffect(effects[i], element, this);
+        break;
+      case 11:
+        eff = new MaskIndexEffect(effects[i], element, this);
+        break;
+      case 5:
+        eff = new EffectsManager(effects[i], element, this);
+        break;
+      //case 6:
+      default:
+        eff = new NoValueEffect(effects[i], element, this);
+        break;
     }
+    if (eff) {
+      this.effectElements.push(eff);
+    }
+  }
 };
+
 
   var lottiejs = {};
 
@@ -12110,27 +12231,9 @@ GroupEffect.prototype.init = function(data,element){
   lottiejs.__getFactory = getFactory;
   lottiejs.version = "5.4.3";
 
-  function checkReady() {
-    if (document.readyState === "complete") {
-      clearInterval(readyStateCheckInterval);
-      searchAnimations();
-    }
-  }
-
-  function getQueryVariable(variable) {
-    var vars = queryString.split("&");
-    for (var i = 0; i < vars.length; i++) {
-      var pair = vars[i].split("=");
-      if (decodeURIComponent(pair[0]) == variable) {
-        return decodeURIComponent(pair[1]);
-      }
-    }
-  }
   var standalone = "__[STANDALONE]__";
   var animationData = "__[ANIMATIONDATA]__";
   var renderer = "";
-  
-  //var readyStateCheckInterval = setInterval(checkReady, 100);
 
   return lottiejs;
 });

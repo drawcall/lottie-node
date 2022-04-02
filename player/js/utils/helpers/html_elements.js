@@ -1,4 +1,4 @@
 function createTag(type) {
-	//return {appendChild:function(){},setAttribute:function(){},style:{}}
+	console.trace(1111);
 	return document.createElement(type);
 }

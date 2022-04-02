@@ -107,27 +107,9 @@
   lottiejs.__getFactory = getFactory;
   lottiejs.version = "[[BM_VERSION]]";
 
-  function checkReady() {
-    if (document.readyState === "complete") {
-      clearInterval(readyStateCheckInterval);
-      searchAnimations();
-    }
-  }
-
-  function getQueryVariable(variable) {
-    var vars = queryString.split("&");
-    for (var i = 0; i < vars.length; i++) {
-      var pair = vars[i].split("=");
-      if (decodeURIComponent(pair[0]) == variable) {
-        return decodeURIComponent(pair[1]);
-      }
-    }
-  }
   var standalone = "__[STANDALONE]__";
   var animationData = "__[ANIMATIONDATA]__";
   var renderer = "";
-  
-  //var readyStateCheckInterval = setInterval(checkReady, 100);
 
   return lottiejs;
 });

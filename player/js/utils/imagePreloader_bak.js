@@ -1,16 +1,13 @@
-var onlyCanvas;
 var ImagePreloader = (function () {
-  var createOnlyFakeImg = function () {
-    if (!onlyCanvas) {
-      onlyCanvas = createTag("canvas");
-      onlyCanvas.width = 1;
-      onlyCanvas.height = 1;
-      var ctx = onlyCanvas.getContext("2d");
-      ctx.fillStyle = "#FF0000";
-      ctx.fillRect(0, 0, 1, 1);
-    }
-    return onlyCanvas;
-  };
+  var proxyImage = (function () {
+    var canvas = createTag("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+    var ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#FF0000";
+    ctx.fillRect(0, 0, 1, 1);
+    return canvas;
+  })();
 
   function imageLoaded() {
     this.loadedAssets += 1;
@@ -42,11 +39,12 @@ var ImagePreloader = (function () {
   function createImageData(assetData) {
     var path = getAssetsPath(assetData, this.assetsPath, this.path);
     var img = createTag("img");
+    img.crossOrigin = "anonymous";
     img.addEventListener("load", this._imageLoaded.bind(this), false);
     img.addEventListener(
       "error",
       function () {
-        ob.img = createOnlyFakeImg();
+        ob.img = proxyImage;
         this._imageLoaded();
       }.bind(this),
       false

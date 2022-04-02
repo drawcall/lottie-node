@@ -184,6 +184,7 @@ CanvasRenderer.prototype.updateContainerSize = function () {
         elementWidth = this.canvasContext.canvas.width * this.renderConfig.dpr;
         elementHeight = this.canvasContext.canvas.height * this.renderConfig.dpr;
     }
+    
     var elementRel,animationRel;
     if(this.renderConfig.preserveAspectRatio.indexOf('meet') !== -1 || this.renderConfig.preserveAspectRatio.indexOf('slice') !== -1){
         var par = this.renderConfig.preserveAspectRatio.split(' ');
