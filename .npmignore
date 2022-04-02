@@ -11,7 +11,4 @@ signer.bat
 gifs/
 build/extension/
 projects/
-build/
-build/*
-builds/
 .DS_Store
