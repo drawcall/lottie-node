@@ -54,10 +54,6 @@ lottie.loadAnimation({
 });
 ```
 
-#### Composition Settings:
-Check this wiki page for an explanation for each setting.
-https://github.com/airbnb/lottie-web/wiki/Composition-Settings
-
 ## Preview
 You can preview or take an svg snapshot of the animation to use as poster. After you render your animation, you can take a snapshot of any frame in the animation and save it to your disk. I recommend to pass the svg through an svg optimizer like https://jakearchibald.github.io/svgomg/ and play around with their settings.<br/>
 

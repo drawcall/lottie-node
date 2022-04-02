@@ -1,5 +1,5 @@
-import { setLocationHref, setWebWorker } from '../main';
-import animationManager from '../animation/AnimationManager';
+import { setLocationHref, setWebWorker } from "../main";
+import animationManager from "../animation/AnimationManager";
 import {
   setDefaultCurveSegments,
   getDefaultCurveSegments,
@@ -7,15 +7,17 @@ import {
   setIdPrefix,
   setSubframeEnabled,
   setExpressionsPlugin,
-} from '../utils/common';
-import PropertyFactory from '../utils/PropertyFactory';
-import ShapePropertyFactory from '../utils/shapes/ShapeProperty';
-import Matrix from '../3rd_party/transformation-matrix';
+} from "../utils/common";
+import PropertyFactory from "../utils/PropertyFactory";
+import ShapePropertyFactory from "../utils/shapes/ShapeProperty";
+import Matrix from "../3rd_party/transformation-matrix";
 
-const lottie = {};
-var standalone = '__[STANDALONE]__';
-var animationData = '__[ANIMATIONDATA]__';
-var renderer = '';
+const lottie = {
+  version: "lottie-nodejs",
+};
+var standalone = "__[STANDALONE]__";
+var animationData = "__[ANIMATIONDATA]__";
+var renderer = "";
 
 function setLocation(href) {
   setLocationHref(href);
@@ -45,16 +47,16 @@ function loadAnimation(params) {
 }
 
 function setQuality(value) {
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     switch (value) {
-      case 'high':
+      case "high":
         setDefaultCurveSegments(200);
         break;
       default:
-      case 'medium':
+      case "medium":
         setDefaultCurveSegments(50);
         break;
-      case 'low':
+      case "low":
         setDefaultCurveSegments(10);
         break;
     }
@@ -69,22 +71,22 @@ function setQuality(value) {
 }
 
 function inBrowser() {
-  return typeof navigator !== 'undefined';
+  return typeof navigator !== "undefined";
 }
 
 function installPlugin(type, plugin) {
-  if (type === 'expressions') {
+  if (type === "expressions") {
     setExpressionsPlugin(plugin);
   }
 }
 
 function getFactory(name) {
   switch (name) {
-    case 'propertyFactory':
+    case "propertyFactory":
       return PropertyFactory;
-    case 'shapePropertyFactory':
+    case "shapePropertyFactory":
       return ShapePropertyFactory;
-    case 'matrix':
+    case "matrix":
       return Matrix;
     default:
       return null;
@@ -118,20 +120,21 @@ lottie.getRegisteredAnimations = animationManager.getRegisteredAnimations;
 lottie.useWebWorker = setWebWorker;
 lottie.setIDPrefix = setPrefix;
 lottie.__getFactory = getFactory;
-lottie.version = '[[BM_VERSION]]';
+lottie.version = "[[BM_VERSION]]";
 
 function checkReady() {
-  if (document.readyState === 'complete') {
+  if (document.readyState === "complete") {
     clearInterval(readyStateCheckInterval);
     searchAnimations();
   }
 }
 
 function getQueryVariable(variable) {
-  var vars = queryString.split('&');
+  var vars = queryString.split("&");
   for (var i = 0; i < vars.length; i += 1) {
-    var pair = vars[i].split('=');
-    if (decodeURIComponent(pair[0]) == variable) { // eslint-disable-line eqeqeq
+    var pair = vars[i].split("=");
+    if (decodeURIComponent(pair[0]) == variable) {
+      // eslint-disable-line eqeqeq
       return decodeURIComponent(pair[1]);
     }
   }
@@ -139,24 +142,14 @@ function getQueryVariable(variable) {
 }
 var queryString;
 if (standalone) {
-  var scripts = document.getElementsByTagName('script');
+  var scripts = document.getElementsByTagName("script");
   var index = scripts.length - 1;
   var myScript = scripts[index] || {
-    src: '',
+    src: "",
   };
-  queryString = myScript.src.replace(/^[^\?]+\??/, ''); // eslint-disable-line no-useless-escape
-  renderer = getQueryVariable('renderer');
+  queryString = myScript.src.replace(/^[^\?]+\??/, ""); // eslint-disable-line no-useless-escape
+  renderer = getQueryVariable("renderer");
 }
 var readyStateCheckInterval = setInterval(checkReady, 100);
 
-// this adds bodymovin to the window object for backwards compatibility
-try {
-  if (!(typeof exports === 'object' && typeof module !== 'undefined')
-    && !(typeof define === 'function' && define.amd) // eslint-disable-line no-undef
-  ) {
-    window.bodymovin = lottie;
-  }
-} catch (err) {
-  //
-}
 export default lottie;
