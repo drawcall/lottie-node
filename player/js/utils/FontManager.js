@@ -237,10 +237,7 @@ var FontManager = (function(){
         var index = char.charCodeAt(0);
         if(!fontData.cache[index + 1]) {
             var tHelper = fontData.helper;
-            //Canvas version
-            //fontData.cache[index] = tHelper.measureText(char).width / 100;
-            //SVG version
-            //console.log(tHelper.getBBox().width)
+            
             if (char === ' ') {
                 tHelper.textContent = '|' + char + '|';
                 var doubleSize = tHelper.getComputedTextLength();

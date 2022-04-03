@@ -2,15 +2,15 @@ var fs = require("fs");
 
 var assetLoader = (function () {
   function loadAsset(path, callback, errorCallback) {
-    fs.readFile(path, (err, data) => {
-      if (err) {
-        errorCallback(err);
-      } else {
-        const body = JSON.parse(data);
-        callback(body);
-      }
-    });
+    try {
+      var data = fs.readFileSync(path, "utf-8");
+      const body = JSON.parse(data);
+      callback(body);
+    } catch (err) {
+      errorCallback(err);
+    }
   }
+
   return {
     load: loadAsset,
   };

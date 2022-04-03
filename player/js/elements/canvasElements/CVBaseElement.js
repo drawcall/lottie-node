@@ -32,9 +32,8 @@ CVBaseElement.prototype = {
     }
   },
   renderFrame: function () {
-    if (this.hidden || this.data.hd) {
-      return;
-    }
+    if (this.hidden || this.data.hd) return;
+
     this.renderTransform();
     this.renderRenderable();
     this.setBlendMode();
@@ -43,12 +42,12 @@ CVBaseElement.prototype = {
     this.globalData.renderer.ctxOpacity(this.finalTransform.mProp.o.v);
     this.renderInnerContent();
     this.globalData.renderer.restore();
+    
     if (this.maskManager.hasMasks) {
       this.globalData.renderer.restore(true);
     }
-    if (this._isFirstFrame) {
-      this._isFirstFrame = false;
-    }
+
+    if (this._isFirstFrame) this._isFirstFrame = false;
   },
   destroy: function () {
     this.canvasContext = null;

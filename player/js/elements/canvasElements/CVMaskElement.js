@@ -26,6 +26,7 @@ CVMaskElement.prototype.renderFrame = function () {
     var i, len = this.masksProperties.length;
     var pt,pts,data;
     ctx.beginPath();
+    
     for (i = 0; i < len; i++) {
         if(this.masksProperties[i].mode !== 'n'){
             if (this.masksProperties[i].inv) {

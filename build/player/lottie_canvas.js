@@ -1171,25 +1171,28 @@ var BezierFactory = (function(){
     return ob;
 
 }());
-function extendPrototype(sources,destination){
-    var i, len = sources.length, sourcePrototype;
-    for (i = 0;i < len;i += 1) {
-        sourcePrototype = sources[i].prototype;
-        for (var attr in sourcePrototype) {
-            if (sourcePrototype.hasOwnProperty(attr)) destination.prototype[attr] = sourcePrototype[attr];
-        }
+function extendPrototype(sources, destination) {
+  var i,
+    len = sources.length,
+    sourcePrototype;
+  for (i = 0; i < len; i += 1) {
+    sourcePrototype = sources[i].prototype;
+    for (var attr in sourcePrototype) {
+      if (sourcePrototype.hasOwnProperty(attr)) destination.prototype[attr] = sourcePrototype[attr];
     }
+  }
 }
 
 function getDescriptor(object, prop) {
-    return Object.getOwnPropertyDescriptor(object, prop);
+  return Object.getOwnPropertyDescriptor(object, prop);
 }
 
 function createProxyFunction(prototype) {
-	function ProxyFunction(){}
-	ProxyFunction.prototype = prototype;
-	return ProxyFunction;
+  function ProxyFunction() {}
+  ProxyFunction.prototype = prototype;
+  return ProxyFunction;
 }
+
 function bezFunction(){
 
     var easingFunctions = [];
@@ -2037,10 +2040,7 @@ var FontManager = (function(){
         var index = char.charCodeAt(0);
         if(!fontData.cache[index + 1]) {
             var tHelper = fontData.helper;
-            //Canvas version
-            //fontData.cache[index] = tHelper.measureText(char).width / 100;
-            //SVG version
-            //console.log(tHelper.getBBox().width)
+            
             if (char === ' ') {
                 tHelper.textContent = '|' + char + '|';
                 var doubleSize = tHelper.getComputedTextLength();
@@ -4238,30 +4238,30 @@ var ImagePreloader = (function () {
   function createImageData(assetData) {
     var path = getAssetsPath(assetData, this.assetsPath, this.path);
     var img = createTag("img");
-    console.log(img);
-    img.onload(this._imageLoaded.bind(this));
-    img.onerror(
-      function () {
-        ob.img = createOnlyFakeImg();
-        this._imageLoaded();
-      }.bind(this)
-    );
     img.src = path;
+
     var ob = {
       img: img,
       assetData: assetData,
     };
+
     return ob;
   }
 
   function loadAssets(assets, cb) {
     this.imagesLoadedCb = cb;
-    var i,
-      len = assets.length;
-    for (i = 0; i < len; i += 1) {
+
+    for (var i = 0; i < assets.length; i++) {
       if (!assets[i].layers) {
         this.totalImages += 1;
-        this.images.push(this._createImageData(assets[i]));
+      }
+    }
+
+    for (var i = 0; i < assets.length; i++) {
+      if (!assets[i].layers) {
+        var obj = this._createImageData(assets[i]);
+        this.images.push(obj);
+        this._imageLoaded();
       }
     }
   }
@@ -4312,52 +4312,54 @@ var ImagePreloader = (function () {
   };
 })();
 
-var featureSupport = (function(){
-	var ob = {
-		maskType: true
-	};
-	
-	return ob;
-}());
-var filtersFactory = (function(){
-	var ob = {};
-	ob.createFilter = createFilter;
-	ob.createAlphaToLuminanceFilter = createAlphaToLuminanceFilter;
+var featureSupport = (function () {
+  var ob = {
+    maskType: true,
+  };
 
-	function createFilter(filId){
-        	var fil = createNS('filter');
-        	fil.setAttribute('id',filId);
-                fil.setAttribute('filterUnits','objectBoundingBox');
-                fil.setAttribute('x','0%');
-                fil.setAttribute('y','0%');
-                fil.setAttribute('width','100%');
-                fil.setAttribute('height','100%');
-                return fil;
-	}
+  return ob;
+})();
 
-	function createAlphaToLuminanceFilter(){
-                var feColorMatrix = createNS('feColorMatrix');
-                feColorMatrix.setAttribute('type','matrix');
-                feColorMatrix.setAttribute('color-interpolation-filters','sRGB');
-                feColorMatrix.setAttribute('values','0 0 0 1 0  0 0 0 1 0  0 0 0 1 0  0 0 0 1 1');
-                return feColorMatrix;
-	}
+var filtersFactory = (function () {
+  var ob = {};
+  ob.createFilter = createFilter;
+  ob.createAlphaToLuminanceFilter = createAlphaToLuminanceFilter;
 
-	return ob;
-}());
+  function createFilter(filId) {
+    var fil = createNS("filter");
+    fil.setAttribute("id", filId);
+    fil.setAttribute("filterUnits", "objectBoundingBox");
+    fil.setAttribute("x", "0%");
+    fil.setAttribute("y", "0%");
+    fil.setAttribute("width", "100%");
+    fil.setAttribute("height", "100%");
+    return fil;
+  }
+
+  function createAlphaToLuminanceFilter() {
+    var feColorMatrix = createNS("feColorMatrix");
+    feColorMatrix.setAttribute("type", "matrix");
+    feColorMatrix.setAttribute("color-interpolation-filters", "sRGB");
+    feColorMatrix.setAttribute("values", "0 0 0 1 0  0 0 0 1 0  0 0 0 1 0  0 0 0 1 1");
+    return feColorMatrix;
+  }
+
+  return ob;
+})();
+
 var fs = require("fs");
 
 var assetLoader = (function () {
   function loadAsset(path, callback, errorCallback) {
-    fs.readFile(path, (err, data) => {
-      if (err) {
-        errorCallback(err);
-      } else {
-        const body = JSON.parse(data);
-        callback(body);
-      }
-    });
+    try {
+      var data = fs.readFileSync(path, "utf-8");
+      const body = JSON.parse(data);
+      callback(body);
+    } catch (err) {
+      errorCallback(err);
+    }
   }
+
   return {
     load: loadAsset,
   };
@@ -7987,9 +7989,8 @@ CVBaseElement.prototype = {
     }
   },
   renderFrame: function () {
-    if (this.hidden || this.data.hd) {
-      return;
-    }
+    if (this.hidden || this.data.hd) return;
+
     this.renderTransform();
     this.renderRenderable();
     this.setBlendMode();
@@ -7998,12 +7999,12 @@ CVBaseElement.prototype = {
     this.globalData.renderer.ctxOpacity(this.finalTransform.mProp.o.v);
     this.renderInnerContent();
     this.globalData.renderer.restore();
+    
     if (this.maskManager.hasMasks) {
       this.globalData.renderer.restore(true);
     }
-    if (this._isFirstFrame) {
-      this._isFirstFrame = false;
-    }
+
+    if (this._isFirstFrame) this._isFirstFrame = false;
   },
   destroy: function () {
     this.canvasContext = null;
@@ -8137,6 +8138,7 @@ CVMaskElement.prototype.renderFrame = function () {
     var i, len = this.masksProperties.length;
     var pt,pts,data;
     ctx.beginPath();
+    
     for (i = 0; i < len; i++) {
         if(this.masksProperties[i].mode !== 'n'){
             if (this.masksProperties[i].inv) {
@@ -9326,7 +9328,7 @@ AnimationItem.prototype.gotoFrame = function () {
 
 AnimationItem.prototype.renderFrame = function () {
   if (this.isLoaded === false) return;
-  this.renderer.renderFrame(this.currentFrame + this.firstFrame);
+  this.renderer.renderFrame(Math.floor(this.currentFrame + this.firstFrame));
 };
 
 AnimationItem.prototype.play = function (name) {

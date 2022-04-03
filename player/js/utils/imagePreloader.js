@@ -42,30 +42,30 @@ var ImagePreloader = (function () {
   function createImageData(assetData) {
     var path = getAssetsPath(assetData, this.assetsPath, this.path);
     var img = createTag("img");
-    console.log(img);
-    img.onload(this._imageLoaded.bind(this));
-    img.onerror(
-      function () {
-        ob.img = createOnlyFakeImg();
-        this._imageLoaded();
-      }.bind(this)
-    );
     img.src = path;
+
     var ob = {
       img: img,
       assetData: assetData,
     };
+
     return ob;
   }
 
   function loadAssets(assets, cb) {
     this.imagesLoadedCb = cb;
-    var i,
-      len = assets.length;
-    for (i = 0; i < len; i += 1) {
+
+    for (var i = 0; i < assets.length; i++) {
       if (!assets[i].layers) {
         this.totalImages += 1;
-        this.images.push(this._createImageData(assets[i]));
+      }
+    }
+
+    for (var i = 0; i < assets.length; i++) {
+      if (!assets[i].layers) {
+        var obj = this._createImageData(assets[i]);
+        this.images.push(obj);
+        this._imageLoaded();
       }
     }
   }
