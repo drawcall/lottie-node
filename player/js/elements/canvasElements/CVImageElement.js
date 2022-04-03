@@ -53,6 +53,7 @@ CVImageElement.prototype.renderInnerContent = function (parentMatrix) {
   if (this.failed) {
     return;
   }
+  
   this.canvasContext.drawImage(this.img, 0, 0);
 };
 

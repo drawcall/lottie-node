@@ -119,16 +119,19 @@ CanvasRenderer.prototype.restore = function(actionFlag){
         this.canvasContext.restore();
         return;
     }
+
     if(actionFlag){
         this.canvasContext.restore();
         this.globalData.blendMode = 'source-over';
     }
+
     this.contextData.cArrPos -= 1;
     var popped = this.contextData.saved[this.contextData.cArrPos];
     var i,arr = this.contextData.cTr.props;
     for(i=0;i<16;i+=1){
         arr[i] = popped[i];
     }
+    
     this.canvasContext.setTransform(popped[0],popped[1],popped[4],popped[5],popped[12],popped[13]);
     popped = this.contextData.savedOp[this.contextData.cArrPos];
     this.contextData.cO = popped;

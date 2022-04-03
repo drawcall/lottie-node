@@ -278,9 +278,9 @@ var FontManager = (function(){
         this.isLoaded = false;
         this.initTime = Date.now();
     };
+
     //TODO: for now I'm adding these methods to the Class and not the prototype. Think of a better way to implement it. 
     Font.getCombinedCharacterCodes = getCombinedCharacterCodes;
-
     Font.prototype.addChars = addChars;
     Font.prototype.addFonts = addFonts;
     Font.prototype.getCharData = getCharData;

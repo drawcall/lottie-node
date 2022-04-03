@@ -2085,9 +2085,9 @@ var FontManager = (function(){
         this.isLoaded = false;
         this.initTime = Date.now();
     };
+
     //TODO: for now I'm adding these methods to the Class and not the prototype. Think of a better way to implement it. 
     Font.getCombinedCharacterCodes = getCombinedCharacterCodes;
-
     Font.prototype.addChars = addChars;
     Font.prototype.addFonts = addFonts;
     Font.prototype.getCharData = getCharData;
@@ -6233,16 +6233,19 @@ CanvasRenderer.prototype.restore = function(actionFlag){
         this.canvasContext.restore();
         return;
     }
+
     if(actionFlag){
         this.canvasContext.restore();
         this.globalData.blendMode = 'source-over';
     }
+
     this.contextData.cArrPos -= 1;
     var popped = this.contextData.saved[this.contextData.cArrPos];
     var i,arr = this.contextData.cTr.props;
     for(i=0;i<16;i+=1){
         arr[i] = popped[i];
     }
+    
     this.canvasContext.setTransform(popped[0],popped[1],popped[4],popped[5],popped[12],popped[13]);
     popped = this.contextData.savedOp[this.contextData.cArrPos];
     this.contextData.cO = popped;
@@ -6861,6 +6864,7 @@ MaskElement.prototype.getMaskProperty = function(pos){
 };
 
 MaskElement.prototype.renderFrame = function (isFirstFrame) {
+    console.log("mask",isFirstFrame);
     var finalMat = this.element.finalTransform.mat;
     var i, len = this.masksProperties.length;
     for (i = 0; i < len; i++) {
@@ -7016,6 +7020,7 @@ FrameElement.prototype = {
         // If layer has been modified in current tick this will be true
         this._mdf = false;
     },
+    
     /**
      * @function 
      * Calculates all dynamic values
@@ -7118,94 +7123,93 @@ TransformElement.prototype = {
     },
     mHelper: new Matrix()
 };
-function RenderableElement(){
-
-}
+function RenderableElement() {}
 
 RenderableElement.prototype = {
-    initRenderable: function() {
-        //layer's visibility related to inpoint and outpoint. Rename isVisible to isInRange
-        this.isInRange = false;
-        //layer's display state
-        this.hidden = false;
-        // If layer's transparency equals 0, it can be hidden
-        this.isTransparent = false;
-        //list of animated components
-        this.renderableComponents = [];
-    },
-    addRenderableComponent: function(component) {
-        if(this.renderableComponents.indexOf(component) === -1) {
-            this.renderableComponents.push(component);
-        }
-    },
-    removeRenderableComponent: function(component) {
-        if(this.renderableComponents.indexOf(component) !== -1) {
-            this.renderableComponents.splice(this.renderableComponents.indexOf(component), 1);
-        }
-    },
-    prepareRenderableFrame: function(num) {
-        this.checkLayerLimits(num);
-    },
-    checkTransparency: function(){
-        if(this.finalTransform.mProp.o.v <= 0) {
-            if(!this.isTransparent && this.globalData.renderConfig.hideOnTransparent){
-                this.isTransparent = true;
-                this.hide();
-            }
-        } else if(this.isTransparent) {
-            this.isTransparent = false;
-            this.show();
-        }
-    },
-    /**
-     * @function 
-     * Initializes frame related properties.
-     *
-     * @param {number} num
-     * current frame number in Layer's time
-     * 
-     */
-    checkLayerLimits: function(num) {
-        if(this.data.ip - this.data.st <= num && this.data.op - this.data.st > num)
-        {
-            if(this.isInRange !== true){
-                this.globalData._mdf = true;
-                this._mdf = true;
-                this.isInRange = true;
-                this.show();
-            }
-        } else {
-            if(this.isInRange !== false){
-                this.globalData._mdf = true;
-                this.isInRange = false;
-                this.hide();
-            }
-        }
-    },
-    renderRenderable: function() {
-        var i, len = this.renderableComponents.length;
-        for(i = 0; i < len; i += 1) {
-            this.renderableComponents[i].renderFrame(this._isFirstFrame);
-        }
-        /*this.maskManager.renderFrame(this.finalTransform.mat);
-        this.renderableEffectsManager.renderFrame(this._isFirstFrame);*/
-    },
-    sourceRectAtTime: function(){
-        return {
-            top:0,
-            left:0,
-            width:100,
-            height:100
-        };
-    },
-    getLayerSize: function(){
-        if(this.data.ty === 5){
-            return {w:this.data.textData.width,h:this.data.textData.height};
-        }else{
-            return {w:this.data.width,h:this.data.height};
-        }
+  initRenderable: function () {
+    //layer's visibility related to inpoint and outpoint. Rename isVisible to isInRange
+    this.isInRange = false;
+    //layer's display state
+    this.hidden = false;
+    // If layer's transparency equals 0, it can be hidden
+    this.isTransparent = false;
+    //list of animated components
+    this.renderableComponents = [];
+  },
+  addRenderableComponent: function (component) {
+    if (this.renderableComponents.indexOf(component) === -1) {
+      this.renderableComponents.push(component);
     }
+  },
+  removeRenderableComponent: function (component) {
+    if (this.renderableComponents.indexOf(component) !== -1) {
+      this.renderableComponents.splice(this.renderableComponents.indexOf(component), 1);
+    }
+  },
+  prepareRenderableFrame: function (num) {
+    this.checkLayerLimits(num);
+  },
+  checkTransparency: function () {
+    if (this.finalTransform.mProp.o.v <= 0) {
+      if (!this.isTransparent && this.globalData.renderConfig.hideOnTransparent) {
+        this.isTransparent = true;
+        this.hide();
+      }
+    } else if (this.isTransparent) {
+      this.isTransparent = false;
+      this.show();
+    }
+  },
+
+  /**
+   * @function
+   * Initializes frame related properties.
+   *
+   * @param {number} num
+   * current frame number in Layer's time
+   *
+   */
+  checkLayerLimits: function (num) {
+    if (this.data.ip - this.data.st <= num && this.data.op - this.data.st > num) {
+      if (this.isInRange !== true) {
+        this.globalData._mdf = true;
+        this._mdf = true;
+        this.isInRange = true;
+        this.show();
+      }
+    } else {
+      if (this.isInRange !== false) {
+        this.globalData._mdf = true;
+        this.isInRange = false;
+        this.hide();
+      }
+    }
+  },
+
+  renderRenderable: function () {
+    var i,
+      len = this.renderableComponents.length;
+    for (i = 0; i < len; i += 1) {
+      this.renderableComponents[i].renderFrame(this._isFirstFrame);
+    }
+  },
+  sourceRectAtTime: function () {
+    return {
+      top: 0,
+      left: 0,
+      width: 100,
+      height: 100,
+    };
+  },
+  getLayerSize: function () {
+    if (this.data.ty === 5) {
+      return { w: this.data.textData.width, h: this.data.textData.height };
+    } else {
+      return { w: this.data.width, h: this.data.height };
+    }
+  },
 };
+
 function RenderableDOMElement() {}
 
 (function(){
@@ -7965,77 +7969,82 @@ SVGBaseElement.prototype = {
         this.matteElement.setAttribute("mask", "url(" + locationHref + "#" + id + ")");
     }
 };
-function IShapeElement(){
-}
+function IShapeElement() {}
 
 IShapeElement.prototype = {
-    addShapeToModifiers: function(data) {
-        var i, len = this.shapeModifiers.length;
-        for(i=0;i<len;i+=1){
-            this.shapeModifiers[i].addShape(data);
-        }
-    },
-    isShapeInAnimatedModifiers: function(data) {
-        var i = 0, len = this.shapeModifiers.length;
-        while(i < len) {
-            if(this.shapeModifiers[i].isAnimatedWithShape(data)) {
-                return true;
-            }
-        }
-        return false;
-    },
-    renderModifiers: function() {
-        if(!this.shapeModifiers.length){
-            return;
-        }
-        var i, len = this.shapes.length;
-        for(i=0;i<len;i+=1){
-            this.shapes[i].sh.reset();
-        }
-
-        len = this.shapeModifiers.length;
-        for(i=len-1;i>=0;i-=1){
-            this.shapeModifiers[i].processShapes(this._isFirstFrame);
-        }
-    },
-    lcEnum: {
-        '1': 'butt',
-        '2': 'round',
-        '3': 'square'
-    },
-    ljEnum: {
-        '1': 'miter',
-        '2': 'round',
-        '3': 'bevel'
-    },
-    searchProcessedElement: function(elem){
-        var elements = this.processedElements;
-        var i = 0, len = elements.length;
-        while (i < len) {
-            if (elements[i].elem === elem) {
-                return elements[i].pos;
-            }
-            i += 1;
-        }
-        return 0;
-    },
-    addProcessedElement: function(elem, pos){
-        var elements = this.processedElements;
-        var i = elements.length;
-        while(i) {
-            i -= 1;
-            if (elements[i].elem === elem) {
-                elements[i].pos = pos;
-                return;
-            }
-        }
-        elements.push(new ProcessedElement(elem, pos));
-    },
-    prepareFrame: function(num) {
-        this.prepareRenderableFrame(num);
-        this.prepareProperties(num, this.isInRange);
+  addShapeToModifiers: function (data) {
+    var i,
+      len = this.shapeModifiers.length;
+    for (i = 0; i < len; i += 1) {
+      this.shapeModifiers[i].addShape(data);
     }
+  },
+  isShapeInAnimatedModifiers: function (data) {
+    var i = 0,
+      len = this.shapeModifiers.length;
+    while (i < len) {
+      if (this.shapeModifiers[i].isAnimatedWithShape(data)) {
+        return true;
+      }
+    }
+    return false;
+  },
+  renderModifiers: function () {
+    if (!this.shapeModifiers.length) {
+      return;
+    }
+    var i,
+      len = this.shapes.length;
+    for (i = 0; i < len; i += 1) {
+      this.shapes[i].sh.reset();
+    }
+
+    len = this.shapeModifiers.length;
+    for (i = len - 1; i >= 0; i -= 1) {
+      this.shapeModifiers[i].processShapes(this._isFirstFrame);
+    }
+  },
+  lcEnum: {
+    1: "butt",
+    2: "round",
+    3: "square",
+  },
+  ljEnum: {
+    1: "miter",
+    2: "round",
+    3: "bevel",
+  },
+  searchProcessedElement: function (elem) {
+    var elements = this.processedElements;
+    var i = 0,
+      len = elements.length;
+    while (i < len) {
+      if (elements[i].elem === elem) {
+        return elements[i].pos;
+      }
+      i += 1;
+    }
+    return 0;
+  },
+  addProcessedElement: function (elem, pos) {
+    var elements = this.processedElements;
+    var i = elements.length;
+    while (i) {
+      i -= 1;
+      if (elements[i].elem === elem) {
+        elements[i].pos = pos;
+        return;
+      }
+    }
+    elements.push(new ProcessedElement(elem, pos));
+  },
+
+  prepareFrame: function (num) {
+    this.prepareRenderableFrame(num);
+    this.prepareProperties(num, this.isInRange);
+  },
 };
+
 function ITextElement(){
 }
 
@@ -8116,98 +8125,91 @@ ITextElement.prototype.emptyProp = new LetterProps();
 ITextElement.prototype.destroy = function(){
     
 };
-function ICompElement(){}
+function ICompElement() {}
 
 extendPrototype([BaseElement, TransformElement, HierarchyElement, FrameElement, RenderableDOMElement], ICompElement);
 
-ICompElement.prototype.initElement = function(data,globalData,comp) {
-    this.initFrame();
-    this.initBaseData(data, globalData, comp);
-    this.initTransform(data, globalData, comp);
-    this.initRenderable();
-    this.initHierarchy();
-    this.initRendererElement();
-    this.createContainerElements();
-    this.createRenderableComponents();
-    if(this.data.xt || !globalData.progressiveLoad){
-        this.buildAllItems();
-    }
-    this.hide();
+ICompElement.prototype.initElement = function (data, globalData, comp) {
+  this.initFrame();
+  this.initBaseData(data, globalData, comp);
+  this.initTransform(data, globalData, comp);
+  this.initRenderable();
+  this.initHierarchy();
+  this.initRendererElement();
+  this.createContainerElements();
+  this.createRenderableComponents();
+  if (this.data.xt || !globalData.progressiveLoad) {
+    this.buildAllItems();
+  }
+  this.hide();
 };
 
-/*ICompElement.prototype.hide = function(){
-    if(!this.hidden){
-        this.hideElement();
-        var i,len = this.elements.length;
-        for( i = 0; i < len; i+=1 ){
-            if(this.elements[i]){
-                this.elements[i].hide();
-            }
-        }
-    }
-};*/
+ICompElement.prototype.prepareFrame = function (num) {
+  this._mdf = false;
+  this.prepareRenderableFrame(num);
+  this.prepareProperties(num, this.isInRange);
+  if (!this.isInRange && !this.data.xt) {
+    return;
+  }
 
-ICompElement.prototype.prepareFrame = function(num){
-    this._mdf = false;
-    this.prepareRenderableFrame(num);
-    this.prepareProperties(num, this.isInRange);
-    if(!this.isInRange && !this.data.xt){
-        return;
+  if (!this.tm._placeholder) {
+    var timeRemapped = this.tm.v;
+    if (timeRemapped === this.data.op) {
+      timeRemapped = this.data.op - 1;
     }
+    this.renderedFrame = timeRemapped;
+  } else {
+    this.renderedFrame = num / this.data.sr;
+  }
+  
+  var i,
+    len = this.elements.length;
+  if (!this.completeLayers) {
+    this.checkLayers(this.renderedFrame);
+  }
 
-    if (!this.tm._placeholder) {
-        var timeRemapped = this.tm.v;
-        if(timeRemapped === this.data.op){
-            timeRemapped = this.data.op - 1;
-        }
-        this.renderedFrame = timeRemapped;
-    } else {
-        this.renderedFrame = num/this.data.sr;
+  //This iteration needs to be backwards because of how expressions connect between each other
+  for (i = len - 1; i >= 0; i -= 1) {
+    if (this.completeLayers || this.elements[i]) {
+      this.elements[i].prepareFrame(this.renderedFrame - this.layers[i].st);
+      if (this.elements[i]._mdf) {
+        this._mdf = true;
+      }
     }
-    var i,len = this.elements.length;
-    if(!this.completeLayers){
-        this.checkLayers(this.renderedFrame);
-    }
-    //This iteration needs to be backwards because of how expressions connect between each other
-    for( i = len - 1; i >= 0; i -= 1 ){
-        if(this.completeLayers || this.elements[i]){
-            this.elements[i].prepareFrame(this.renderedFrame - this.layers[i].st);
-            if(this.elements[i]._mdf) {
-                this._mdf = true;
-            }
-        }
-    }
+  }
 };
 
-ICompElement.prototype.renderInnerContent = function() {
-    var i,len = this.layers.length;
-    for( i = 0; i < len; i += 1 ){
-        if(this.completeLayers || this.elements[i]){
-            this.elements[i].renderFrame();
-        }
+ICompElement.prototype.renderInnerContent = function () {
+  var i,
+    len = this.layers.length;
+  for (i = 0; i < len; i += 1) {
+    if (this.completeLayers || this.elements[i]) {
+      this.elements[i].renderFrame();
     }
+  }
 };
 
-ICompElement.prototype.setElements = function(elems){
-    this.elements = elems;
+ICompElement.prototype.setElements = function (elems) {
+  this.elements = elems;
 };
 
-ICompElement.prototype.getElements = function(){
-    return this.elements;
+ICompElement.prototype.getElements = function () {
+  return this.elements;
 };
 
-ICompElement.prototype.destroyElements = function(){
-    var i,len = this.layers.length;
-    for( i = 0; i < len; i+=1 ){
-        if(this.elements[i]){
-            this.elements[i].destroy();
-        }
+ICompElement.prototype.destroyElements = function () {
+  var i,
+    len = this.layers.length;
+  for (i = 0; i < len; i += 1) {
+    if (this.elements[i]) {
+      this.elements[i].destroy();
     }
+  }
 };
 
-ICompElement.prototype.destroy = function(){
-    this.destroyElements();
-    this.destroyBaseElement();
+ICompElement.prototype.destroy = function () {
+  this.destroyElements();
+  this.destroyBaseElement();
 };
 
 function IImageElement(data, globalData, comp) {
@@ -9367,6 +9369,7 @@ CVBaseElement.prototype = {
       this.maskManager._isFirstFrame = true;
     }
   },
+  
   renderFrame: function () {
     if (this.hidden || this.data.hd) return;
 
@@ -9452,6 +9455,7 @@ CVImageElement.prototype.renderInnerContent = function (parentMatrix) {
   if (this.failed) {
     return;
   }
+  
   this.canvasContext.drawImage(this.img, 0, 0);
 };
 
@@ -11474,7 +11478,7 @@ AnimationItem.prototype.gotoFrame = function () {
 
 AnimationItem.prototype.renderFrame = function () {
   if (this.isLoaded === false) return;
-  this.renderer.renderFrame(Math.floor(this.currentFrame + this.firstFrame));
+  this.renderer.renderFrame(this.currentFrame + this.firstFrame);
 };
 
 AnimationItem.prototype.play = function (name) {

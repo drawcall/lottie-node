@@ -31,6 +31,7 @@ CVBaseElement.prototype = {
       this.maskManager._isFirstFrame = true;
     }
   },
+  
   renderFrame: function () {
     if (this.hidden || this.data.hd) return;
 
