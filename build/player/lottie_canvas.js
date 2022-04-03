@@ -2087,7 +2087,7 @@ var FontManager = (function(){
     }
 
     function loaded() {
-        return this.isLoaded;
+        return true;
     }
 
     var Font = function(){
@@ -9374,21 +9374,14 @@ AnimationItem.prototype.waitForFontsLoaded = function () {
   if (!this.renderer) {
     return;
   }
-  //console.log(this.renderer.globalData);
-
-  if (this.renderer.globalData.fontManager.loaded()) {
-    this.checkLoaded();
-  } else {
-    setTimeout(this.waitForFontsLoaded.bind(this), 20);
-  }
+  this.checkLoaded();
 };
 
 AnimationItem.prototype.checkLoaded = function () {
-  if (
-    !this.isLoaded &&
-    this.renderer.globalData.fontManager.loaded() &&
-    (this.imagePreloader.loaded() || this.renderer.rendererType !== "canvas")
-  ) {
+  console.log(this.imagePreloader.loaded());
+  console.log(this.imagePreloader.loaded());
+
+  if (!this.isLoaded && (this.imagePreloader.loaded() || this.renderer.rendererType !== "canvas")) {
     this.isLoaded = true;
     dataManager.completeData(this.animationData, this.renderer.globalData.fontManager);
     if (expressionsPlugin) {
@@ -9402,6 +9395,8 @@ AnimationItem.prototype.checkLoaded = function () {
       }.bind(this),
       0
     );
+
+    console.log("------------");
     this.gotoFrame();
     if (this.autoplay) {
       this.play();
@@ -12203,9 +12198,12 @@ GroupEffect.prototype.init = function (data, element) {
   lottiejs.loadAnimation = loadAnimation;
   lottiejs.setSubframeRendering = setSubframeRendering;
   lottiejs.resize = animationManager.resize;
-  //lottiejs.start = start;
+
   lottiejs.goToAndStop = animationManager.goToAndStop;
-  lottiejs.destroy = animationManager.destroy;
+  lottiejs.destroy = function () {
+    lottiejs.canvas = null;
+    animationManager.destroy();
+  };
   lottiejs.setQuality = setQuality;
   lottiejs.inBrowser = inBrowser;
   lottiejs.installPlugin = installPlugin;
@@ -12213,8 +12211,8 @@ GroupEffect.prototype.init = function (data, element) {
   lottiejs.unfreeze = animationManager.unfreeze;
   lottiejs.getRegisteredAnimations = animationManager.getRegisteredAnimations;
   lottiejs.__getFactory = getFactory;
-  lottiejs.version = "5.4.3";
 
+  lottiejs.version = "5.4.3";
   var standalone = "__[STANDALONE]__";
   var animationData = "__[ANIMATIONDATA]__";
   var renderer = "";

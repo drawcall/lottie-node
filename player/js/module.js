@@ -90,9 +90,12 @@
   lottiejs.loadAnimation = loadAnimation;
   lottiejs.setSubframeRendering = setSubframeRendering;
   lottiejs.resize = animationManager.resize;
-  //lottiejs.start = start;
+
   lottiejs.goToAndStop = animationManager.goToAndStop;
-  lottiejs.destroy = animationManager.destroy;
+  lottiejs.destroy = function () {
+    lottiejs.canvas = null;
+    animationManager.destroy();
+  };
   lottiejs.setQuality = setQuality;
   lottiejs.inBrowser = inBrowser;
   lottiejs.installPlugin = installPlugin;
@@ -100,8 +103,8 @@
   lottiejs.unfreeze = animationManager.unfreeze;
   lottiejs.getRegisteredAnimations = animationManager.getRegisteredAnimations;
   lottiejs.__getFactory = getFactory;
-  lottiejs.version = "[[BM_VERSION]]";
 
+  lottiejs.version = "[[BM_VERSION]]";
   var standalone = "__[STANDALONE]__";
   var animationData = "__[ANIMATIONDATA]__";
   var renderer = "";

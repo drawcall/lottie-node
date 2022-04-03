@@ -1,5 +1,6 @@
 function CanvasRenderer(animationItem, config){
     this.animationItem = animationItem;
+
     this.renderConfig = {
         clearCanvas: (config && config.clearCanvas !== undefined) ? config.clearCanvas : true,
         context: (config && config.context) || null,
@@ -8,10 +9,12 @@ function CanvasRenderer(animationItem, config){
         imagePreserveAspectRatio: (config && config.imagePreserveAspectRatio) || 'xMidYMid slice',
         className: (config && config.className) || ''
     };
+
     this.renderConfig.dpr = (config && config.dpr) || 1;
     if (this.animationItem.wrapper) {
         this.renderConfig.dpr = (config && config.dpr) || 1;
     }
+
     this.renderedFrame = -1;
     this.globalData = {
         frameNum: -1,
@@ -19,6 +22,7 @@ function CanvasRenderer(animationItem, config){
         renderConfig: this.renderConfig,
         currentGlobalAlpha: -1
     };
+
     this.contextData = new CVContextData();
     this.elements = [];
     this.pendingElements = [];
@@ -26,7 +30,8 @@ function CanvasRenderer(animationItem, config){
     this.completeLayers = false;
     this.rendererType = 'canvas';
 }
-extendPrototype([BaseRenderer],CanvasRenderer);
+
+extendPrototype([BaseRenderer], CanvasRenderer);
 
 CanvasRenderer.prototype.createShape = function (data) {
     return new CVShapeElement(data, this.globalData, this);
@@ -267,8 +272,6 @@ CanvasRenderer.prototype.renderFrame = function(num){
     this.globalData._mdf = !this.renderConfig.clearCanvas;
     this.globalData.projectInterface.currentFrame = num;
 
-     // console.log('--------');
-     // console.log('NEW: ',num);
     var i, len = this.layers.length;
     if(!this.completeLayers){
         this.checkLayers(num);

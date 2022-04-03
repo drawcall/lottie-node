@@ -224,9 +224,11 @@ var FontManager = (function(){
             }
             i+= 1;
         }
+        
         if(console && console.warn) {
             console.warn('Missing character from exported characters list: ', char, style, font);
         }
+
         return emptyChar;
     }
 
@@ -269,7 +271,7 @@ var FontManager = (function(){
     }
 
     function loaded() {
-        return this.isLoaded;
+        return true;
     }
 
     var Font = function(){
