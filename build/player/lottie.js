@@ -299,38 +299,44 @@ function createNS(type) {
 	return document.createElementNS(svgNS, type);
 }
 function createTag(type) {
-  if (type === "canvas") return new lottiejs.canvas.Canvas(1, 1);
-  else if (type === "image") return new lottiejs.canvas.Image();
+  switch (type) {
+    case "img":
+    case "image":
+      return new lottiejs.canvas.Image();
 
-  return null;
+    default:
+      return new lottiejs.canvas.Canvas(1, 1);
+  }
 }
 
-function DynamicPropertyContainer(){};
+function DynamicPropertyContainer() {}
 DynamicPropertyContainer.prototype = {
-	addDynamicProperty: function(prop) {
-		if(this.dynamicProperties.indexOf(prop) === -1) {
-	        this.dynamicProperties.push(prop);
-	        this.container.addDynamicProperty(this);
-	    	this._isAnimated = true;
-	    }
-	},
-	iterateDynamicProperties: function(){
-	    this._mdf = false;
-	    var i, len = this.dynamicProperties.length;
-	    for(i=0;i<len;i+=1){
-	        this.dynamicProperties[i].getValue();
-	        if(this.dynamicProperties[i]._mdf) {
-	            this._mdf = true;
-	        }
-	    }
-	},
-	initDynamicPropertyContainer: function(container){
-	    this.container = container;
-	    this.dynamicProperties = [];
-	    this._mdf = false;
-	    this._isAnimated = false;
-	}
-}
+  addDynamicProperty: function (prop) {
+    if (this.dynamicProperties.indexOf(prop) === -1) {
+      this.dynamicProperties.push(prop);
+      this.container.addDynamicProperty(this);
+      this._isAnimated = true;
+    }
+  },
+  iterateDynamicProperties: function () {
+    this._mdf = false;
+    var i,
+      len = this.dynamicProperties.length;
+    for (i = 0; i < len; i += 1) {
+      this.dynamicProperties[i].getValue();
+      if (this.dynamicProperties[i]._mdf) {
+        this._mdf = true;
+      }
+    }
+  },
+  initDynamicPropertyContainer: function (container) {
+    this.container = container;
+    this.dynamicProperties = [];
+    this._mdf = false;
+    this._isAnimated = false;
+  },
+};
+
 var getBlendMode = (function() {
 
 	var blendModeEnums = {
@@ -1169,30 +1175,6 @@ var BezierFactory = (function(){
     return ob;
 
 }());
-(function () {
-    var lastTime = 0;
-    var vendors = ['ms', 'moz', 'webkit', 'o'];
-    for(var x = 0; x < vendors.length && !global.requestAnimationFrame; ++x) {
-        global.requestAnimationFrame = global[vendors[x] + 'RequestAnimationFrame'];
-        global.cancelAnimationFrame = global[vendors[x] + 'CancelAnimationFrame'] || global[vendors[x] + 'CancelRequestAnimationFrame'];
-    }
-    if(!global.requestAnimationFrame)
-        global.requestAnimationFrame = function (callback, element) {
-            var currTime = new Date().getTime();
-            var timeToCall = Math.max(0, 16 - (currTime - lastTime));
-            var id = setTimeout(function () {
-                    callback(currTime + timeToCall);
-                },
-                timeToCall);
-            lastTime = currTime + timeToCall;
-            return id;
-        };
-    if(!global.cancelAnimationFrame)
-        global.cancelAnimationFrame = function (id) {
-            clearTimeout(id);
-        };
-}());
-
 function extendPrototype(sources,destination){
     var i, len = sources.length, sourcePrototype;
     for (i = 0;i < len;i += 1) {
@@ -2046,9 +2028,11 @@ var FontManager = (function(){
             }
             i+= 1;
         }
+        
         if(console && console.warn) {
             console.warn('Missing character from exported characters list: ', char, style, font);
         }
+
         return emptyChar;
     }
 
@@ -4258,14 +4242,13 @@ var ImagePreloader = (function () {
   function createImageData(assetData) {
     var path = getAssetsPath(assetData, this.assetsPath, this.path);
     var img = createTag("img");
-    img.addEventListener("load", this._imageLoaded.bind(this), false);
-    img.addEventListener(
-      "error",
+    console.log(img);
+    img.onload(this._imageLoaded.bind(this));
+    img.onerror(
       function () {
         ob.img = createOnlyFakeImg();
         this._imageLoaded();
-      }.bind(this),
-      false
+      }.bind(this)
     );
     img.src = path;
     var ob = {
@@ -6076,8 +6059,7 @@ SVGRenderer.prototype.renderFrame = function(num){
     }else{
         this.renderedFrame = num;
     }
-    // console.log('-------');
-    // console.log('FRAME ',num);
+    
     this.globalData.frameNum = num;
     this.globalData.frameId += 1;
     this.globalData.projectInterface.currentFrame = num;
@@ -6130,6 +6112,7 @@ SVGRenderer.prototype.show = function(){
 
 function CanvasRenderer(animationItem, config){
     this.animationItem = animationItem;
+
     this.renderConfig = {
         clearCanvas: (config && config.clearCanvas !== undefined) ? config.clearCanvas : true,
         context: (config && config.context) || null,
@@ -6138,10 +6121,12 @@ function CanvasRenderer(animationItem, config){
         imagePreserveAspectRatio: (config && config.imagePreserveAspectRatio) || 'xMidYMid slice',
         className: (config && config.className) || ''
     };
+
     this.renderConfig.dpr = (config && config.dpr) || 1;
     if (this.animationItem.wrapper) {
         this.renderConfig.dpr = (config && config.dpr) || 1;
     }
+
     this.renderedFrame = -1;
     this.globalData = {
         frameNum: -1,
@@ -6149,6 +6134,7 @@ function CanvasRenderer(animationItem, config){
         renderConfig: this.renderConfig,
         currentGlobalAlpha: -1
     };
+
     this.contextData = new CVContextData();
     this.elements = [];
     this.pendingElements = [];
@@ -6156,7 +6142,8 @@ function CanvasRenderer(animationItem, config){
     this.completeLayers = false;
     this.rendererType = 'canvas';
 }
-extendPrototype([BaseRenderer],CanvasRenderer);
+
+extendPrototype([BaseRenderer], CanvasRenderer);
 
 CanvasRenderer.prototype.createShape = function (data) {
     return new CVShapeElement(data, this.globalData, this);
@@ -6191,21 +6178,19 @@ CanvasRenderer.prototype.ctxTransform = function(props){
     this.transformMat.cloneFromProps(props);
     var cProps = this.contextData.cTr.props;
     this.transformMat.transform(cProps[0],cProps[1],cProps[2],cProps[3],cProps[4],cProps[5],cProps[6],cProps[7],cProps[8],cProps[9],cProps[10],cProps[11],cProps[12],cProps[13],cProps[14],cProps[15]);
-    //this.contextData.cTr.transform(props[0],props[1],props[2],props[3],props[4],props[5],props[6],props[7],props[8],props[9],props[10],props[11],props[12],props[13],props[14],props[15]);
+    
     this.contextData.cTr.cloneFromProps(this.transformMat.props);
     var trProps = this.contextData.cTr.props;
     this.canvasContext.setTransform(trProps[0],trProps[1],trProps[4],trProps[5],trProps[12],trProps[13]);
 };
 
 CanvasRenderer.prototype.ctxOpacity = function(op){
-    /*if(op === 1){
-        return;
-    }*/
     if(!this.renderConfig.clearCanvas){
         this.canvasContext.globalAlpha *= op < 0 ? 0 : op;
         this.globalData.currentGlobalAlpha = this.contextData.cO;
         return;
     }
+
     this.contextData.cO *= op < 0 ? 0 : op;
     if(this.globalData.currentGlobalAlpha !== this.contextData.cO) {
         this.canvasContext.globalAlpha = this.contextData.cO;
@@ -6268,12 +6253,6 @@ CanvasRenderer.prototype.restore = function(actionFlag){
 CanvasRenderer.prototype.configAnimation = function(animData){
     if(this.animationItem.wrapper){
         this.animationItem.container = this.animationItem.wrapper;
-        // this.animationItem.container.style.width = '100%';
-        // this.animationItem.container.style.height = '100%';
-        
-        // this.animationItem.container.style.transformOrigin = this.animationItem.container.style.mozTransformOrigin = this.animationItem.container.style.webkitTransformOrigin = this.animationItem.container.style['-webkit-transform'] = "0px 0px 0px";
-        // this.animationItem.wrapper.appendChild(this.animationItem.container);
-
         this.canvasContext = this.animationItem.container.getContext('2d');
     }else{
         this.canvasContext = this.renderConfig.context;
@@ -6304,15 +6283,8 @@ CanvasRenderer.prototype.configAnimation = function(animData){
 CanvasRenderer.prototype.updateContainerSize = function () {
     this.reset();
     var elementWidth,elementHeight;
-    if(this.animationItem.wrapper && this.animationItem.container){
-        elementWidth = this.animationItem.wrapper.offsetWidth;
-        elementHeight = this.animationItem.wrapper.offsetHeight;
-        // this.animationItem.container.setAttribute('width',elementWidth * this.renderConfig.dpr );
-        // this.animationItem.container.setAttribute('height',elementHeight * this.renderConfig.dpr);
-    }else{
-        elementWidth = this.canvasContext.canvas.width * this.renderConfig.dpr;
-        elementHeight = this.canvasContext.canvas.height * this.renderConfig.dpr;
-    }
+    elementWidth = this.canvasContext.canvas.width * this.renderConfig.dpr;
+    elementHeight = this.canvasContext.canvas.height * this.renderConfig.dpr;
     
     var elementRel,animationRel;
     if(this.renderConfig.preserveAspectRatio.indexOf('meet') !== -1 || this.renderConfig.preserveAspectRatio.indexOf('slice') !== -1){
@@ -6358,12 +6330,7 @@ CanvasRenderer.prototype.updateContainerSize = function () {
         this.transformCanvas.ty = 0;
     }
     this.transformCanvas.props = [this.transformCanvas.sx,0,0,0,0,this.transformCanvas.sy,0,0,0,0,1,0,this.transformCanvas.tx,this.transformCanvas.ty,0,1];
-    /*var i, len = this.elements.length;
-    for(i=0;i<len;i+=1){
-        if(this.elements[i] && this.elements[i].data.ty === 0){
-            this.elements[i].resize(this.globalData.transformCanvas);
-        }
-    }*/
+    
     this.ctxTransform(this.transformCanvas.props);
     this.canvasContext.beginPath();
     this.canvasContext.rect(0,0,this.transformCanvas.w,this.transformCanvas.h);
@@ -6373,8 +6340,9 @@ CanvasRenderer.prototype.updateContainerSize = function () {
 
 CanvasRenderer.prototype.destroy = function () {
     if(this.renderConfig.clearCanvas) {
-        this.animationItem.wrapper.innerHTML = '';
+        //this.animationItem.wrapper.innerHTML = '';
     }
+
     var i, len = this.layers ? this.layers.length : 0;
     for (i = len - 1; i >= 0; i-=1) {
         if(this.elements[i]) {
@@ -6387,18 +6355,22 @@ CanvasRenderer.prototype.destroy = function () {
     this.destroyed = true;
 };
 
+CanvasRenderer.prototype.drawRect = function(){
+    this.canvasContext.fillStyle = 'red';
+    this.canvasContext.fillRect(0, 0, this.transformCanvas.w/2, this.transformCanvas.h/2);
+}
+
 CanvasRenderer.prototype.renderFrame = function(num){
     if((this.renderedFrame == num && this.renderConfig.clearCanvas === true) || this.destroyed || num === -1){
         return;
     }
+
     this.renderedFrame = num;
     this.globalData.frameNum = num - this.animationItem._isFirstFrame;
     this.globalData.frameId += 1;
     this.globalData._mdf = !this.renderConfig.clearCanvas;
     this.globalData.projectInterface.currentFrame = num;
 
-     // console.log('--------');
-     // console.log('NEW: ',num);
     var i, len = this.layers.length;
     if(!this.completeLayers){
         this.checkLayers(num);
@@ -6409,17 +6381,20 @@ CanvasRenderer.prototype.renderFrame = function(num){
             this.elements[i].prepareFrame(num - this.layers[i].st);
         }
     }
+
     if(this.globalData._mdf) {
         if(this.renderConfig.clearCanvas === true){
             this.canvasContext.clearRect(0, 0, this.transformCanvas.w, this.transformCanvas.h);
         }else{
             this.save();
         }
+
         for (i = len - 1; i >= 0; i-=1) {
             if(this.completeLayers || this.elements[i]){
                 this.elements[i].renderFrame();
             }
         }
+
         if(this.renderConfig.clearCanvas !== true){
             this.restore();
         }
@@ -8233,24 +8208,29 @@ ICompElement.prototype.destroy = function(){
     this.destroyBaseElement();
 };
 
-function IImageElement(data,globalData,comp){
-    this.assetData = globalData.getAssetData(data.refId);
-    this.initElement(data,globalData,comp);
+function IImageElement(data, globalData, comp) {
+  this.assetData = globalData.getAssetData(data.refId);
+  this.initElement(data, globalData, comp);
 }
 
-extendPrototype([BaseElement,TransformElement,SVGBaseElement,HierarchyElement,FrameElement,RenderableDOMElement], IImageElement);
+extendPrototype(
+  [BaseElement, TransformElement, SVGBaseElement, HierarchyElement, FrameElement, RenderableDOMElement],
+  IImageElement
+);
 
-IImageElement.prototype.createContent = function(){
+IImageElement.prototype.createContent = function () {
+  var assetPath = this.globalData.getAssetsPath(this.assetData);
 
-    var assetPath = this.globalData.getAssetsPath(this.assetData);
+  this.innerElem = createNS("image");
+  this.innerElem.setAttribute("width", this.assetData.w + "px");
+  this.innerElem.setAttribute("height", this.assetData.h + "px");
+  this.innerElem.setAttribute(
+    "preserveAspectRatio",
+    this.assetData.pr || this.globalData.renderConfig.imagePreserveAspectRatio
+  );
+  this.innerElem.setAttributeNS("http://www.w3.org/1999/xlink", "href", assetPath);
 
-    this.innerElem = createNS('image');
-    this.innerElem.setAttribute('width',this.assetData.w+"px");
-    this.innerElem.setAttribute('height',this.assetData.h+"px");
-    this.innerElem.setAttribute('preserveAspectRatio',this.assetData.pr || this.globalData.renderConfig.imagePreserveAspectRatio);
-    this.innerElem.setAttributeNS('http://www.w3.org/1999/xlink','href',assetPath);
-    
-    this.layerElement.appendChild(this.innerElem);
+  this.layerElement.appendChild(this.innerElem);
 };
 
 function ISolidElement(data,globalData,comp){
@@ -9352,118 +9332,132 @@ CVContextData.prototype.reset = function() {
 	this.cTr.reset();
     this.cO = 1;
 };
-function CVBaseElement(){
-}
+function CVBaseElement() {}
 
 CVBaseElement.prototype = {
-    createElements: function(){},
-    initRendererElement: function(){},
-    createContainerElements: function(){
-        this.canvasContext = this.globalData.canvasContext;
-        this.renderableEffectsManager = new CVEffects(this);
-    },
-    createContent: function(){},
-    setBlendMode: function(){
-        var globalData = this.globalData;
-        if(globalData.blendMode !== this.data.bm) {
-            globalData.blendMode = this.data.bm;
-            var blendModeValue = getBlendMode(this.data.bm);
-            globalData.canvasContext.globalCompositeOperation = blendModeValue;
-        }
-    },
-    createRenderableComponents: function(){
-        this.maskManager = new CVMaskElement(this.data, this);
-    },
-    hideElement: function(){
-        if (!this.hidden && (!this.isInRange || this.isTransparent)) {
-            this.hidden = true;
-        }
-    },
-    showElement: function(){
-        if (this.isInRange && !this.isTransparent){
-            this.hidden = false;
-            this._isFirstFrame = true;
-            this.maskManager._isFirstFrame = true;
-        }
-    },
-    renderFrame: function() {
-        if (this.hidden || this.data.hd) {
-            return;
-        }
-        this.renderTransform();
-        this.renderRenderable();
-        this.setBlendMode();
-        this.globalData.renderer.save();
-        this.globalData.renderer.ctxTransform(this.finalTransform.mat.props);
-        this.globalData.renderer.ctxOpacity(this.finalTransform.mProp.o.v);
-        this.renderInnerContent();
-        this.globalData.renderer.restore();
-        if(this.maskManager.hasMasks) {
-            this.globalData.renderer.restore(true);
-        }
-        if (this._isFirstFrame) {
-            this._isFirstFrame = false;
-        }
-    },
-    destroy: function(){
-        this.canvasContext = null;
-        this.data = null;
-        this.globalData = null;
-        this.maskManager.destroy();
-    },
-    mHelper: new Matrix()
+  createElements: function () {},
+  initRendererElement: function () {},
+  createContainerElements: function () {
+    this.canvasContext = this.globalData.canvasContext;
+    this.renderableEffectsManager = new CVEffects(this);
+  },
+  createContent: function () {},
+  setBlendMode: function () {
+    var globalData = this.globalData;
+    if (globalData.blendMode !== this.data.bm) {
+      globalData.blendMode = this.data.bm;
+      var blendModeValue = getBlendMode(this.data.bm);
+      globalData.canvasContext.globalCompositeOperation = blendModeValue;
+    }
+  },
+  createRenderableComponents: function () {
+    this.maskManager = new CVMaskElement(this.data, this);
+  },
+  hideElement: function () {
+    if (!this.hidden && (!this.isInRange || this.isTransparent)) {
+      this.hidden = true;
+    }
+  },
+  showElement: function () {
+    if (this.isInRange && !this.isTransparent) {
+      this.hidden = false;
+      this._isFirstFrame = true;
+      this.maskManager._isFirstFrame = true;
+    }
+  },
+  renderFrame: function () {
+    if (this.hidden || this.data.hd) {
+      return;
+    }
+    this.renderTransform();
+    this.renderRenderable();
+    this.setBlendMode();
+    this.globalData.renderer.save();
+    this.globalData.renderer.ctxTransform(this.finalTransform.mat.props);
+    this.globalData.renderer.ctxOpacity(this.finalTransform.mProp.o.v);
+    this.renderInnerContent();
+    this.globalData.renderer.restore();
+    if (this.maskManager.hasMasks) {
+      this.globalData.renderer.restore(true);
+    }
+    if (this._isFirstFrame) {
+      this._isFirstFrame = false;
+    }
+  },
+  destroy: function () {
+    this.canvasContext = null;
+    this.data = null;
+    this.globalData = null;
+    this.maskManager.destroy();
+  },
+  mHelper: new Matrix(),
 };
+
 CVBaseElement.prototype.hide = CVBaseElement.prototype.hideElement;
 CVBaseElement.prototype.show = CVBaseElement.prototype.showElement;
 
-function CVImageElement(data, globalData, comp){
-    this.failed = false;
-    this.assetData = globalData.getAssetData(data.refId);
-    this.img = globalData.imageLoader.getImage(this.assetData);
-    this.initElement(data,globalData,comp);
+function CVImageElement(data, globalData, comp) {
+  this.failed = false;
+  this.assetData = globalData.getAssetData(data.refId);
+  this.img = globalData.imageLoader.getImage(this.assetData);
+  this.initElement(data, globalData, comp);
 }
-extendPrototype([BaseElement, TransformElement, CVBaseElement, HierarchyElement, FrameElement, RenderableElement], CVImageElement);
+extendPrototype(
+  [BaseElement, TransformElement, CVBaseElement, HierarchyElement, FrameElement, RenderableElement],
+  CVImageElement
+);
 
 CVImageElement.prototype.initElement = SVGShapeElement.prototype.initElement;
 CVImageElement.prototype.prepareFrame = IImageElement.prototype.prepareFrame;
 
-CVImageElement.prototype.createContent = function(){
+CVImageElement.prototype.createContent = function () {
+  if (this.img.width && (this.assetData.w !== this.img.width || this.assetData.h !== this.img.height)) {
+    var canvas = createTag("canvas");
+    canvas.width = this.assetData.w;
+    canvas.height = this.assetData.h;
+    var ctx = canvas.getContext("2d");
 
-    if (this.img.width && (this.assetData.w !== this.img.width || this.assetData.h !== this.img.height)) {
-        var canvas = createTag('canvas');
-        canvas.width = this.assetData.w;
-        canvas.height = this.assetData.h;
-        var ctx = canvas.getContext('2d');
-
-        var imgW = this.img.width;
-        var imgH = this.img.height;
-        var imgRel = imgW / imgH;
-        var canvasRel = this.assetData.w/this.assetData.h;
-        var widthCrop, heightCrop;
-        var par = this.assetData.pr || this.globalData.renderConfig.imagePreserveAspectRatio;
-        if((imgRel > canvasRel && par === 'xMidYMid slice') || (imgRel < canvasRel && par !== 'xMidYMid slice')) {
-            heightCrop = imgH;
-            widthCrop = heightCrop*canvasRel;
-        } else {
-            widthCrop = imgW;
-            heightCrop = widthCrop/canvasRel;
-        }
-        ctx.drawImage(this.img,(imgW-widthCrop)/2,(imgH-heightCrop)/2,widthCrop,heightCrop,0,0,this.assetData.w,this.assetData.h);
-        this.img = canvas;
+    var imgW = this.img.width;
+    var imgH = this.img.height;
+    var imgRel = imgW / imgH;
+    var canvasRel = this.assetData.w / this.assetData.h;
+    var widthCrop, heightCrop;
+    var par = this.assetData.pr || this.globalData.renderConfig.imagePreserveAspectRatio;
+    
+    if ((imgRel > canvasRel && par === "xMidYMid slice") || (imgRel < canvasRel && par !== "xMidYMid slice")) {
+      heightCrop = imgH;
+      widthCrop = heightCrop * canvasRel;
+    } else {
+      widthCrop = imgW;
+      heightCrop = widthCrop / canvasRel;
     }
 
+    ctx.drawImage(
+      this.img,
+      (imgW - widthCrop) / 2,
+      (imgH - heightCrop) / 2,
+      widthCrop,
+      heightCrop,
+      0,
+      0,
+      this.assetData.w,
+      this.assetData.h
+    );
+    this.img = canvas;
+  }
 };
 
-CVImageElement.prototype.renderInnerContent = function(parentMatrix){
-    if (this.failed) {
-        return;
-    }
-    this.canvasContext.drawImage(this.img, 0, 0);
+CVImageElement.prototype.renderInnerContent = function (parentMatrix) {
+  if (this.failed) {
+    return;
+  }
+  this.canvasContext.drawImage(this.img, 0, 0);
 };
 
-CVImageElement.prototype.destroy = function(){
-    this.img = null;
+CVImageElement.prototype.destroy = function () {
+  this.img = null;
 };
+
 function CVCompElement(data, globalData, comp) {
     this.completeLayers = false;
     this.layers = data.layers;
@@ -9553,6 +9547,7 @@ CVMaskElement.prototype.destroy = function(){
     this.element = null;
 };
 function CVShapeElement(data, globalData, comp) {
+    
     this.shapes = [];
     this.shapesData = data.shapes;
     this.stylesList = [];
@@ -10012,19 +10007,24 @@ CVShapeElement.prototype.destroy = function(){
 
 
 function CVSolidElement(data, globalData, comp) {
-    this.initElement(data,globalData,comp);
+  this.initElement(data, globalData, comp);
 }
-extendPrototype([BaseElement, TransformElement, CVBaseElement, HierarchyElement, FrameElement, RenderableElement], CVSolidElement);
+
+extendPrototype(
+  [BaseElement, TransformElement, CVBaseElement, HierarchyElement, FrameElement, RenderableElement],
+  CVSolidElement
+);
 
 CVSolidElement.prototype.initElement = SVGShapeElement.prototype.initElement;
 CVSolidElement.prototype.prepareFrame = IImageElement.prototype.prepareFrame;
 
-CVSolidElement.prototype.renderInnerContent = function() {
-    var ctx = this.canvasContext;
-    ctx.fillStyle = this.data.sc;
-    ctx.fillRect(0, 0, this.data.sw, this.data.sh);
-    //
+CVSolidElement.prototype.renderInnerContent = function () {
+  var ctx = this.canvasContext;
+  ctx.fillStyle = this.data.sc;
+  ctx.fillRect(0, 0, this.data.sw, this.data.sh);
+  //
 };
+
 function CVTextElement(data, globalData, comp) {
   this.textSpans = [];
   this.yOffset = 0;
@@ -10272,10 +10272,9 @@ CVTextElement.prototype.renderInnerContent = function () {
   }
 };
 
-function CVEffects() {
+function CVEffects() {}
+CVEffects.prototype.renderFrame = function () {};
 
-}
-CVEffects.prototype.renderFrame = function(){};
 function HBaseElement(data, globalData, comp) {}
 HBaseElement.prototype = {
   checkBlendMode: function () {},
@@ -10978,10 +10977,6 @@ HCameraElement.prototype.renderFrame = function(){
             var mat;
             len = this.hierarchy.length - 1;
             for (i = len; i >= 0; i -= 1) {
-                /*mat = this.hierarchy[i].finalTransform.mProp.v.props;
-                console.log(mat)
-                this.mat.transform(-mat[0],-mat[1],-mat[2],-mat[3],-mat[4],-mat[5],-mat[6],-mat[7],-mat[8],-mat[9],-mat[10],-mat[11],-mat[12],-mat[13],-mat[14],mat[15]);
-                console.log(this.mat.props)*/
                 var mTransf = this.hierarchy[i].finalTransform.mProp;
                 this.mat.translate(-mTransf.p.v[0],-mTransf.p.v[1],mTransf.p.v[2]);
                 this.mat.rotateX(-mTransf.or.v[0]).rotateY(-mTransf.or.v[1]).rotateZ(mTransf.or.v[2]);
@@ -11072,23 +11067,6 @@ var animationManager = (function () {
     }
   }
 
-  function registerAnimation(element, animationData) {
-    if (!element) {
-      return null;
-    }
-    var i = 0;
-    while (i < len) {
-      if (registeredAnimations[i].elem == element && registeredAnimations[i].elem !== null) {
-        return registeredAnimations[i].animation;
-      }
-      i += 1;
-    }
-    var animItem = new AnimationItem();
-    setupAnimation(animItem, element);
-    animItem.setData(element, animationData);
-    return animItem;
-  }
-
   function getRegisteredAnimations() {
     var i,
       len = registeredAnimations.length;
@@ -11149,6 +11127,7 @@ var animationManager = (function () {
     for (i = 0; i < len; i += 1) {
       registeredAnimations[i].animation.advanceTime(elapsedTime);
     }
+    
     initTime = nowTime;
     if (playingAnimationsNum && !_isFrozen) {
       global.requestAnimationFrame(resume);
@@ -11222,7 +11201,6 @@ var animationManager = (function () {
     activate();
   }
 
-  moduleOb.registerAnimation = registerAnimation;
   moduleOb.loadAnimation = loadAnimation;
   moduleOb.setSpeed = setSpeed;
   moduleOb.setDirection = setDirection;
@@ -11288,10 +11266,6 @@ AnimationItem.prototype.setParams = function (params) {
       this.renderer = new CanvasRenderer(this, params.rendererSettings);
       break;
 
-    case "svg":
-      this.renderer = new SVGRenderer(this, params.rendererSettings);
-      break;
-
     default:
       this.renderer = new HybridRenderer(this, params.rendererSettings);
       break;
@@ -11342,83 +11316,6 @@ AnimationItem.prototype.setParams = function (params) {
   }
 };
 
-AnimationItem.prototype.setData = function (wrapper, animationData) {
-  var params = {
-    wrapper: wrapper,
-    animationData: animationData
-      ? typeof animationData === "object"
-        ? animationData
-        : JSON.parse(animationData)
-      : null,
-  };
-  var wrapperAttributes = wrapper.attributes;
-
-  params.path = wrapperAttributes.getNamedItem("data-animation-path")
-    ? wrapperAttributes.getNamedItem("data-animation-path").value
-    : wrapperAttributes.getNamedItem("data-bm-path")
-    ? wrapperAttributes.getNamedItem("data-bm-path").value
-    : wrapperAttributes.getNamedItem("bm-path")
-    ? wrapperAttributes.getNamedItem("bm-path").value
-    : "";
-  params.animType = wrapperAttributes.getNamedItem("data-anim-type")
-    ? wrapperAttributes.getNamedItem("data-anim-type").value
-    : wrapperAttributes.getNamedItem("data-bm-type")
-    ? wrapperAttributes.getNamedItem("data-bm-type").value
-    : wrapperAttributes.getNamedItem("bm-type")
-    ? wrapperAttributes.getNamedItem("bm-type").value
-    : wrapperAttributes.getNamedItem("data-bm-renderer")
-    ? wrapperAttributes.getNamedItem("data-bm-renderer").value
-    : wrapperAttributes.getNamedItem("bm-renderer")
-    ? wrapperAttributes.getNamedItem("bm-renderer").value
-    : "canvas";
-
-  var loop = wrapperAttributes.getNamedItem("data-anim-loop")
-    ? wrapperAttributes.getNamedItem("data-anim-loop").value
-    : wrapperAttributes.getNamedItem("data-bm-loop")
-    ? wrapperAttributes.getNamedItem("data-bm-loop").value
-    : wrapperAttributes.getNamedItem("bm-loop")
-    ? wrapperAttributes.getNamedItem("bm-loop").value
-    : "";
-
-  if (loop === "") {
-  } else if (loop === "false") {
-    params.loop = false;
-  } else if (loop === "true") {
-    params.loop = true;
-  } else {
-    params.loop = parseInt(loop);
-  }
-  var autoplay = wrapperAttributes.getNamedItem("data-anim-autoplay")
-    ? wrapperAttributes.getNamedItem("data-anim-autoplay").value
-    : wrapperAttributes.getNamedItem("data-bm-autoplay")
-    ? wrapperAttributes.getNamedItem("data-bm-autoplay").value
-    : wrapperAttributes.getNamedItem("bm-autoplay")
-    ? wrapperAttributes.getNamedItem("bm-autoplay").value
-    : true;
-  params.autoplay = autoplay !== "false";
-
-  params.name = wrapperAttributes.getNamedItem("data-name")
-    ? wrapperAttributes.getNamedItem("data-name").value
-    : wrapperAttributes.getNamedItem("data-bm-name")
-    ? wrapperAttributes.getNamedItem("data-bm-name").value
-    : wrapperAttributes.getNamedItem("bm-name")
-    ? wrapperAttributes.getNamedItem("bm-name").value
-    : "";
-  var prerender = wrapperAttributes.getNamedItem("data-anim-prerender")
-    ? wrapperAttributes.getNamedItem("data-anim-prerender").value
-    : wrapperAttributes.getNamedItem("data-bm-prerender")
-    ? wrapperAttributes.getNamedItem("data-bm-prerender").value
-    : wrapperAttributes.getNamedItem("bm-prerender")
-    ? wrapperAttributes.getNamedItem("bm-prerender").value
-    : "";
-
-  if (prerender === "false") {
-    params.prerender = false;
-  }
-
-  this.setParams(params);
-};
-
 AnimationItem.prototype.includeLayers = function (data) {
   if (data.op > this.animationData.op) {
     this.animationData.op = data.op;
@@ -11440,6 +11337,7 @@ AnimationItem.prototype.includeLayers = function (data) {
       i += 1;
     }
   }
+
   if (data.chars || data.fonts) {
     this.renderer.globalData.fontManager.addChars(data.chars);
     this.renderer.globalData.fontManager.addFonts(data.fonts, this.renderer.globalData.defs);
@@ -11466,6 +11364,7 @@ AnimationItem.prototype.loadNextSegment = function () {
     this.timeCompleted = this.totalFrames;
     return;
   }
+
   var segment = segments.shift();
   this.timeCompleted = segment.time * this.frameRate;
   var segmentPath = this.path + this.fileName + "_" + this.segmentPos + ".json";
@@ -11484,6 +11383,7 @@ AnimationItem.prototype.loadSegments = function () {
   if (!segments) {
     this.timeCompleted = this.totalFrames;
   }
+
   this.loadNextSegment();
 };
 
@@ -11507,12 +11407,14 @@ AnimationItem.prototype.configAnimation = function (animData) {
   if (!animData.assets) {
     animData.assets = [];
   }
+
   this.renderer.searchExtraCompositions(animData.assets);
 
   this.assets = this.animationData.assets;
   this.frameRate = this.animationData.fr;
   this.firstFrame = Math.round(this.animationData.ip);
   this.frameMult = this.animationData.fr / 1000;
+
   this.trigger("config_ready");
   this.preloadImages();
   this.loadSegments();
@@ -11521,32 +11423,17 @@ AnimationItem.prototype.configAnimation = function (animData) {
 };
 
 AnimationItem.prototype.waitForFontsLoaded = function () {
-  if (!this.renderer) {
-    return;
-  }
+  if (!this.renderer) return;
   this.checkLoaded();
 };
 
 AnimationItem.prototype.checkLoaded = function () {
-  console.log(this.imagePreloader.loaded());
-  console.log(this.imagePreloader.loaded());
-
   if (!this.isLoaded && (this.imagePreloader.loaded() || this.renderer.rendererType !== "canvas")) {
     this.isLoaded = true;
     dataManager.completeData(this.animationData, this.renderer.globalData.fontManager);
-    if (expressionsPlugin) {
-      expressionsPlugin.initExpressions(this);
-    }
+    if (expressionsPlugin) expressionsPlugin.initExpressions(this);
     this.renderer.initItems();
 
-    setTimeout(
-      function () {
-        this.trigger("DOMLoaded");
-      }.bind(this),
-      0
-    );
-
-    console.log("------------");
     this.gotoFrame();
     if (this.autoplay) {
       this.play();
@@ -11567,27 +11454,30 @@ AnimationItem.prototype.nextFrame = function () {
   this.gotoFrame();
 };
 
+AnimationItem.prototype.render = function (delta) {
+  this.isPaused = false;
+  this.advanceTime(delta);
+};
+
 AnimationItem.prototype.gotoFrame = function () {
   this.currentFrame = this.subframeEnabled ? this.currentRawFrame : ~~this.currentRawFrame;
 
   if (this.timeCompleted !== this.totalFrames && this.currentFrame > this.timeCompleted) {
     this.currentFrame = this.timeCompleted;
   }
+
   this.trigger("enterFrame");
   this.renderFrame();
 };
 
 AnimationItem.prototype.renderFrame = function () {
-  if (this.isLoaded === false) {
-    return;
-  }
+  if (this.isLoaded === false) return;
   this.renderer.renderFrame(this.currentFrame + this.firstFrame);
 };
 
 AnimationItem.prototype.play = function (name) {
-  if (name && this.name != name) {
-    return;
-  }
+  if (name && this.name != name) return;
+
   if (this.isPaused === true) {
     this.isPaused = false;
     if (this._idle) {
@@ -11649,13 +11539,11 @@ AnimationItem.prototype.goToAndPlay = function (value, isFrame, name) {
 };
 
 AnimationItem.prototype.advanceTime = function (value) {
-  if (this.isPaused === true || this.isLoaded === false) {
-    return;
-  }
+  if (this.isPaused === true || this.isLoaded === false) return;
+
   var nextValue = this.currentRawFrame + value * this.frameModifier;
   var _isComplete = false;
-  // Checking if nextValue > totalFrames - 1 for addressing non looping and looping animations.
-  // If animation won't loop, it should stop at totalFrames - 1. If it will loop it should complete the last frame and then loop.
+
   if (nextValue >= this.totalFrames - 1 && this.frameModifier > 0) {
     if (!this.loop || this.playCount === this.loop) {
       if (!this.checkSegments(nextValue > this.totalFrames ? nextValue % this.totalFrames : 0)) {
@@ -11689,6 +11577,7 @@ AnimationItem.prototype.advanceTime = function (value) {
   } else {
     this.setCurrentRawFrameValue(nextValue);
   }
+
   if (_isComplete) {
     this.setCurrentRawFrameValue(nextValue);
     this.pause();
@@ -14344,7 +14233,6 @@ GroupEffect.prototype.init = function (data, element) {
   lottiejs.setSpeed = animationManager.setSpeed;
   lottiejs.setDirection = animationManager.setDirection;
   lottiejs.stop = animationManager.stop;
-  lottiejs.registerAnimation = animationManager.registerAnimation;
   lottiejs.loadAnimation = loadAnimation;
   lottiejs.setSubframeRendering = setSubframeRendering;
   lottiejs.resize = animationManager.resize;

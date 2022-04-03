@@ -76,7 +76,6 @@ BasicPlayer.prototype.buildControls = function (item, wrapper) {
   this.playButton.setAttribute("data-anim-name", "play");
   this.playButton.setAttribute("data-anim-repeat", "0");
   this.playButton.style.display = "none";
-  this.playAnimation = animationManager.registerAnimation(this.playButton);
   this.playAnimation.loop = false;
   this.controls.appendChild(this.playButton);
   this.playButton.addEventListener("click", function () {
@@ -95,7 +94,6 @@ BasicPlayer.prototype.buildControls = function (item, wrapper) {
   this.pauseButton.setAttribute("data-anim-type", "svg");
   this.pauseButton.setAttribute("data-anim-name", "pause");
   this.pauseButton.setAttribute("data-anim-repeat", "0");
-  this.pauseAnimation = animationManager.registerAnimation(this.pauseButton);
   this.pauseAnimation.wrapper.addEventListener("bmLoaded", function () {
     self.pauseAnimation.goToAndStop(self.pauseAnimation.totalFrames - 1);
   });

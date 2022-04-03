@@ -42,14 +42,13 @@ var ImagePreloader = (function () {
   function createImageData(assetData) {
     var path = getAssetsPath(assetData, this.assetsPath, this.path);
     var img = createTag("img");
-    img.addEventListener("load", this._imageLoaded.bind(this), false);
-    img.addEventListener(
-      "error",
+    console.log(img);
+    img.onload(this._imageLoaded.bind(this));
+    img.onerror(
       function () {
         ob.img = createOnlyFakeImg();
         this._imageLoaded();
-      }.bind(this),
-      false
+      }.bind(this)
     );
     img.src = path;
     var ob = {

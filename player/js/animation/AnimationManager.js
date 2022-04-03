@@ -23,23 +23,6 @@ var animationManager = (function () {
     }
   }
 
-  function registerAnimation(element, animationData) {
-    if (!element) {
-      return null;
-    }
-    var i = 0;
-    while (i < len) {
-      if (registeredAnimations[i].elem == element && registeredAnimations[i].elem !== null) {
-        return registeredAnimations[i].animation;
-      }
-      i += 1;
-    }
-    var animItem = new AnimationItem();
-    setupAnimation(animItem, element);
-    animItem.setData(element, animationData);
-    return animItem;
-  }
-
   function getRegisteredAnimations() {
     var i,
       len = registeredAnimations.length;
@@ -100,6 +83,7 @@ var animationManager = (function () {
     for (i = 0; i < len; i += 1) {
       registeredAnimations[i].animation.advanceTime(elapsedTime);
     }
+    
     initTime = nowTime;
     if (playingAnimationsNum && !_isFrozen) {
       global.requestAnimationFrame(resume);
@@ -173,7 +157,6 @@ var animationManager = (function () {
     activate();
   }
 
-  moduleOb.registerAnimation = registerAnimation;
   moduleOb.loadAnimation = loadAnimation;
   moduleOb.setSpeed = setSpeed;
   moduleOb.setDirection = setDirection;

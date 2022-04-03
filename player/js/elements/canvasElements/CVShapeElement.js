@@ -1,4 +1,5 @@
 function CVShapeElement(data, globalData, comp) {
+    
     this.shapes = [];
     this.shapesData = data.shapes;
     this.stylesList = [];

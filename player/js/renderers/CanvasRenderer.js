@@ -66,21 +66,19 @@ CanvasRenderer.prototype.ctxTransform = function(props){
     this.transformMat.cloneFromProps(props);
     var cProps = this.contextData.cTr.props;
     this.transformMat.transform(cProps[0],cProps[1],cProps[2],cProps[3],cProps[4],cProps[5],cProps[6],cProps[7],cProps[8],cProps[9],cProps[10],cProps[11],cProps[12],cProps[13],cProps[14],cProps[15]);
-    //this.contextData.cTr.transform(props[0],props[1],props[2],props[3],props[4],props[5],props[6],props[7],props[8],props[9],props[10],props[11],props[12],props[13],props[14],props[15]);
+    
     this.contextData.cTr.cloneFromProps(this.transformMat.props);
     var trProps = this.contextData.cTr.props;
     this.canvasContext.setTransform(trProps[0],trProps[1],trProps[4],trProps[5],trProps[12],trProps[13]);
 };
 
 CanvasRenderer.prototype.ctxOpacity = function(op){
-    /*if(op === 1){
-        return;
-    }*/
     if(!this.renderConfig.clearCanvas){
         this.canvasContext.globalAlpha *= op < 0 ? 0 : op;
         this.globalData.currentGlobalAlpha = this.contextData.cO;
         return;
     }
+
     this.contextData.cO *= op < 0 ? 0 : op;
     if(this.globalData.currentGlobalAlpha !== this.contextData.cO) {
         this.canvasContext.globalAlpha = this.contextData.cO;
@@ -143,12 +141,6 @@ CanvasRenderer.prototype.restore = function(actionFlag){
 CanvasRenderer.prototype.configAnimation = function(animData){
     if(this.animationItem.wrapper){
         this.animationItem.container = this.animationItem.wrapper;
-        // this.animationItem.container.style.width = '100%';
-        // this.animationItem.container.style.height = '100%';
-        
-        // this.animationItem.container.style.transformOrigin = this.animationItem.container.style.mozTransformOrigin = this.animationItem.container.style.webkitTransformOrigin = this.animationItem.container.style['-webkit-transform'] = "0px 0px 0px";
-        // this.animationItem.wrapper.appendChild(this.animationItem.container);
-
         this.canvasContext = this.animationItem.container.getContext('2d');
     }else{
         this.canvasContext = this.renderConfig.context;
@@ -179,15 +171,8 @@ CanvasRenderer.prototype.configAnimation = function(animData){
 CanvasRenderer.prototype.updateContainerSize = function () {
     this.reset();
     var elementWidth,elementHeight;
-    if(this.animationItem.wrapper && this.animationItem.container){
-        elementWidth = this.animationItem.wrapper.offsetWidth;
-        elementHeight = this.animationItem.wrapper.offsetHeight;
-        // this.animationItem.container.setAttribute('width',elementWidth * this.renderConfig.dpr );
-        // this.animationItem.container.setAttribute('height',elementHeight * this.renderConfig.dpr);
-    }else{
-        elementWidth = this.canvasContext.canvas.width * this.renderConfig.dpr;
-        elementHeight = this.canvasContext.canvas.height * this.renderConfig.dpr;
-    }
+    elementWidth = this.canvasContext.canvas.width * this.renderConfig.dpr;
+    elementHeight = this.canvasContext.canvas.height * this.renderConfig.dpr;
     
     var elementRel,animationRel;
     if(this.renderConfig.preserveAspectRatio.indexOf('meet') !== -1 || this.renderConfig.preserveAspectRatio.indexOf('slice') !== -1){
@@ -233,12 +218,7 @@ CanvasRenderer.prototype.updateContainerSize = function () {
         this.transformCanvas.ty = 0;
     }
     this.transformCanvas.props = [this.transformCanvas.sx,0,0,0,0,this.transformCanvas.sy,0,0,0,0,1,0,this.transformCanvas.tx,this.transformCanvas.ty,0,1];
-    /*var i, len = this.elements.length;
-    for(i=0;i<len;i+=1){
-        if(this.elements[i] && this.elements[i].data.ty === 0){
-            this.elements[i].resize(this.globalData.transformCanvas);
-        }
-    }*/
+    
     this.ctxTransform(this.transformCanvas.props);
     this.canvasContext.beginPath();
     this.canvasContext.rect(0,0,this.transformCanvas.w,this.transformCanvas.h);
@@ -248,8 +228,9 @@ CanvasRenderer.prototype.updateContainerSize = function () {
 
 CanvasRenderer.prototype.destroy = function () {
     if(this.renderConfig.clearCanvas) {
-        this.animationItem.wrapper.innerHTML = '';
+        //this.animationItem.wrapper.innerHTML = '';
     }
+
     var i, len = this.layers ? this.layers.length : 0;
     for (i = len - 1; i >= 0; i-=1) {
         if(this.elements[i]) {
@@ -262,10 +243,16 @@ CanvasRenderer.prototype.destroy = function () {
     this.destroyed = true;
 };
 
+CanvasRenderer.prototype.drawRect = function(){
+    this.canvasContext.fillStyle = 'red';
+    this.canvasContext.fillRect(0, 0, this.transformCanvas.w/2, this.transformCanvas.h/2);
+}
+
 CanvasRenderer.prototype.renderFrame = function(num){
     if((this.renderedFrame == num && this.renderConfig.clearCanvas === true) || this.destroyed || num === -1){
         return;
     }
+
     this.renderedFrame = num;
     this.globalData.frameNum = num - this.animationItem._isFirstFrame;
     this.globalData.frameId += 1;
@@ -282,17 +269,20 @@ CanvasRenderer.prototype.renderFrame = function(num){
             this.elements[i].prepareFrame(num - this.layers[i].st);
         }
     }
+
     if(this.globalData._mdf) {
         if(this.renderConfig.clearCanvas === true){
             this.canvasContext.clearRect(0, 0, this.transformCanvas.w, this.transformCanvas.h);
         }else{
             this.save();
         }
+
         for (i = len - 1; i >= 0; i-=1) {
             if(this.completeLayers || this.elements[i]){
                 this.elements[i].renderFrame();
             }
         }
+
         if(this.renderConfig.clearCanvas !== true){
             this.restore();
         }
