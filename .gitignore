@@ -3,6 +3,7 @@ player/exports/
 player/tests/
 node_modules/
 node_modules/
+demo/__output
 tests/
 esprima/
 bodymovinCert.p12
