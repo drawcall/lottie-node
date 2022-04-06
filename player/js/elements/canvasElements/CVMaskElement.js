@@ -6,6 +6,7 @@ function CVMaskElement(data, element) {
   var i,
     len = this.masksProperties.length,
     hasMasks = false;
+    
   for (i = 0; i < len; i++) {
     if (this.masksProperties[i].mode !== 'n') {
       hasMasks = true;
