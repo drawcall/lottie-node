@@ -20,14 +20,6 @@
     locationHref = href;
   }
 
-  function searchAnimations() {
-    if (standalone === true) {
-      animationManager.searchAnimations(animationData, standalone, renderer);
-    } else {
-      animationManager.searchAnimations();
-    }
-  }
-
   function setSubframeRendering(flag) {
     subframeEnabled = flag;
   }
@@ -94,7 +86,6 @@
   lottiejs.setSpeed = animationManager.setSpeed;
   lottiejs.setDirection = animationManager.setDirection;
   lottiejs.stop = animationManager.stop;
-  lottiejs.searchAnimations = searchAnimations;
   lottiejs.registerAnimation = animationManager.registerAnimation;
   lottiejs.loadAnimation = loadAnimation;
   lottiejs.setSubframeRendering = setSubframeRendering;
