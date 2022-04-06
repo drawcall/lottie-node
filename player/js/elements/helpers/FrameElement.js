@@ -21,7 +21,6 @@ FrameElement.prototype = {
         // If layer has been modified in current tick this will be true
         this._mdf = false;
     },
-    
     /**
      * @function 
      * Calculates all dynamic values

@@ -1,9 +1,10 @@
-const fs = require("fs");
+const fs = require("fs-extra");
 const cheerio = require("cheerio");
-const UglifyJS = require("uglify-js");
+const package = require("../package.json");
 
 const rootFolder = "player/";
-const bm_version = "5.4.3";
+const bm_version = package.version;
+const buildReducedVersion = process.argv[2] === "reduced";
 
 function loadIndex() {
   return new Promise((resolve, reject) => {
@@ -32,7 +33,7 @@ function parseHTML(html) {
 function getScripts($) {
   return new Promise((resolve, reject) => {
     try {
-      const defaultBuilds = ["full", "canvas", "canvas_light"];
+      const defaultBuilds = ["canvas", "canvas_light"];
       const scriptNodes = [];
       let shouldAddToScripts = false;
       $("head")
@@ -43,14 +44,19 @@ function getScripts($) {
           } else if (shouldAddToScripts) {
             if (node.type === "script") {
               scriptNodes.push(node);
-            } else if (node.nodeType === 8 && node.data.indexOf("endbuild") !== -1) {
+            } else if (
+              node.nodeType === 8 &&
+              node.data.indexOf("endbuild") !== -1
+            ) {
               shouldAddToScripts = false;
             }
           }
         });
 
       const scripts = scriptNodes.map((node) => {
-        const builds = node.attribs["data-builds"] ? node.attribs["data-builds"].split(",") : defaultBuilds;
+        const builds = node.attribs["data-builds"]
+          ? node.attribs["data-builds"].split(",")
+          : defaultBuilds;
         return {
           src: node.attribs.src,
           builds: builds,
@@ -70,7 +76,9 @@ function concatScripts(scripts, build) {
       let scriptsString = "";
       scripts.forEach((script) => {
         if (script.builds.indexOf(build) !== -1) {
-          scriptsString += fs.readFileSync(`${rootFolder}${script.src}`, { encoding: "utf8" });
+          scriptsString += fs.readFileSync(`${rootFolder}${script.src}`, {
+            encoding: "utf8",
+          });
           scriptsString += "\r\n";
         }
       });
@@ -95,21 +103,6 @@ function wrapScriptWithModule(code) {
   });
 }
 
-function uglifyCode(code) {
-  return new Promise((resolve, reject) => {
-    try {
-      const result = UglifyJS.minify(code, { output: { ascii_only: true }, toplevel: true });
-      if (result.error) {
-        reject(result.error);
-      } else {
-        resolve(result.code);
-      }
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
 async function buildVersion(scripts, version) {
   const code = await concatScripts(scripts, version.build);
   const wrappedCode = await wrapScriptWithModule(code);
@@ -120,7 +113,7 @@ async function buildVersion(scripts, version) {
 
 function save(code, fileName) {
   return new Promise((resolve, reject) => {
-    fs.writeFile(`build/player/${fileName}`, code, (err) => {
+    fs.writeFile(`build/${fileName}`, code, (err) => {
       if (err) {
         reject(err);
       } else {
@@ -135,79 +128,19 @@ function noop(code) {
 }
 
 function buildVersions(scripts) {
+  console.log("begin build ");
   return new Promise((resolve, reject) => {
-    const versions = [
-      {
-        fileName: "lottie.js",
-        build: "full",
-        process: noop,
-      },
-      {
-        fileName: "lottie.min.js",
-        build: "full",
-        process: uglifyCode,
-      },
-      // {
-      //   fileName: "lottie_light.js",
-      //   build: "svg_light",
-      //   process: noop,
-      // },
-      // {
-      //   fileName: "lottie_light.min.js",
-      //   build: "svg_light",
-      //   process: uglifyCode,
-      // },
-      // {
-      //   fileName: "lottie_svg.js",
-      //   build: "svg",
-      //   process: noop,
-      // },
-      // {
-      //   fileName: "lottie_svg.min.js",
-      //   build: "svg",
-      //   process: uglifyCode,
-      // },
-      // {
-      //   fileName: "lottie_light_canvas.js",
-      //   build: "canvas_light",
-      //   process: noop,
-      // },
-      // {
-      //   fileName: "lottie_light_canvas.min.js",
-      //   build: "canvas_light",
-      //   process: uglifyCode,
-      // },
+    let versions = [
       {
         fileName: "lottie_canvas.js",
         build: "canvas",
         process: noop,
       },
-      {
-        fileName: "lottie_canvas.min.js",
-        build: "canvas",
-        process: uglifyCode,
-      },
-      // {
-      //   fileName: "lottie_html.js",
-      //   build: "html",
-      //   process: noop,
-      // },
-      // {
-      //   fileName: "lottie_html.min.js",
-      //   build: "html",
-      //   process: uglifyCode,
-      // },
-      // {
-      //   fileName: "lottie_light_html.js",
-      //   build: "html_light",
-      //   process: noop,
-      // },
-      // {
-      //   fileName: "lottie_light_html.min.js",
-      //   build: "html_light",
-      //   process: uglifyCode,
-      // },
     ];
+
+    if (buildReducedVersion) {
+      versions = versions.splice(0, 1);
+    }
 
     const buildProcesses = versions.map((version) => {
       return buildVersion(scripts, version);
@@ -228,6 +161,7 @@ function handleError(err) {
 
 async function build() {
   try {
+    fs.emptyDir('build');
     const htmlData = await loadIndex();
     const parsedData = await parseHTML(htmlData);
     const scripts = await getScripts(parsedData);

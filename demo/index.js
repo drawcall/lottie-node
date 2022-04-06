@@ -1,10 +1,10 @@
 const path = require("path");
 const fs = require("fs-extra");
-const lottie = require("../build/player/lottie_canvas.js");
+const lottie = require("../build/lottie_canvas.js");
 const { Canvas, Image } = require("canvas");
 
 const num = 60;
-const delta = 33*4;
+const delta = 33 * 4;
 const folder = "./adrock/";
 let id = 0;
 let index = 0;

@@ -34,6 +34,7 @@
     <script src="js/3rd_party/transformation-matrix.js"></script>
     <script src="js/3rd_party/seedrandom.js"></script>
     <script src="js/3rd_party/BezierEaser.js"></script>
+    <script src="js/utils/animationFramePolyFill.js"></script>
     <script src="js/utils/functionExtensions.js"></script>
     <script src="js/utils/bez.js"></script>
     <script src="js/utils/DataManager.js"></script>
@@ -101,6 +102,7 @@
     <script src="js/elements/svgElements/SVGShapeElement.js"></script>
     <script src="js/elements/svgElements/effects/SVGTintEffect.js" data-builds="full,svg,svg_light,html,html_light"></script>
     <script src="js/elements/svgElements/effects/SVGFillFilter.js" data-builds="full,svg,svg_light,html,html_light"></script>
+    <script src="js/elements/svgElements/effects/SVGGaussianBlurEffect.js" data-builds="full,svg,svg_light,html,html_light"></script>
     <script src="js/elements/svgElements/effects/SVGStrokeEffect.js" data-builds="full,svg,svg_light,html,html_light"></script>
     <script src="js/elements/svgElements/effects/SVGTritoneFilter.js" data-builds="full,svg,svg_light,html,html_light"></script>
     <script src="js/elements/svgElements/effects/SVGProLevelsFilter.js" data-builds="full,svg,svg_light,html,html_light"></script>
@@ -129,6 +131,7 @@
     <!-- Expressions -->
     <script src="js/utils/expressions/Expressions.js" data-builds="full,svg,canvas,html"></script>
     <script src="js/utils/expressions/ExpressionManager.js" data-builds="full,svg,canvas,html"></script>
+    <script src="js/utils/expressions/expressionHelpers.js" data-builds="full,svg,canvas,html"></script>
     <script src="js/utils/expressions/ExpressionPropertyDecorator.js" data-builds="full,svg,canvas,html"></script>
     <script src="js/utils/expressions/ExpressionTextPropertyDecorator.js" data-builds="full,svg,canvas,html"></script>
     <script src="js/utils/expressions/ShapeInterface.js" data-builds="full,svg,canvas,html"></script>
@@ -140,6 +143,7 @@
     <script src="js/utils/expressions/EffectInterface.js" data-builds="full,svg,canvas,html"></script>
     <script src="js/utils/expressions/MaskInterface.js" data-builds="full,svg,canvas,html"></script>
     <script src="js/utils/expressions/ExpressionValueFactory.js" data-builds="full,svg,canvas,html"></script>
+    <script src="js/utils/expressions/TextSelectorPropertyDecorator.js" data-builds="full,svg,canvas,html"></script>
     <script src="js/effects/SliderEffect.js" data-builds="full,svg,canvas,html"></script>
     <script src="js/effects/EffectsManagerPlaceholder.js" ></script>
     <script src="js/EffectsManager.js" data-builds="full,svg,canvas,html"></script>
@@ -160,27 +164,28 @@
     var elem = document.getElementById('lottie');
     var animData = {
         container: elem,
-        renderer: 'svg',
-        loop: true,
+        renderer: 'canvas',
+        loop: false,
         autoplay: true,
         rendererSettings: {
             progressiveLoad:true,
             preserveAspectRatio: 'xMidYMid meet',
-            imagePreserveAspectRatio: 'xMidYMid meet'
+            imagePreserveAspectRatio: 'xMidYMid meet',
+            title: 'TEST TITLE',
+            description: 'TEST DESCRIPTION',
         },
         path: 'exports/render/data.json'
     };
     // lottie.setQuality('low');
-    setTimeout(()=>{
-        anim = lottie.loadAnimation(animData);
-        anim.setSubframe(false);
+    anim = lottie.loadAnimation(animData);
+    anim.setSubframe(false);
+    anim.onError = function(errorType, nativeError, errorProps) {
+        console.log(errorType)
+    }
 
-        setTimeout(()=>{
-            // anim.goToAndStop(10, true);
-            
-        },0)
-        
-    },0)
+    anim.addEventListener('error', function(error) {
+        console.log(error)
+    })
 
 </script>
 </body>

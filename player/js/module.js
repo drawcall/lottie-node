@@ -9,7 +9,7 @@
     root.lottie = factory(root);
     root.bodymovin = root.lottie;
   }
-})({}, function () {
+})(global || {}, function (global) {
   "use strict";
   /*<%= contents %>*/
   var lottiejs = {};
@@ -18,6 +18,14 @@
 
   function setLocationHref(href) {
     locationHref = href;
+  }
+
+  function searchAnimations() {
+    if (standalone === true) {
+      animationManager.searchAnimations(animationData, standalone, renderer);
+    } else {
+      animationManager.searchAnimations();
+    }
   }
 
   function setSubframeRendering(flag) {
@@ -86,15 +94,14 @@
   lottiejs.setSpeed = animationManager.setSpeed;
   lottiejs.setDirection = animationManager.setDirection;
   lottiejs.stop = animationManager.stop;
+  lottiejs.searchAnimations = searchAnimations;
+  lottiejs.registerAnimation = animationManager.registerAnimation;
   lottiejs.loadAnimation = loadAnimation;
   lottiejs.setSubframeRendering = setSubframeRendering;
   lottiejs.resize = animationManager.resize;
-
+  //lottiejs.start = start;
   lottiejs.goToAndStop = animationManager.goToAndStop;
-  lottiejs.destroy = function () {
-    lottiejs.canvas = null;
-    animationManager.destroy();
-  };
+  lottiejs.destroy = animationManager.destroy;
   lottiejs.setQuality = setQuality;
   lottiejs.inBrowser = inBrowser;
   lottiejs.installPlugin = installPlugin;
@@ -102,11 +109,11 @@
   lottiejs.unfreeze = animationManager.unfreeze;
   lottiejs.getRegisteredAnimations = animationManager.getRegisteredAnimations;
   lottiejs.__getFactory = getFactory;
-
   lottiejs.version = "[[BM_VERSION]]";
+
   var standalone = "__[STANDALONE]__";
   var animationData = "__[ANIMATIONDATA]__";
   var renderer = "";
-
+  
   return lottiejs;
 });

@@ -88,7 +88,7 @@ var FontManager = (function(){
         tHelper.textContent = '1';
         if(fontData.fClass){
             tHelper.style.fontFamily = 'inherit';
-            tHelper.className = fontData.fClass;
+            tHelper.setAttribute('class', fontData.fClass);
         } else {
             tHelper.style.fontFamily = fontData.fFamily;
         }
@@ -220,15 +220,14 @@ var FontManager = (function(){
         var i = 0, len = this.chars.length;
         while( i < len) {
             if(this.chars[i].ch === char && this.chars[i].style === style && this.chars[i].fFamily === font){
+
                 return this.chars[i];
             }
             i+= 1;
         }
-        
-        if(console && console.warn) {
+        if((typeof char === 'string' && char.charCodeAt(0) !== 13 || !char) && console && console.warn) {
             console.warn('Missing character from exported characters list: ', char, style, font);
         }
-
         return emptyChar;
     }
 
@@ -237,7 +236,10 @@ var FontManager = (function(){
         var index = char.charCodeAt(0);
         if(!fontData.cache[index + 1]) {
             var tHelper = fontData.helper;
-            
+            //Canvas version
+            //fontData.cache[index] = tHelper.measureText(char).width / 100;
+            //SVG version
+            //console.log(tHelper.getBBox().width)
             if (char === ' ') {
                 tHelper.textContent = '|' + char + '|';
                 var doubleSize = tHelper.getComputedTextLength();
@@ -268,7 +270,7 @@ var FontManager = (function(){
     }
 
     function loaded() {
-        return true;
+        return this.isLoaded;
     }
 
     var Font = function(){
@@ -278,9 +280,9 @@ var FontManager = (function(){
         this.isLoaded = false;
         this.initTime = Date.now();
     };
-
     //TODO: for now I'm adding these methods to the Class and not the prototype. Think of a better way to implement it. 
     Font.getCombinedCharacterCodes = getCombinedCharacterCodes;
+
     Font.prototype.addChars = addChars;
     Font.prototype.addFonts = addFonts;
     Font.prototype.getCharData = getCharData;

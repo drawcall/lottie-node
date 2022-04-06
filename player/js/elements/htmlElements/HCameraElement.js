@@ -29,6 +29,11 @@ function HCameraElement(data,globalData,comp){
     this.mat = new Matrix();
     this._prevMat = new Matrix();
     this._isFirstFrame = true;
+    
+    // TODO: find a better way to make the HCamera element to be compatible with the LayerInterface and TransformInterface.
+    this.finalTransform = {
+        mProp: this
+    };
 }
 extendPrototype([BaseElement, FrameElement, HierarchyElement], HCameraElement);
 
@@ -75,14 +80,18 @@ HCameraElement.prototype.renderFrame = function(){
                 this.mat.translate(mTransf.a.v[0],mTransf.a.v[1],mTransf.a.v[2]);
             }
         }
-
-        if(this.p){
+        if (this.p) {
             this.mat.translate(-this.p.v[0],-this.p.v[1],this.p.v[2]);
-        }else{
+        } else {
             this.mat.translate(-this.px.v,-this.py.v,this.pz.v);
         }
-        if(this.a){
-            var diffVector = [this.p.v[0]-this.a.v[0],this.p.v[1]-this.a.v[1],this.p.v[2]-this.a.v[2]];
+        if (this.a) {
+            var diffVector
+            if (this.p) {
+                diffVector = [this.p.v[0] - this.a.v[0], this.p.v[1] - this.a.v[1], this.p.v[2] - this.a.v[2]];
+            } else {
+                diffVector = [this.px.v - this.a.v[0], this.py.v - this.a.v[1], this.pz.v - this.a.v[2]];
+            }
             var mag = Math.sqrt(Math.pow(diffVector[0],2)+Math.pow(diffVector[1],2)+Math.pow(diffVector[2],2));
             //var lookDir = getNormalizedPoint(getDiffVector(this.a.v,this.p.v));
             var lookDir = [diffVector[0]/mag,diffVector[1]/mag,diffVector[2]/mag];
@@ -127,5 +136,4 @@ HCameraElement.prototype.prepareFrame = function(num) {
 
 HCameraElement.prototype.destroy = function(){
 };
-HCameraElement.prototype.initExpressions = function(){};
 HCameraElement.prototype.getBaseElement = function(){return null;};
