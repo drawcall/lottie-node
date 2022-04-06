@@ -89,7 +89,6 @@
   lottiejs.loadAnimation = loadAnimation;
   lottiejs.setSubframeRendering = setSubframeRendering;
   lottiejs.resize = animationManager.resize;
-  //lottiejs.start = start;
   lottiejs.goToAndStop = animationManager.goToAndStop;
   lottiejs.destroy = animationManager.destroy;
   lottiejs.setQuality = setQuality;

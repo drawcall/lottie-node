@@ -9,6 +9,7 @@ function CVContextData() {
   for (i = 0; i < len; i += 1) {
     this.saved[i] = createTypedArray('float32', 16);
   }
+  
   this._length = len;
 }
 

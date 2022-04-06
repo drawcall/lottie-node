@@ -10,16 +10,6 @@ FrameElement.prototype = {
     this._mdf = false;
   },
 
-  /**
-   * @function
-   * Calculates all dynamic values
-   *
-   * @param {number} num
-   * current frame number in Layer's time
-   * @param {boolean} isVisible
-   * if layers is currently in range
-   *
-   */
   prepareProperties: function (num, isVisible) {
     var i,
       len = this.dynamicProperties.length;

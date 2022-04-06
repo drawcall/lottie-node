@@ -57,7 +57,7 @@ AnimationItem.prototype.setParams = function (params) {
   this.name = params.name ? params.name : '';
   this.autoloadSegments = params.hasOwnProperty('autoloadSegments') ? params.autoloadSegments : true;
   this.assetsPath = params.assetsPath;
-  
+
   if (params.animationData) {
     this.configAnimation(params.animationData);
   } else if (params.path) {
@@ -218,17 +218,18 @@ AnimationItem.prototype.gotoFrame = function () {
   if (this.timeCompleted !== this.totalFrames && this.currentFrame > this.timeCompleted) {
     this.currentFrame = this.timeCompleted;
   }
+
   this.trigger('enterFrame');
   this.renderFrame();
 };
 
 AnimationItem.prototype.renderFrame = function () {
-  if (this.isLoaded === false) {
-    return;
-  }
+  if (this.isLoaded === false) return;
+
   try {
     this.renderer.renderFrame(this.currentFrame + this.firstFrame);
   } catch (error) {
+    console.log(error);
     this.triggerRenderFrameError(error);
   }
 };
@@ -275,7 +276,7 @@ AnimationItem.prototype.stop = function (name) {
   this.pause();
   this.playCount = 0;
   this._completedLoop = false;
-  this.setCurrentRawFrameValue(0);
+  this.setCurrentRawFrameAndGoto(0);
 };
 
 AnimationItem.prototype.goToAndStop = function (value, isFrame, name) {
@@ -283,9 +284,9 @@ AnimationItem.prototype.goToAndStop = function (value, isFrame, name) {
     return;
   }
   if (isFrame) {
-    this.setCurrentRawFrameValue(value);
+    this.setCurrentRawFrameAndGoto(value);
   } else {
-    this.setCurrentRawFrameValue(value * this.frameModifier);
+    this.setCurrentRawFrameAndGoto(value * this.frameModifier);
   }
   this.pause();
 };
@@ -299,10 +300,12 @@ AnimationItem.prototype.advanceTime = function (value) {
   if (this.isPaused === true || this.isLoaded === false) {
     return;
   }
+
   var nextValue = this.currentRawFrame + value * this.frameModifier;
   var _isComplete = false;
-  // Checking if nextValue > totalFrames - 1 for addressing non looping and looping animations.
-  // If animation won't loop, it should stop at totalFrames - 1. If it will loop it should complete the last frame and then loop.
+
+  // 检查 nextValue > totalFrames - 1 是否用于处理非循环和循环动画。
+  // 如果动画不循环，它应该在 totalFrames - 1 处停止。如果它会循环，它应该完成最后一帧然后循环。
   if (nextValue >= this.totalFrames - 1 && this.frameModifier > 0) {
     if (!this.loop || this.playCount === this.loop) {
       if (!this.checkSegments(nextValue > this.totalFrames ? nextValue % this.totalFrames : 0)) {
@@ -312,17 +315,17 @@ AnimationItem.prototype.advanceTime = function (value) {
     } else if (nextValue >= this.totalFrames) {
       this.playCount += 1;
       if (!this.checkSegments(nextValue % this.totalFrames)) {
-        this.setCurrentRawFrameValue(nextValue % this.totalFrames);
+        this.setCurrentRawFrameAndGoto(nextValue % this.totalFrames);
         this._completedLoop = true;
         this.trigger('loopComplete');
       }
     } else {
-      this.setCurrentRawFrameValue(nextValue);
+      this.setCurrentRawFrameAndGoto(nextValue);
     }
   } else if (nextValue < 0) {
     if (!this.checkSegments(nextValue % this.totalFrames)) {
       if (this.loop && !(this.playCount-- <= 0 && this.loop !== true)) {
-        this.setCurrentRawFrameValue(this.totalFrames + (nextValue % this.totalFrames));
+        this.setCurrentRawFrameAndGoto(this.totalFrames + (nextValue % this.totalFrames));
         if (!this._completedLoop) {
           this._completedLoop = true;
         } else {
@@ -334,10 +337,11 @@ AnimationItem.prototype.advanceTime = function (value) {
       }
     }
   } else {
-    this.setCurrentRawFrameValue(nextValue);
+    this.setCurrentRawFrameAndGoto(nextValue);
   }
+
   if (_isComplete) {
-    this.setCurrentRawFrameValue(nextValue);
+    this.setCurrentRawFrameAndGoto(nextValue);
     this.pause();
     this.trigger('complete');
   }
@@ -353,9 +357,10 @@ AnimationItem.prototype.adjustSegment = function (arr, offset) {
         this.setDirection(-1);
       }
     }
+
     this.timeCompleted = this.totalFrames = arr[0] - arr[1];
     this.firstFrame = arr[1];
-    this.setCurrentRawFrameValue(this.totalFrames - 0.001 - offset);
+    this.setCurrentRawFrameAndGoto(this.totalFrames - 0.001 - offset);
   } else if (arr[1] > arr[0]) {
     if (this.frameModifier < 0) {
       if (this.playSpeed < 0) {
@@ -366,7 +371,7 @@ AnimationItem.prototype.adjustSegment = function (arr, offset) {
     }
     this.timeCompleted = this.totalFrames = arr[1] - arr[0];
     this.firstFrame = arr[0];
-    this.setCurrentRawFrameValue(0.001 + offset);
+    this.setCurrentRawFrameAndGoto(0.001 + offset);
   }
   this.trigger('segmentStart');
 };
@@ -437,7 +442,7 @@ AnimationItem.prototype.destroy = function (name) {
   this.renderer = null;
 };
 
-AnimationItem.prototype.setCurrentRawFrameValue = function (value) {
+AnimationItem.prototype.setCurrentRawFrameAndGoto = function (value) {
   this.currentRawFrame = value;
   this.gotoFrame();
 };
@@ -463,6 +468,7 @@ AnimationItem.prototype.setDirection = function (val) {
 };
 
 AnimationItem.prototype.updaFrameModifier = function () {
+  // 0.03 0.03 1 1
   this.frameModifier = this.frameMult * this.playSpeed * this.playDirection;
 };
 

@@ -1,3 +1,5 @@
+const util = require("util");
+
 function CanvasRenderer(animationItem, config) {
   this.animationItem = animationItem;
   this.renderConfig = {
@@ -301,7 +303,8 @@ CanvasRenderer.prototype.renderFrame = function (num, forceRender) {
     //console.log("结束~");
     return;
   }
-
+  
+  Logger.setNum(2).log(util.inspect(this.globalData));
   this.renderedFrame = num;
   this.globalData.frameNum = num - this.animationItem._isFirstFrame;
   this.globalData.frameId += 1;

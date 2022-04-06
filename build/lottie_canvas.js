@@ -11,11 +11,27 @@
   }
 })(global || {}, function (global) {
   "use strict";
-  var svgNS = "http://www.w3.org/2000/svg";
-
-var locationHref = "";
-
+  var svgNS = 'http://www.w3.org/2000/svg';
+var locationHref = '';
 var initialDefaultFrame = -999999;
+
+var Logger = {
+  num: 10,
+  index: 0,
+  setNum: function (num) {
+    this.num = num;
+    return this;
+  },
+  log: function (...rest) {
+    if (this.index < this.num) {
+      this.index++;
+      console.log('++++++++++++++++++++++++++++++++++++++++++++');
+      console.log.apply(console, rest);
+      console.log('\n');
+    }
+    return this;
+  },
+};
 
 var subframeEnabled = true;
 var expressionsPlugin;
@@ -4330,12 +4346,12 @@ var filtersFactory = (function(){
 
 	return ob;
 }());
-var fs = require("fs");
+var fs = require('fs');
 
 var assetLoader = (function () {
   function loadAsset(path, callback, errorCallback) {
     try {
-      var data = fs.readFileSync(path, "utf-8");
+      var data = fs.readFileSync(path, 'utf-8');
       const body = JSON.parse(data);
       callback(body);
     } catch (err) {
@@ -5872,6 +5888,8 @@ BaseRenderer.prototype.setupGlobalData = function (animData, fontsContainer) {
   };
 };
 
+const util = require("util");
+
 function CanvasRenderer(animationItem, config) {
   this.animationItem = animationItem;
   this.renderConfig = {
@@ -6175,7 +6193,8 @@ CanvasRenderer.prototype.renderFrame = function (num, forceRender) {
     //console.log("结束~");
     return;
   }
-
+  
+  Logger.setNum(2).log(util.inspect(this.globalData));
   this.renderedFrame = num;
   this.globalData.frameNum = num - this.animationItem._isFirstFrame;
   this.globalData.frameId += 1;
@@ -6552,16 +6571,6 @@ FrameElement.prototype = {
     this._mdf = false;
   },
 
-  /**
-   * @function
-   * Calculates all dynamic values
-   *
-   * @param {number} num
-   * current frame number in Layer's time
-   * @param {boolean} isVisible
-   * if layers is currently in range
-   *
-   */
   prepareProperties: function (num, isVisible) {
     var i,
       len = this.dynamicProperties.length;
@@ -6584,80 +6593,102 @@ FrameElement.prototype = {
   },
 };
 
-function TransformElement(){}
+function TransformElement() {}
 
 TransformElement.prototype = {
-    initTransform: function() {
-        this.finalTransform = {
-            mProp: this.data.ks ? TransformPropertyFactory.getTransformProperty(this, this.data.ks, this) : {o:0},
-            _matMdf: false,
-            _opMdf: false,
-            mat: new Matrix()
-        };
-        if (this.data.ao) {
-            this.finalTransform.mProp.autoOriented = true;
-        }
+  initTransform: function () {
+    this.finalTransform = {
+      mProp: this.data.ks ? TransformPropertyFactory.getTransformProperty(this, this.data.ks, this) : { o: 0 },
+      _matMdf: false,
+      _opMdf: false,
+      mat: new Matrix(),
+    };
+    if (this.data.ao) {
+      this.finalTransform.mProp.autoOriented = true;
+    }
 
-        //TODO: check TYPE 11: Guided elements
-        if (this.data.ty !== 11) {
-            //this.createElements();
-        }
-    },
-    renderTransform: function() {
+    //TODO: check TYPE 11: Guided elements
+    if (this.data.ty !== 11) {
+      //this.createElements();
+    }
+  },
 
-        this.finalTransform._opMdf = this.finalTransform.mProp.o._mdf || this._isFirstFrame;
-        this.finalTransform._matMdf = this.finalTransform.mProp._mdf || this._isFirstFrame;
+  renderTransform: function () {
+    this.finalTransform._opMdf = this.finalTransform.mProp.o._mdf || this._isFirstFrame;
+    this.finalTransform._matMdf = this.finalTransform.mProp._mdf || this._isFirstFrame;
 
-        if (this.hierarchy) {
-            var mat;
-            var finalMat = this.finalTransform.mat;
-            var i = 0, len = this.hierarchy.length;
-            //Checking if any of the transformation matrices in the hierarchy chain has changed.
-            if (!this.finalTransform._matMdf) {
-                while (i < len) {
-                    if (this.hierarchy[i].finalTransform.mProp._mdf) {
-                        this.finalTransform._matMdf = true;
-                        break;
-                    }
-                    i += 1;
-                }
-            }
-            
-            if (this.finalTransform._matMdf) {
-                mat = this.finalTransform.mProp.v.props;
-                finalMat.cloneFromProps(mat);
-                for (i = 0; i < len; i += 1) {
-                    mat = this.hierarchy[i].finalTransform.mProp.v.props;
-                    finalMat.transform(mat[0], mat[1], mat[2], mat[3], mat[4], mat[5], mat[6], mat[7], mat[8], mat[9], mat[10], mat[11], mat[12], mat[13], mat[14], mat[15]);
-                }
-            }
+    if (this.hierarchy) {
+      var mat;
+      var finalMat = this.finalTransform.mat;
+      var i = 0,
+        len = this.hierarchy.length;
+      //Checking if any of the transformation matrices in the hierarchy chain has changed.
+      if (!this.finalTransform._matMdf) {
+        while (i < len) {
+          if (this.hierarchy[i].finalTransform.mProp._mdf) {
+            this.finalTransform._matMdf = true;
+            break;
+          }
+          i += 1;
         }
-    },
-    globalToLocal: function(pt) {
-        var transforms = [];
-        transforms.push(this.finalTransform);
-        var flag = true;
-        var comp = this.comp;
-        while (flag) {
-            if (comp.finalTransform) {
-                if (comp.data.hasMask) {
-                    transforms.splice(0, 0, comp.finalTransform);
-                }
-                comp = comp.comp;
-            } else {
-                flag = false;
-            }
-        }
-        var i, len = transforms.length,ptNew;
+      }
+
+      if (this.finalTransform._matMdf) {
+        mat = this.finalTransform.mProp.v.props;
+        finalMat.cloneFromProps(mat);
         for (i = 0; i < len; i += 1) {
-            ptNew = transforms[i].mat.applyToPointArray(0, 0, 0);
-            //ptNew = transforms[i].mat.applyToPointArray(pt[0],pt[1],pt[2]);
-            pt = [pt[0] - ptNew[0], pt[1] - ptNew[1], 0];
+          mat = this.hierarchy[i].finalTransform.mProp.v.props;
+          finalMat.transform(
+            mat[0],
+            mat[1],
+            mat[2],
+            mat[3],
+            mat[4],
+            mat[5],
+            mat[6],
+            mat[7],
+            mat[8],
+            mat[9],
+            mat[10],
+            mat[11],
+            mat[12],
+            mat[13],
+            mat[14],
+            mat[15]
+          );
         }
-        return pt;
-    },
-    mHelper: new Matrix()
+      }
+    }
+  },
+  
+  globalToLocal: function (pt) {
+    var transforms = [];
+    transforms.push(this.finalTransform);
+    var flag = true;
+    var comp = this.comp;
+    while (flag) {
+      if (comp.finalTransform) {
+        if (comp.data.hasMask) {
+          transforms.splice(0, 0, comp.finalTransform);
+        }
+        comp = comp.comp;
+      } else {
+        flag = false;
+      }
+    }
+    var i,
+      len = transforms.length,
+      ptNew;
+    for (i = 0; i < len; i += 1) {
+      ptNew = transforms[i].mat.applyToPointArray(0, 0, 0);
+      //ptNew = transforms[i].mat.applyToPointArray(pt[0],pt[1],pt[2]);
+      pt = [pt[0] - ptNew[0], pt[1] - ptNew[1], 0];
+    }
+    return pt;
+  },
+  mHelper: new Matrix(),
 };
+
 function RenderableElement() {}
 
 RenderableElement.prototype = {
@@ -7776,6 +7807,7 @@ function CVContextData() {
   for (i = 0; i < len; i += 1) {
     this.saved[i] = createTypedArray('float32', 16);
   }
+  
   this._length = len;
 }
 
@@ -7867,50 +7899,61 @@ CVBaseElement.prototype = {
 CVBaseElement.prototype.hide = CVBaseElement.prototype.hideElement;
 CVBaseElement.prototype.show = CVBaseElement.prototype.showElement;
 
-function CVImageElement(data, globalData, comp){
-    this.assetData = globalData.getAssetData(data.refId);
-    this.img = globalData.imageLoader.getImage(this.assetData);
-    this.initElement(data,globalData,comp);
+function CVImageElement(data, globalData, comp) {
+  this.assetData = globalData.getAssetData(data.refId);
+  this.img = globalData.imageLoader.getImage(this.assetData);
+  this.initElement(data, globalData, comp);
 }
 extendPrototype([BaseElement, TransformElement, CVBaseElement, HierarchyElement, FrameElement, RenderableElement], CVImageElement);
 
 CVImageElement.prototype.initElement = SVGShapeElement.prototype.initElement;
 CVImageElement.prototype.prepareFrame = IImageElement.prototype.prepareFrame;
 
-CVImageElement.prototype.createContent = function(){
+CVImageElement.prototype.createContent = function () {
+  if (this.img.width && (this.assetData.w !== this.img.width || this.assetData.h !== this.img.height)) {
+    var canvas = createTag('canvas');
+    canvas.width = this.assetData.w;
+    canvas.height = this.assetData.h;
+    var ctx = canvas.getContext('2d');
 
-    if (this.img.width && (this.assetData.w !== this.img.width || this.assetData.h !== this.img.height)) {
-        var canvas = createTag('canvas');
-        canvas.width = this.assetData.w;
-        canvas.height = this.assetData.h;
-        var ctx = canvas.getContext('2d');
-
-        var imgW = this.img.width;
-        var imgH = this.img.height;
-        var imgRel = imgW / imgH;
-        var canvasRel = this.assetData.w/this.assetData.h;
-        var widthCrop, heightCrop;
-        var par = this.assetData.pr || this.globalData.renderConfig.imagePreserveAspectRatio;
-        if((imgRel > canvasRel && par === 'xMidYMid slice') || (imgRel < canvasRel && par !== 'xMidYMid slice')) {
-            heightCrop = imgH;
-            widthCrop = heightCrop*canvasRel;
-        } else {
-            widthCrop = imgW;
-            heightCrop = widthCrop/canvasRel;
-        }
-        ctx.drawImage(this.img,(imgW-widthCrop)/2,(imgH-heightCrop)/2,widthCrop,heightCrop,0,0,this.assetData.w,this.assetData.h);
-        this.img = canvas;
+    var imgW = this.img.width;
+    var imgH = this.img.height;
+    var imgRel = imgW / imgH;
+    var canvasRel = this.assetData.w / this.assetData.h;
+    var widthCrop, heightCrop;
+    var par = this.assetData.pr || this.globalData.renderConfig.imagePreserveAspectRatio;
+    
+    if ((imgRel > canvasRel && par === 'xMidYMid slice') || (imgRel < canvasRel && par !== 'xMidYMid slice')) {
+      heightCrop = imgH;
+      widthCrop = heightCrop * canvasRel;
+    } else {
+      widthCrop = imgW;
+      heightCrop = widthCrop / canvasRel;
     }
-
+    
+    ctx.drawImage(
+      this.img,
+      (imgW - widthCrop) / 2,
+      (imgH - heightCrop) / 2,
+      widthCrop,
+      heightCrop,
+      0,
+      0,
+      this.assetData.w,
+      this.assetData.h
+    );
+    this.img = canvas;
+  }
 };
 
-CVImageElement.prototype.renderInnerContent = function(parentMatrix){
-    this.canvasContext.drawImage(this.img, 0, 0);
+CVImageElement.prototype.renderInnerContent = function (parentMatrix) {
+  this.canvasContext.drawImage(this.img, 0, 0);
 };
 
-CVImageElement.prototype.destroy = function(){
-    this.img = null;
+CVImageElement.prototype.destroy = function () {
+  this.img = null;
 };
+
 function CVCompElement(data, globalData, comp) {
   this.completeLayers = false;
   this.layers = data.layers;
@@ -8514,210 +8557,266 @@ CVShapeElement.prototype.destroy = function () {
 };
 
 function CVSolidElement(data, globalData, comp) {
-    this.initElement(data,globalData,comp);
+  this.initElement(data, globalData, comp);
 }
 extendPrototype([BaseElement, TransformElement, CVBaseElement, HierarchyElement, FrameElement, RenderableElement], CVSolidElement);
 
 CVSolidElement.prototype.initElement = SVGShapeElement.prototype.initElement;
 CVSolidElement.prototype.prepareFrame = IImageElement.prototype.prepareFrame;
 
-CVSolidElement.prototype.renderInnerContent = function() {
-    var ctx = this.canvasContext;
-    ctx.fillStyle = this.data.sc;
-    ctx.fillRect(0, 0, this.data.sw, this.data.sh);
-    //
+CVSolidElement.prototype.renderInnerContent = function () {
+  var ctx = this.canvasContext;
+  ctx.fillStyle = this.data.sc;
+  ctx.fillRect(0, 0, this.data.sw, this.data.sh);
+  //
 };
-function CVTextElement(data, globalData, comp){
-    this.textSpans = [];
-    this.yOffset = 0;
-    this.fillColorAnim = false;
-    this.strokeColorAnim = false;
-    this.strokeWidthAnim = false;
-    this.stroke = false;
-    this.fill = false;
-    this.justifyOffset = 0;
-    this.currentRender = null;
-    this.renderType = 'canvas';
-    this.values = {
-        fill: 'rgba(0,0,0,0)',
-        stroke: 'rgba(0,0,0,0)',
-        sWidth: 0,
-        fValue: ''
-    };
-    this.initElement(data,globalData,comp);
+
+function CVTextElement(data, globalData, comp) {
+  this.textSpans = [];
+  this.yOffset = 0;
+  this.fillColorAnim = false;
+  this.strokeColorAnim = false;
+  this.strokeWidthAnim = false;
+  this.stroke = false;
+  this.fill = false;
+  this.justifyOffset = 0;
+  this.currentRender = null;
+  this.renderType = 'canvas';
+  this.values = {
+    fill: 'rgba(0,0,0,0)',
+    stroke: 'rgba(0,0,0,0)',
+    sWidth: 0,
+    fValue: '',
+  };
+  this.initElement(data, globalData, comp);
 }
-extendPrototype([BaseElement,TransformElement,CVBaseElement,HierarchyElement,FrameElement,RenderableElement,ITextElement], CVTextElement);
+extendPrototype(
+  [BaseElement, TransformElement, CVBaseElement, HierarchyElement, FrameElement, RenderableElement, ITextElement],
+  CVTextElement
+);
 
-CVTextElement.prototype.tHelper = ()=>createTag('canvas').getContext('2d');
+CVTextElement.prototype.tHelper = () => createTag('canvas').getContext('2d');
 
-CVTextElement.prototype.buildNewText = function(){
-    var documentData = this.textProperty.currentData;
-    this.renderedLetters = createSizedArray(documentData.l ? documentData.l.length : 0);
+CVTextElement.prototype.buildNewText = function () {
+  var documentData = this.textProperty.currentData;
+  this.renderedLetters = createSizedArray(documentData.l ? documentData.l.length : 0);
 
-    var hasFill = false;
-    if(documentData.fc) {
-        hasFill = true;
-        this.values.fill = this.buildColor(documentData.fc);
-    }else{
-        this.values.fill = 'rgba(0,0,0,0)';
+  var hasFill = false;
+  if (documentData.fc) {
+    hasFill = true;
+    this.values.fill = this.buildColor(documentData.fc);
+  } else {
+    this.values.fill = 'rgba(0,0,0,0)';
+  }
+  this.fill = hasFill;
+  var hasStroke = false;
+  if (documentData.sc) {
+    hasStroke = true;
+    this.values.stroke = this.buildColor(documentData.sc);
+    this.values.sWidth = documentData.sw;
+  }
+  var fontData = this.globalData.fontManager.getFontByName(documentData.f);
+  var i, len;
+  var letters = documentData.l;
+  var matrixHelper = this.mHelper;
+  this.stroke = hasStroke;
+  this.values.fValue = documentData.finalSize + 'px ' + this.globalData.fontManager.getFontByName(documentData.f).fFamily;
+  len = documentData.finalText.length;
+  //this.tHelper.font = this.values.fValue;
+  var charData,
+    shapeData,
+    k,
+    kLen,
+    shapes,
+    j,
+    jLen,
+    pathNodes,
+    commands,
+    pathArr,
+    singleShape = this.data.singleShape;
+  var trackingOffset = (documentData.tr / 1000) * documentData.finalSize;
+  var xPos = 0,
+    yPos = 0,
+    firstLine = true;
+  var cnt = 0;
+  for (i = 0; i < len; i += 1) {
+    charData = this.globalData.fontManager.getCharData(
+      documentData.finalText[i],
+      fontData.fStyle,
+      this.globalData.fontManager.getFontByName(documentData.f).fFamily
+    );
+    shapeData = (charData && charData.data) || {};
+    matrixHelper.reset();
+    if (singleShape && letters[i].n) {
+      xPos = -trackingOffset;
+      yPos += documentData.yOffset;
+      yPos += firstLine ? 1 : 0;
+      firstLine = false;
     }
-    this.fill = hasFill;
-    var hasStroke = false;
-    if(documentData.sc){
-        hasStroke = true;
-        this.values.stroke = this.buildColor(documentData.sc);
-        this.values.sWidth = documentData.sw;
-    }
-    var fontData = this.globalData.fontManager.getFontByName(documentData.f);
-    var i, len;
-    var letters = documentData.l;
-    var matrixHelper = this.mHelper;
-    this.stroke = hasStroke;
-    this.values.fValue = documentData.finalSize + 'px '+ this.globalData.fontManager.getFontByName(documentData.f).fFamily;
-    len = documentData.finalText.length;
-    //this.tHelper.font = this.values.fValue;
-    var charData, shapeData, k, kLen, shapes, j, jLen, pathNodes, commands, pathArr, singleShape = this.data.singleShape;
-    var trackingOffset = documentData.tr/1000*documentData.finalSize;
-    var xPos = 0, yPos = 0, firstLine = true;
-    var cnt = 0;
-    for (i = 0; i < len; i += 1) {
-        charData = this.globalData.fontManager.getCharData(documentData.finalText[i], fontData.fStyle, this.globalData.fontManager.getFontByName(documentData.f).fFamily);
-        shapeData = charData && charData.data || {};
-        matrixHelper.reset();
-        if(singleShape && letters[i].n) {
-            xPos = -trackingOffset;
-            yPos += documentData.yOffset;
-            yPos += firstLine ? 1 : 0;
-            firstLine = false;
-        }
 
-        shapes = shapeData.shapes ? shapeData.shapes[0].it : [];
-        jLen = shapes.length;
-        matrixHelper.scale(documentData.finalSize/100,documentData.finalSize/100);
-        if(singleShape){
-            this.applyTextPropertiesToMatrix(documentData, matrixHelper, letters[i].line, xPos, yPos);
-        }
-        commands = createSizedArray(jLen);
-        for(j=0;j<jLen;j+=1){
-            kLen = shapes[j].ks.k.i.length;
-            pathNodes = shapes[j].ks.k;
-            pathArr = [];
-            for(k=1;k<kLen;k+=1){
-                if(k==1){
-                    pathArr.push(matrixHelper.applyToX(pathNodes.v[0][0],pathNodes.v[0][1],0),matrixHelper.applyToY(pathNodes.v[0][0],pathNodes.v[0][1],0));
-                }
-                pathArr.push(matrixHelper.applyToX(pathNodes.o[k-1][0],pathNodes.o[k-1][1],0),matrixHelper.applyToY(pathNodes.o[k-1][0],pathNodes.o[k-1][1],0),matrixHelper.applyToX(pathNodes.i[k][0],pathNodes.i[k][1],0),matrixHelper.applyToY(pathNodes.i[k][0],pathNodes.i[k][1],0),matrixHelper.applyToX(pathNodes.v[k][0],pathNodes.v[k][1],0),matrixHelper.applyToY(pathNodes.v[k][0],pathNodes.v[k][1],0));
-            }
-            pathArr.push(matrixHelper.applyToX(pathNodes.o[k-1][0],pathNodes.o[k-1][1],0),matrixHelper.applyToY(pathNodes.o[k-1][0],pathNodes.o[k-1][1],0),matrixHelper.applyToX(pathNodes.i[0][0],pathNodes.i[0][1],0),matrixHelper.applyToY(pathNodes.i[0][0],pathNodes.i[0][1],0),matrixHelper.applyToX(pathNodes.v[0][0],pathNodes.v[0][1],0),matrixHelper.applyToY(pathNodes.v[0][0],pathNodes.v[0][1],0));
-            commands[j] = pathArr;
-        }
-        if(singleShape){
-            xPos += letters[i].l;
-            xPos += trackingOffset;
-        }
-        if(this.textSpans[cnt]){
-            this.textSpans[cnt].elem = commands;
-        } else {
-            this.textSpans[cnt] = {elem: commands};
-        }
-        cnt +=1;
+    shapes = shapeData.shapes ? shapeData.shapes[0].it : [];
+    jLen = shapes.length;
+    matrixHelper.scale(documentData.finalSize / 100, documentData.finalSize / 100);
+    if (singleShape) {
+      this.applyTextPropertiesToMatrix(documentData, matrixHelper, letters[i].line, xPos, yPos);
     }
+    commands = createSizedArray(jLen);
+    for (j = 0; j < jLen; j += 1) {
+      kLen = shapes[j].ks.k.i.length;
+      pathNodes = shapes[j].ks.k;
+      pathArr = [];
+      for (k = 1; k < kLen; k += 1) {
+        if (k == 1) {
+          pathArr.push(
+            matrixHelper.applyToX(pathNodes.v[0][0], pathNodes.v[0][1], 0),
+            matrixHelper.applyToY(pathNodes.v[0][0], pathNodes.v[0][1], 0)
+          );
+        }
+        pathArr.push(
+          matrixHelper.applyToX(pathNodes.o[k - 1][0], pathNodes.o[k - 1][1], 0),
+          matrixHelper.applyToY(pathNodes.o[k - 1][0], pathNodes.o[k - 1][1], 0),
+          matrixHelper.applyToX(pathNodes.i[k][0], pathNodes.i[k][1], 0),
+          matrixHelper.applyToY(pathNodes.i[k][0], pathNodes.i[k][1], 0),
+          matrixHelper.applyToX(pathNodes.v[k][0], pathNodes.v[k][1], 0),
+          matrixHelper.applyToY(pathNodes.v[k][0], pathNodes.v[k][1], 0)
+        );
+      }
+      pathArr.push(
+        matrixHelper.applyToX(pathNodes.o[k - 1][0], pathNodes.o[k - 1][1], 0),
+        matrixHelper.applyToY(pathNodes.o[k - 1][0], pathNodes.o[k - 1][1], 0),
+        matrixHelper.applyToX(pathNodes.i[0][0], pathNodes.i[0][1], 0),
+        matrixHelper.applyToY(pathNodes.i[0][0], pathNodes.i[0][1], 0),
+        matrixHelper.applyToX(pathNodes.v[0][0], pathNodes.v[0][1], 0),
+        matrixHelper.applyToY(pathNodes.v[0][0], pathNodes.v[0][1], 0)
+      );
+      commands[j] = pathArr;
+    }
+    if (singleShape) {
+      xPos += letters[i].l;
+      xPos += trackingOffset;
+    }
+    if (this.textSpans[cnt]) {
+      this.textSpans[cnt].elem = commands;
+    } else {
+      this.textSpans[cnt] = { elem: commands };
+    }
+    cnt += 1;
+  }
 };
 
-CVTextElement.prototype.renderInnerContent = function(){
-    var ctx = this.canvasContext;
-    var finalMat = this.finalTransform.mat.props;
-    ctx.font = this.values.fValue;
-    ctx.lineCap = 'butt';
-    ctx.lineJoin = 'miter';
-    ctx.miterLimit = 4;
+CVTextElement.prototype.renderInnerContent = function () {
+  var ctx = this.canvasContext;
+  var finalMat = this.finalTransform.mat.props;
+  ctx.font = this.values.fValue;
+  ctx.lineCap = 'butt';
+  ctx.lineJoin = 'miter';
+  ctx.miterLimit = 4;
 
-    if(!this.data.singleShape){
-        this.textAnimator.getMeasures(this.textProperty.currentData, this.lettersChangedFlag);
+  if (!this.data.singleShape) {
+    this.textAnimator.getMeasures(this.textProperty.currentData, this.lettersChangedFlag);
+  }
+
+  var i, len, j, jLen, k, kLen;
+  var renderedLetters = this.textAnimator.renderedLetters;
+
+  var letters = this.textProperty.currentData.l;
+
+  len = letters.length;
+  var renderedLetter;
+  var lastFill = null,
+    lastStroke = null,
+    lastStrokeW = null,
+    commands,
+    pathArr;
+  for (i = 0; i < len; i += 1) {
+    if (letters[i].n) {
+      continue;
     }
-
-    var  i,len, j, jLen, k, kLen;
-    var renderedLetters = this.textAnimator.renderedLetters;
-
-    var letters = this.textProperty.currentData.l;
-
-    len = letters.length;
-    var renderedLetter;
-    var lastFill = null, lastStroke = null, lastStrokeW = null, commands, pathArr;
-    for(i=0;i<len;i+=1){
-        if(letters[i].n){
-            continue;
-        }
-        renderedLetter = renderedLetters[i];
-        if(renderedLetter){
-            this.globalData.renderer.save();
-            this.globalData.renderer.ctxTransform(renderedLetter.p);
-            this.globalData.renderer.ctxOpacity(renderedLetter.o);
-        }
-        if(this.fill){
-            if(renderedLetter && renderedLetter.fc){
-                if(lastFill !== renderedLetter.fc){
-                    lastFill = renderedLetter.fc;
-                    ctx.fillStyle = renderedLetter.fc;
-                }
-            }else if(lastFill !== this.values.fill){
-                lastFill = this.values.fill;
-                ctx.fillStyle = this.values.fill;
-            }
-            commands = this.textSpans[i].elem;
-            jLen = commands.length;
-            this.globalData.canvasContext.beginPath();
-            for(j=0;j<jLen;j+=1) {
-                pathArr = commands[j];
-                kLen = pathArr.length;
-                this.globalData.canvasContext.moveTo(pathArr[0], pathArr[1]);
-                for (k = 2; k < kLen; k += 6) {
-                    this.globalData.canvasContext.bezierCurveTo(pathArr[k], pathArr[k + 1], pathArr[k + 2], pathArr[k + 3], pathArr[k + 4], pathArr[k + 5]);
-                }
-            }
-            this.globalData.canvasContext.closePath();
-            this.globalData.canvasContext.fill();
-            ///ctx.fillText(this.textSpans[i].val,0,0);
-        }
-        if(this.stroke){
-            if(renderedLetter && renderedLetter.sw){
-                if(lastStrokeW !== renderedLetter.sw){
-                    lastStrokeW = renderedLetter.sw;
-                    ctx.lineWidth = renderedLetter.sw;
-                }
-            }else if(lastStrokeW !== this.values.sWidth){
-                lastStrokeW = this.values.sWidth;
-                ctx.lineWidth = this.values.sWidth;
-            }
-            if(renderedLetter && renderedLetter.sc){
-                if(lastStroke !== renderedLetter.sc){
-                    lastStroke = renderedLetter.sc;
-                    ctx.strokeStyle = renderedLetter.sc;
-                }
-            }else if(lastStroke !== this.values.stroke){
-                lastStroke = this.values.stroke;
-                ctx.strokeStyle = this.values.stroke;
-            }
-            commands = this.textSpans[i].elem;
-            jLen = commands.length;
-            this.globalData.canvasContext.beginPath();
-            for(j=0;j<jLen;j+=1) {
-                pathArr = commands[j];
-                kLen = pathArr.length;
-                this.globalData.canvasContext.moveTo(pathArr[0], pathArr[1]);
-                for (k = 2; k < kLen; k += 6) {
-                    this.globalData.canvasContext.bezierCurveTo(pathArr[k], pathArr[k + 1], pathArr[k + 2], pathArr[k + 3], pathArr[k + 4], pathArr[k + 5]);
-                }
-            }
-            this.globalData.canvasContext.closePath();
-            this.globalData.canvasContext.stroke();
-            ///ctx.strokeText(letters[i].val,0,0);
-        }
-        if(renderedLetter) {
-            this.globalData.renderer.restore();
-        }
+    renderedLetter = renderedLetters[i];
+    if (renderedLetter) {
+      this.globalData.renderer.save();
+      this.globalData.renderer.ctxTransform(renderedLetter.p);
+      this.globalData.renderer.ctxOpacity(renderedLetter.o);
     }
+    if (this.fill) {
+      if (renderedLetter && renderedLetter.fc) {
+        if (lastFill !== renderedLetter.fc) {
+          lastFill = renderedLetter.fc;
+          ctx.fillStyle = renderedLetter.fc;
+        }
+      } else if (lastFill !== this.values.fill) {
+        lastFill = this.values.fill;
+        ctx.fillStyle = this.values.fill;
+      }
+      commands = this.textSpans[i].elem;
+      jLen = commands.length;
+      this.globalData.canvasContext.beginPath();
+      for (j = 0; j < jLen; j += 1) {
+        pathArr = commands[j];
+        kLen = pathArr.length;
+        this.globalData.canvasContext.moveTo(pathArr[0], pathArr[1]);
+        for (k = 2; k < kLen; k += 6) {
+          this.globalData.canvasContext.bezierCurveTo(
+            pathArr[k],
+            pathArr[k + 1],
+            pathArr[k + 2],
+            pathArr[k + 3],
+            pathArr[k + 4],
+            pathArr[k + 5]
+          );
+        }
+      }
+      this.globalData.canvasContext.closePath();
+      this.globalData.canvasContext.fill();
+      ///ctx.fillText(this.textSpans[i].val,0,0);
+    }
+    if (this.stroke) {
+      if (renderedLetter && renderedLetter.sw) {
+        if (lastStrokeW !== renderedLetter.sw) {
+          lastStrokeW = renderedLetter.sw;
+          ctx.lineWidth = renderedLetter.sw;
+        }
+      } else if (lastStrokeW !== this.values.sWidth) {
+        lastStrokeW = this.values.sWidth;
+        ctx.lineWidth = this.values.sWidth;
+      }
+      if (renderedLetter && renderedLetter.sc) {
+        if (lastStroke !== renderedLetter.sc) {
+          lastStroke = renderedLetter.sc;
+          ctx.strokeStyle = renderedLetter.sc;
+        }
+      } else if (lastStroke !== this.values.stroke) {
+        lastStroke = this.values.stroke;
+        ctx.strokeStyle = this.values.stroke;
+      }
+      commands = this.textSpans[i].elem;
+      jLen = commands.length;
+      this.globalData.canvasContext.beginPath();
+      for (j = 0; j < jLen; j += 1) {
+        pathArr = commands[j];
+        kLen = pathArr.length;
+        this.globalData.canvasContext.moveTo(pathArr[0], pathArr[1]);
+        for (k = 2; k < kLen; k += 6) {
+          this.globalData.canvasContext.bezierCurveTo(
+            pathArr[k],
+            pathArr[k + 1],
+            pathArr[k + 2],
+            pathArr[k + 3],
+            pathArr[k + 4],
+            pathArr[k + 5]
+          );
+        }
+      }
+      this.globalData.canvasContext.closePath();
+      this.globalData.canvasContext.stroke();
+      ///ctx.strokeText(letters[i].val,0,0);
+    }
+    if (renderedLetter) {
+      this.globalData.renderer.restore();
+    }
+  }
 };
+
 function CVEffects() {}
 CVEffects.prototype.renderFrame = function () {};
 
@@ -8955,7 +9054,7 @@ AnimationItem.prototype.setParams = function (params) {
   this.name = params.name ? params.name : '';
   this.autoloadSegments = params.hasOwnProperty('autoloadSegments') ? params.autoloadSegments : true;
   this.assetsPath = params.assetsPath;
-  
+
   if (params.animationData) {
     this.configAnimation(params.animationData);
   } else if (params.path) {
@@ -9116,17 +9215,18 @@ AnimationItem.prototype.gotoFrame = function () {
   if (this.timeCompleted !== this.totalFrames && this.currentFrame > this.timeCompleted) {
     this.currentFrame = this.timeCompleted;
   }
+
   this.trigger('enterFrame');
   this.renderFrame();
 };
 
 AnimationItem.prototype.renderFrame = function () {
-  if (this.isLoaded === false) {
-    return;
-  }
+  if (this.isLoaded === false) return;
+
   try {
     this.renderer.renderFrame(this.currentFrame + this.firstFrame);
   } catch (error) {
+    console.log(error);
     this.triggerRenderFrameError(error);
   }
 };
@@ -9173,7 +9273,7 @@ AnimationItem.prototype.stop = function (name) {
   this.pause();
   this.playCount = 0;
   this._completedLoop = false;
-  this.setCurrentRawFrameValue(0);
+  this.setCurrentRawFrameAndGoto(0);
 };
 
 AnimationItem.prototype.goToAndStop = function (value, isFrame, name) {
@@ -9181,9 +9281,9 @@ AnimationItem.prototype.goToAndStop = function (value, isFrame, name) {
     return;
   }
   if (isFrame) {
-    this.setCurrentRawFrameValue(value);
+    this.setCurrentRawFrameAndGoto(value);
   } else {
-    this.setCurrentRawFrameValue(value * this.frameModifier);
+    this.setCurrentRawFrameAndGoto(value * this.frameModifier);
   }
   this.pause();
 };
@@ -9197,10 +9297,12 @@ AnimationItem.prototype.advanceTime = function (value) {
   if (this.isPaused === true || this.isLoaded === false) {
     return;
   }
+
   var nextValue = this.currentRawFrame + value * this.frameModifier;
   var _isComplete = false;
-  // Checking if nextValue > totalFrames - 1 for addressing non looping and looping animations.
-  // If animation won't loop, it should stop at totalFrames - 1. If it will loop it should complete the last frame and then loop.
+
+  // 检查 nextValue > totalFrames - 1 是否用于处理非循环和循环动画。
+  // 如果动画不循环，它应该在 totalFrames - 1 处停止。如果它会循环，它应该完成最后一帧然后循环。
   if (nextValue >= this.totalFrames - 1 && this.frameModifier > 0) {
     if (!this.loop || this.playCount === this.loop) {
       if (!this.checkSegments(nextValue > this.totalFrames ? nextValue % this.totalFrames : 0)) {
@@ -9210,17 +9312,17 @@ AnimationItem.prototype.advanceTime = function (value) {
     } else if (nextValue >= this.totalFrames) {
       this.playCount += 1;
       if (!this.checkSegments(nextValue % this.totalFrames)) {
-        this.setCurrentRawFrameValue(nextValue % this.totalFrames);
+        this.setCurrentRawFrameAndGoto(nextValue % this.totalFrames);
         this._completedLoop = true;
         this.trigger('loopComplete');
       }
     } else {
-      this.setCurrentRawFrameValue(nextValue);
+      this.setCurrentRawFrameAndGoto(nextValue);
     }
   } else if (nextValue < 0) {
     if (!this.checkSegments(nextValue % this.totalFrames)) {
       if (this.loop && !(this.playCount-- <= 0 && this.loop !== true)) {
-        this.setCurrentRawFrameValue(this.totalFrames + (nextValue % this.totalFrames));
+        this.setCurrentRawFrameAndGoto(this.totalFrames + (nextValue % this.totalFrames));
         if (!this._completedLoop) {
           this._completedLoop = true;
         } else {
@@ -9232,10 +9334,11 @@ AnimationItem.prototype.advanceTime = function (value) {
       }
     }
   } else {
-    this.setCurrentRawFrameValue(nextValue);
+    this.setCurrentRawFrameAndGoto(nextValue);
   }
+
   if (_isComplete) {
-    this.setCurrentRawFrameValue(nextValue);
+    this.setCurrentRawFrameAndGoto(nextValue);
     this.pause();
     this.trigger('complete');
   }
@@ -9251,9 +9354,10 @@ AnimationItem.prototype.adjustSegment = function (arr, offset) {
         this.setDirection(-1);
       }
     }
+
     this.timeCompleted = this.totalFrames = arr[0] - arr[1];
     this.firstFrame = arr[1];
-    this.setCurrentRawFrameValue(this.totalFrames - 0.001 - offset);
+    this.setCurrentRawFrameAndGoto(this.totalFrames - 0.001 - offset);
   } else if (arr[1] > arr[0]) {
     if (this.frameModifier < 0) {
       if (this.playSpeed < 0) {
@@ -9264,7 +9368,7 @@ AnimationItem.prototype.adjustSegment = function (arr, offset) {
     }
     this.timeCompleted = this.totalFrames = arr[1] - arr[0];
     this.firstFrame = arr[0];
-    this.setCurrentRawFrameValue(0.001 + offset);
+    this.setCurrentRawFrameAndGoto(0.001 + offset);
   }
   this.trigger('segmentStart');
 };
@@ -9335,7 +9439,7 @@ AnimationItem.prototype.destroy = function (name) {
   this.renderer = null;
 };
 
-AnimationItem.prototype.setCurrentRawFrameValue = function (value) {
+AnimationItem.prototype.setCurrentRawFrameAndGoto = function (value) {
   this.currentRawFrame = value;
   this.gotoFrame();
 };
@@ -9361,6 +9465,7 @@ AnimationItem.prototype.setDirection = function (val) {
 };
 
 AnimationItem.prototype.updaFrameModifier = function () {
+  // 0.03 0.03 1 1
   this.frameModifier = this.frameMult * this.playSpeed * this.playDirection;
 };
 
@@ -11853,30 +11958,31 @@ var ExpressionPropertyInterface = (function() {
 	    }
 	};
 }());
-function SliderEffect(data,elem, container){
-    this.p = PropertyFactory.getProp(elem,data.v,0,0,container);
+function SliderEffect(data, elem, container) {
+  this.p = PropertyFactory.getProp(elem, data.v, 0, 0, container);
 }
-function AngleEffect(data,elem, container){
-    this.p = PropertyFactory.getProp(elem,data.v,0,0,container);
+function AngleEffect(data, elem, container) {
+  this.p = PropertyFactory.getProp(elem, data.v, 0, 0, container);
 }
-function ColorEffect(data,elem, container){
-    this.p = PropertyFactory.getProp(elem,data.v,1,0,container);
+function ColorEffect(data, elem, container) {
+  this.p = PropertyFactory.getProp(elem, data.v, 1, 0, container);
 }
-function PointEffect(data,elem, container){
-    this.p = PropertyFactory.getProp(elem,data.v,1,0,container);
+function PointEffect(data, elem, container) {
+  this.p = PropertyFactory.getProp(elem, data.v, 1, 0, container);
 }
-function LayerIndexEffect(data,elem, container){
-    this.p = PropertyFactory.getProp(elem,data.v,0,0,container);
+function LayerIndexEffect(data, elem, container) {
+  this.p = PropertyFactory.getProp(elem, data.v, 0, 0, container);
 }
-function MaskIndexEffect(data,elem, container){
-    this.p = PropertyFactory.getProp(elem,data.v,0,0,container);
+function MaskIndexEffect(data, elem, container) {
+  this.p = PropertyFactory.getProp(elem, data.v, 0, 0, container);
 }
-function CheckboxEffect(data,elem, container){
-    this.p = PropertyFactory.getProp(elem,data.v,0,0,container);
+function CheckboxEffect(data, elem, container) {
+  this.p = PropertyFactory.getProp(elem, data.v, 0, 0, container);
 }
-function NoValueEffect(){
-    this.p = {};
+function NoValueEffect() {
+  this.p = {};
 }
+
 function EffectsManager(){}
 function EffectsManager(data, element) {
   var effects = data.ef || [];
@@ -12023,7 +12129,6 @@ GroupEffect.prototype.init = function (data, element) {
   lottiejs.loadAnimation = loadAnimation;
   lottiejs.setSubframeRendering = setSubframeRendering;
   lottiejs.resize = animationManager.resize;
-  //lottiejs.start = start;
   lottiejs.goToAndStop = animationManager.goToAndStop;
   lottiejs.destroy = animationManager.destroy;
   lottiejs.setQuality = setQuality;
