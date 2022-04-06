@@ -1,7 +1,7 @@
 var AnimationItem = function () {
   this._cbs = [];
-  this.name = "";
-  this.path = "";
+  this.name = '';
+  this.path = '';
   this.isLoaded = false;
   this.currentFrame = 0;
   this.currentRawFrame = 0;
@@ -18,7 +18,7 @@ var AnimationItem = function () {
   this.loop = true;
   this.renderer = null;
   this.animationID = createElementID();
-  this.assetsPath = "";
+  this.assetsPath = '';
   this.timeCompleted = 0;
   this.segmentPos = 0;
   this.subframeEnabled = subframeEnabled;
@@ -35,19 +35,17 @@ AnimationItem.prototype.setParams = function (params) {
   if (params.context) {
     this.context = params.context;
   }
+
   if (params.wrapper || params.container) {
     this.wrapper = params.wrapper || params.container;
   }
-  var animType = params.animType
-    ? params.animType
-    : params.renderer
-    ? params.renderer
-    : "canvas";
+  
+  var animType = params.animType ? params.animType : params.renderer ? params.renderer : 'canvas';
   this.renderer = new CanvasRenderer(this, params.rendererSettings);
   this.renderer.setProjectInterface(this.projectInterface);
   this.animType = animType;
 
-  if (params.loop === "" || params.loop === null) {
+  if (params.loop === '' || params.loop === null) {
   } else if (params.loop === false) {
     this.loop = false;
   } else if (params.loop === true) {
@@ -55,28 +53,26 @@ AnimationItem.prototype.setParams = function (params) {
   } else {
     this.loop = parseInt(params.loop);
   }
-  this.autoplay = "autoplay" in params ? params.autoplay : true;
-  this.name = params.name ? params.name : "";
-  this.autoloadSegments = params.hasOwnProperty("autoloadSegments")
-    ? params.autoloadSegments
-    : true;
+  this.autoplay = 'autoplay' in params ? params.autoplay : true;
+  this.name = params.name ? params.name : '';
+  this.autoloadSegments = params.hasOwnProperty('autoloadSegments') ? params.autoloadSegments : true;
   this.assetsPath = params.assetsPath;
   if (params.animationData) {
     this.configAnimation(params.animationData);
   } else if (params.path) {
-    if (params.path.lastIndexOf("\\") !== -1) {
-      this.path = params.path.substr(0, params.path.lastIndexOf("\\") + 1);
+    if (params.path.lastIndexOf('\\') !== -1) {
+      this.path = params.path.substr(0, params.path.lastIndexOf('\\') + 1);
     } else {
-      this.path = params.path.substr(0, params.path.lastIndexOf("/") + 1);
+      this.path = params.path.substr(0, params.path.lastIndexOf('/') + 1);
     }
-    this.fileName = params.path.substr(params.path.lastIndexOf("/") + 1);
-    this.fileName = this.fileName.substr(0, this.fileName.lastIndexOf(".json"));
+    this.fileName = params.path.substr(params.path.lastIndexOf('/') + 1);
+    this.fileName = this.fileName.substr(0, this.fileName.lastIndexOf('.json'));
 
     assetLoader.load(
       params.path,
       this.configAnimation.bind(this),
       function () {
-        this.trigger("data_failed");
+        this.trigger('data_failed');
       }.bind(this)
     );
   }
@@ -105,10 +101,7 @@ AnimationItem.prototype.includeLayers = function (data) {
   }
   if (data.chars || data.fonts) {
     this.renderer.globalData.fontManager.addChars(data.chars);
-    this.renderer.globalData.fontManager.addFonts(
-      data.fonts,
-      this.renderer.globalData.defs
-    );
+    this.renderer.globalData.fontManager.addFonts(data.fonts, this.renderer.globalData.defs);
   }
   if (data.assets) {
     len = data.assets.length;
@@ -117,10 +110,7 @@ AnimationItem.prototype.includeLayers = function (data) {
     }
   }
   this.animationData.__complete = false;
-  dataManager.completeData(
-    this.animationData,
-    this.renderer.globalData.fontManager
-  );
+  dataManager.completeData(this.animationData, this.renderer.globalData.fontManager);
   this.renderer.includeLayers(data.layers);
   if (expressionsPlugin) {
     expressionsPlugin.initExpressions(this);
@@ -131,19 +121,19 @@ AnimationItem.prototype.includeLayers = function (data) {
 AnimationItem.prototype.loadNextSegment = function () {
   var segments = this.animationData.segments;
   if (!segments || segments.length === 0 || !this.autoloadSegments) {
-    this.trigger("data_ready");
+    this.trigger('data_ready');
     this.timeCompleted = this.totalFrames;
     return;
   }
   var segment = segments.shift();
   this.timeCompleted = segment.time * this.frameRate;
-  var segmentPath = this.path + this.fileName + "_" + this.segmentPos + ".json";
+  var segmentPath = this.path + this.fileName + '_' + this.segmentPos + '.json';
   this.segmentPos += 1;
   assetLoader.load(
     segmentPath,
     this.includeLayers.bind(this),
     function () {
-      this.trigger("data_failed");
+      this.trigger('data_failed');
     }.bind(this)
   );
 };
@@ -157,17 +147,14 @@ AnimationItem.prototype.loadSegments = function () {
 };
 
 AnimationItem.prototype.imagesLoaded = function () {
-  this.trigger("loaded_images");
+  this.trigger('loaded_images');
   this.checkLoaded();
 };
 
 AnimationItem.prototype.preloadImages = function () {
   this.imagePreloader.setAssetsPath(this.assetsPath);
   this.imagePreloader.setPath(this.path);
-  this.imagePreloader.loadAssets(
-    this.animationData.assets,
-    this.imagesLoaded.bind(this)
-  );
+  this.imagePreloader.loadAssets(this.animationData.assets, this.imagesLoaded.bind(this));
 };
 
 AnimationItem.prototype.configAnimation = function (animData) {
@@ -175,9 +162,7 @@ AnimationItem.prototype.configAnimation = function (animData) {
 
   try {
     this.animationData = animData;
-    this.totalFrames = Math.floor(
-      this.animationData.op - this.animationData.ip
-    );
+    this.totalFrames = Math.floor(this.animationData.op - this.animationData.ip);
     this.renderer.configAnimation(animData);
     if (!animData.assets) {
       animData.assets = [];
@@ -188,7 +173,7 @@ AnimationItem.prototype.configAnimation = function (animData) {
     this.firstFrame = Math.round(this.animationData.ip);
     this.frameMult = this.animationData.fr / 1000;
     this.renderer.searchExtraCompositions(animData.assets);
-    this.trigger("config_ready");
+    this.trigger('config_ready');
     this.preloadImages();
     this.loadSegments();
     this.updaFrameModifier();
@@ -206,10 +191,7 @@ AnimationItem.prototype.waitForFontsLoaded = function () {
 AnimationItem.prototype.checkLoaded = function () {
   if (!this.isLoaded && this.imagePreloader.loaded()) {
     this.isLoaded = true;
-    dataManager.completeData(
-      this.animationData,
-      this.renderer.globalData.fontManager
-    );
+    dataManager.completeData(this.animationData, this.renderer.globalData.fontManager);
     if (expressionsPlugin) expressionsPlugin.initExpressions(this);
     this.renderer.initItems();
 
@@ -230,17 +212,12 @@ AnimationItem.prototype.setSubframe = function (flag) {
 };
 
 AnimationItem.prototype.gotoFrame = function () {
-  this.currentFrame = this.subframeEnabled
-    ? this.currentRawFrame
-    : ~~this.currentRawFrame;
+  this.currentFrame = this.subframeEnabled ? this.currentRawFrame : ~~this.currentRawFrame;
 
-  if (
-    this.timeCompleted !== this.totalFrames &&
-    this.currentFrame > this.timeCompleted
-  ) {
+  if (this.timeCompleted !== this.totalFrames && this.currentFrame > this.timeCompleted) {
     this.currentFrame = this.timeCompleted;
   }
-  this.trigger("enterFrame");
+  this.trigger('enterFrame');
   this.renderFrame();
 };
 
@@ -263,7 +240,7 @@ AnimationItem.prototype.play = function (name) {
     this.isPaused = false;
     if (this._idle) {
       this._idle = false;
-      this.trigger("_active");
+      this.trigger('_active');
     }
   }
 };
@@ -275,7 +252,7 @@ AnimationItem.prototype.pause = function (name) {
   if (this.isPaused === false) {
     this.isPaused = true;
     this._idle = true;
-    this.trigger("_idle");
+    this.trigger('_idle');
   }
 };
 
@@ -327,11 +304,7 @@ AnimationItem.prototype.advanceTime = function (value) {
   // If animation won't loop, it should stop at totalFrames - 1. If it will loop it should complete the last frame and then loop.
   if (nextValue >= this.totalFrames - 1 && this.frameModifier > 0) {
     if (!this.loop || this.playCount === this.loop) {
-      if (
-        !this.checkSegments(
-          nextValue > this.totalFrames ? nextValue % this.totalFrames : 0
-        )
-      ) {
+      if (!this.checkSegments(nextValue > this.totalFrames ? nextValue % this.totalFrames : 0)) {
         _isComplete = true;
         nextValue = this.totalFrames - 1;
       }
@@ -340,7 +313,7 @@ AnimationItem.prototype.advanceTime = function (value) {
       if (!this.checkSegments(nextValue % this.totalFrames)) {
         this.setCurrentRawFrameValue(nextValue % this.totalFrames);
         this._completedLoop = true;
-        this.trigger("loopComplete");
+        this.trigger('loopComplete');
       }
     } else {
       this.setCurrentRawFrameValue(nextValue);
@@ -348,13 +321,11 @@ AnimationItem.prototype.advanceTime = function (value) {
   } else if (nextValue < 0) {
     if (!this.checkSegments(nextValue % this.totalFrames)) {
       if (this.loop && !(this.playCount-- <= 0 && this.loop !== true)) {
-        this.setCurrentRawFrameValue(
-          this.totalFrames + (nextValue % this.totalFrames)
-        );
+        this.setCurrentRawFrameValue(this.totalFrames + (nextValue % this.totalFrames));
         if (!this._completedLoop) {
           this._completedLoop = true;
         } else {
-          this.trigger("loopComplete");
+          this.trigger('loopComplete');
         }
       } else {
         _isComplete = true;
@@ -367,7 +338,7 @@ AnimationItem.prototype.advanceTime = function (value) {
   if (_isComplete) {
     this.setCurrentRawFrameValue(nextValue);
     this.pause();
-    this.trigger("complete");
+    this.trigger('complete');
   }
 };
 
@@ -396,7 +367,7 @@ AnimationItem.prototype.adjustSegment = function (arr, offset) {
     this.firstFrame = arr[0];
     this.setCurrentRawFrameValue(0.001 + offset);
   }
-  this.trigger("segmentStart");
+  this.trigger('segmentStart');
 };
 
 AnimationItem.prototype.setSegment = function (init, end) {
@@ -420,7 +391,7 @@ AnimationItem.prototype.playSegments = function (arr, forceFlag) {
   if (forceFlag) {
     this.segments.length = 0;
   }
-  if (typeof arr[0] === "object") {
+  if (typeof arr[0] === 'object') {
     var i,
       len = arr.length;
     for (i = 0; i < len; i += 1) {
@@ -459,14 +430,9 @@ AnimationItem.prototype.destroy = function (name) {
   }
   this.renderer.destroy();
   this.imagePreloader.destroy();
-  this.trigger("destroy");
+  this.trigger('destroy');
   this._cbs = null;
-  this.onEnterFrame =
-    this.onLoopComplete =
-    this.onComplete =
-    this.onSegmentStart =
-    this.onDestroy =
-      null;
+  this.onEnterFrame = this.onLoopComplete = this.onComplete = this.onSegmentStart = this.onDestroy = null;
   this.renderer = null;
 };
 
@@ -504,18 +470,18 @@ AnimationItem.prototype.getPath = function () {
 };
 
 AnimationItem.prototype.getAssetsPath = function (assetData) {
-  var path = "";
+  var path = '';
   if (assetData.e) {
     path = assetData.p;
   } else if (this.assetsPath) {
     var imagePath = assetData.p;
-    if (imagePath.indexOf("images/") !== -1) {
-      imagePath = imagePath.split("/")[1];
+    if (imagePath.indexOf('images/') !== -1) {
+      imagePath = imagePath.split('/')[1];
     }
     path = this.assetsPath + imagePath;
   } else {
     path = this.path;
-    path += assetData.u ? assetData.u : "";
+    path += assetData.u ? assetData.u : '';
     path += assetData.p;
   }
   return path;
@@ -547,40 +513,21 @@ AnimationItem.prototype.getDuration = function (isFrame) {
 AnimationItem.prototype.trigger = function (name) {
   if (this._cbs && this._cbs[name]) {
     switch (name) {
-      case "enterFrame":
-        this.triggerEvent(
-          name,
-          new BMEnterFrameEvent(
-            name,
-            this.currentFrame,
-            this.totalFrames,
-            this.frameModifier
-          )
-        );
+      case 'enterFrame':
+        this.triggerEvent(name, new BMEnterFrameEvent(name, this.currentFrame, this.totalFrames, this.frameModifier));
         break;
 
-      case "loopComplete":
-        this.triggerEvent(
-          name,
-          new BMCompleteLoopEvent(
-            name,
-            this.loop,
-            this.playCount,
-            this.frameMult
-          )
-        );
+      case 'loopComplete':
+        this.triggerEvent(name, new BMCompleteLoopEvent(name, this.loop, this.playCount, this.frameMult));
         break;
 
-      case "complete":
+      case 'complete':
         this.triggerEvent(name, new BMCompleteEvent(name, this.frameMult));
         break;
-      case "segmentStart":
-        this.triggerEvent(
-          name,
-          new BMSegmentStartEvent(name, this.firstFrame, this.totalFrames)
-        );
+      case 'segmentStart':
+        this.triggerEvent(name, new BMSegmentStartEvent(name, this.firstFrame, this.totalFrames));
         break;
-      case "destroy":
+      case 'destroy':
         this.triggerEvent(name, new BMDestroyEvent(name, this));
         break;
       default:
@@ -588,41 +535,27 @@ AnimationItem.prototype.trigger = function (name) {
     }
   }
 
-  if (name === "enterFrame" && this.onEnterFrame) {
-    this.onEnterFrame.call(
-      this,
-      new BMEnterFrameEvent(
-        name,
-        this.currentFrame,
-        this.totalFrames,
-        this.frameMult
-      )
-    );
+  if (name === 'enterFrame' && this.onEnterFrame) {
+    this.onEnterFrame.call(this, new BMEnterFrameEvent(name, this.currentFrame, this.totalFrames, this.frameMult));
   }
 
-  if (name === "loopComplete" && this.onLoopComplete) {
-    this.onLoopComplete.call(
-      this,
-      new BMCompleteLoopEvent(name, this.loop, this.playCount, this.frameMult)
-    );
+  if (name === 'loopComplete' && this.onLoopComplete) {
+    this.onLoopComplete.call(this, new BMCompleteLoopEvent(name, this.loop, this.playCount, this.frameMult));
   }
-  if (name === "complete" && this.onComplete) {
+  if (name === 'complete' && this.onComplete) {
     this.onComplete.call(this, new BMCompleteEvent(name, this.frameMult));
   }
-  if (name === "segmentStart" && this.onSegmentStart) {
-    this.onSegmentStart.call(
-      this,
-      new BMSegmentStartEvent(name, this.firstFrame, this.totalFrames)
-    );
+  if (name === 'segmentStart' && this.onSegmentStart) {
+    this.onSegmentStart.call(this, new BMSegmentStartEvent(name, this.firstFrame, this.totalFrames));
   }
-  if (name === "destroy" && this.onDestroy) {
+  if (name === 'destroy' && this.onDestroy) {
     this.onDestroy.call(this, new BMDestroyEvent(name, this));
   }
 };
 
 AnimationItem.prototype.triggerRenderFrameError = function (nativeError) {
   var error = new BMRenderFrameErrorEvent(nativeError, this.currentFrame);
-  this.triggerEvent("error", error);
+  this.triggerEvent('error', error);
 
   if (this.onError) {
     this.onError.call(this, error);
@@ -631,7 +564,7 @@ AnimationItem.prototype.triggerRenderFrameError = function (nativeError) {
 
 AnimationItem.prototype.triggerConfigError = function (nativeError) {
   var error = new BMConfigErrorEvent(nativeError, this.currentFrame);
-  this.triggerEvent("error", error);
+  this.triggerEvent('error', error);
 
   if (this.onError) {
     this.onError.call(this, error);

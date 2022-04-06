@@ -32,7 +32,6 @@ npm install lottie-nodejs
 - A Panel will open with a Compositions tab listing all of your Project Compositions.
 - Select the composition you want to export.
 - Select a Destination Folder.
-- Click Render
 - look for the exported json file (if you had images or AI layers on your animation, there will be an images folder with the exported files)
 
 ### UseAge
@@ -51,13 +50,19 @@ It takes an object as a unique param with:
 It returns the animation instance you can control with play, pause, setSpeed, etc.
 
 ```js
-lottie.loadAnimation({
+const lottie = require("lottie-nodejs");
+
+const ani = lottie.loadAnimation({
   container: element, // the dom element that will contain the animation
-  renderer: "svg",
+  renderer: "canvas",
   loop: true,
-  autoplay: true,
+  autoplay: false,
   path: "data.json", // the path to the animation json
 });
+
+setInterval(() => {
+  ani.render();
+}, 1000 / 30);
 ```
 
 ## Preview
