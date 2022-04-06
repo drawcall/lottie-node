@@ -21,7 +21,7 @@ function CanvasRenderer(animationItem, config) {
     renderConfig: this.renderConfig,
     currentGlobalAlpha: -1,
   };
-  
+
   this.contextData = new CVContextData();
   this.elements = [];
   this.pendingElements = [];

@@ -8,6 +8,7 @@ IShapeElement.prototype = {
       this.shapeModifiers[i].addShape(data);
     }
   },
+
   isShapeInAnimatedModifiers: function (data) {
     var i = 0,
       len = this.shapeModifiers.length;
@@ -33,6 +34,7 @@ IShapeElement.prototype = {
       this.shapeModifiers[i].processShapes(this._isFirstFrame);
     }
   },
+
   lcEnum: {
     1: 'butt',
     2: 'round',
@@ -43,6 +45,7 @@ IShapeElement.prototype = {
     2: 'round',
     3: 'bevel',
   },
+  
   searchProcessedElement: function (elem) {
     var elements = this.processedElements;
     var i = 0,
