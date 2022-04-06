@@ -7353,9 +7353,6 @@ extendPrototype([IImageElement], ISolidElement);
 ISolidElement.prototype.createContent = function(){
 
     var rect = createNS('rect');
-    ////rect.style.width = this.data.sw;
-    ////rect.style.height = this.data.sh;
-    ////rect.style.fill = this.data.sc;
     rect.setAttribute('width',this.data.sw);
     rect.setAttribute('height',this.data.sh);
     rect.setAttribute('fill',this.data.sc);
@@ -8604,26 +8601,6 @@ var animationManager = (function () {
     }
   }
 
-  function registerAnimation(element, animationData) {
-    if (!element) {
-      return null;
-    }
-    var i = 0;
-    while (i < len) {
-      if (
-        registeredAnimations[i].elem == element &&
-        registeredAnimations[i].elem !== null
-      ) {
-        return registeredAnimations[i].animation;
-      }
-      i += 1;
-    }
-    var animItem = new AnimationItem();
-    setupAnimation(animItem, element);
-    animItem.setData(element, animationData);
-    return animItem;
-  }
-
   function getRegisteredAnimations() {
     var i,
       len = registeredAnimations.length;
@@ -8757,7 +8734,6 @@ var animationManager = (function () {
     activate();
   }
 
-  moduleOb.registerAnimation = registerAnimation;
   moduleOb.loadAnimation = loadAnimation;
   moduleOb.setSpeed = setSpeed;
   moduleOb.setDirection = setDirection;
@@ -8857,81 +8833,6 @@ AnimationItem.prototype.setParams = function (params) {
       }.bind(this)
     );
   }
-};
-
-AnimationItem.prototype.setData = function (wrapper, animationData) {
-  var params = {
-    wrapper: wrapper,
-    animationData: animationData
-      ? typeof animationData === "object"
-        ? animationData
-        : JSON.parse(animationData)
-      : null,
-  };
-  var wrapperAttributes = wrapper.attributes;
-
-  params.path = wrapperAttributes.getNamedItem("data-animation-path")
-    ? wrapperAttributes.getNamedItem("data-animation-path").value
-    : wrapperAttributes.getNamedItem("data-bm-path")
-    ? wrapperAttributes.getNamedItem("data-bm-path").value
-    : wrapperAttributes.getNamedItem("bm-path")
-    ? wrapperAttributes.getNamedItem("bm-path").value
-    : "";
-  params.animType = wrapperAttributes.getNamedItem("data-anim-type")
-    ? wrapperAttributes.getNamedItem("data-anim-type").value
-    : wrapperAttributes.getNamedItem("data-bm-type")
-    ? wrapperAttributes.getNamedItem("data-bm-type").value
-    : wrapperAttributes.getNamedItem("bm-type")
-    ? wrapperAttributes.getNamedItem("bm-type").value
-    : wrapperAttributes.getNamedItem("data-bm-renderer")
-    ? wrapperAttributes.getNamedItem("data-bm-renderer").value
-    : wrapperAttributes.getNamedItem("bm-renderer")
-    ? wrapperAttributes.getNamedItem("bm-renderer").value
-    : "canvas";
-
-  var loop = wrapperAttributes.getNamedItem("data-anim-loop")
-    ? wrapperAttributes.getNamedItem("data-anim-loop").value
-    : wrapperAttributes.getNamedItem("data-bm-loop")
-    ? wrapperAttributes.getNamedItem("data-bm-loop").value
-    : wrapperAttributes.getNamedItem("bm-loop")
-    ? wrapperAttributes.getNamedItem("bm-loop").value
-    : "";
-  if (loop === "") {
-  } else if (loop === "false") {
-    params.loop = false;
-  } else if (loop === "true") {
-    params.loop = true;
-  } else {
-    params.loop = parseInt(loop);
-  }
-  var autoplay = wrapperAttributes.getNamedItem("data-anim-autoplay")
-    ? wrapperAttributes.getNamedItem("data-anim-autoplay").value
-    : wrapperAttributes.getNamedItem("data-bm-autoplay")
-    ? wrapperAttributes.getNamedItem("data-bm-autoplay").value
-    : wrapperAttributes.getNamedItem("bm-autoplay")
-    ? wrapperAttributes.getNamedItem("bm-autoplay").value
-    : true;
-  params.autoplay = autoplay !== "false";
-
-  params.name = wrapperAttributes.getNamedItem("data-name")
-    ? wrapperAttributes.getNamedItem("data-name").value
-    : wrapperAttributes.getNamedItem("data-bm-name")
-    ? wrapperAttributes.getNamedItem("data-bm-name").value
-    : wrapperAttributes.getNamedItem("bm-name")
-    ? wrapperAttributes.getNamedItem("bm-name").value
-    : "";
-  var prerender = wrapperAttributes.getNamedItem("data-anim-prerender")
-    ? wrapperAttributes.getNamedItem("data-anim-prerender").value
-    : wrapperAttributes.getNamedItem("data-bm-prerender")
-    ? wrapperAttributes.getNamedItem("data-bm-prerender").value
-    : wrapperAttributes.getNamedItem("bm-prerender")
-    ? wrapperAttributes.getNamedItem("bm-prerender").value
-    : "";
-
-  if (prerender === "false") {
-    params.prerender = false;
-  }
-  this.setParams(params);
 };
 
 AnimationItem.prototype.includeLayers = function (data) {
@@ -9451,7 +9352,7 @@ AnimationItem.prototype.trigger = function (name) {
       )
     );
   }
-  
+
   if (name === "loopComplete" && this.onLoopComplete) {
     this.onLoopComplete.call(
       this,
@@ -12041,7 +11942,6 @@ GroupEffect.prototype.init = function (data, element) {
   lottiejs.setSpeed = animationManager.setSpeed;
   lottiejs.setDirection = animationManager.setDirection;
   lottiejs.stop = animationManager.stop;
-  lottiejs.registerAnimation = animationManager.registerAnimation;
   lottiejs.loadAnimation = loadAnimation;
   lottiejs.setSubframeRendering = setSubframeRendering;
   lottiejs.resize = animationManager.resize;

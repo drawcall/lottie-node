@@ -86,7 +86,6 @@
   lottiejs.setSpeed = animationManager.setSpeed;
   lottiejs.setDirection = animationManager.setDirection;
   lottiejs.stop = animationManager.stop;
-  lottiejs.registerAnimation = animationManager.registerAnimation;
   lottiejs.loadAnimation = loadAnimation;
   lottiejs.setSubframeRendering = setSubframeRendering;
   lottiejs.resize = animationManager.resize;
