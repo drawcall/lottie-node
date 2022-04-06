@@ -1,5 +1,5 @@
 function createTag(type) {
-  console.trace(2222);
+  
   switch (type) {
     case "img":
     case "image":

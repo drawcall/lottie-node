@@ -310,7 +310,7 @@ function createSizedArray(len) {
 	return Array.apply(null,{length:len});
 }
 function createTag(type) {
-  console.trace(2222);
+  
   switch (type) {
     case "img":
     case "image":
@@ -9250,6 +9250,7 @@ AnimationItem.prototype.adjustSegment = function (arr, offset) {
   }
   this.trigger("segmentStart");
 };
+
 AnimationItem.prototype.setSegment = function (init, end) {
   var pendingFrame = -1;
   if (this.isPaused) {
@@ -9409,6 +9410,7 @@ AnimationItem.prototype.trigger = function (name) {
           )
         );
         break;
+
       case "loopComplete":
         this.triggerEvent(
           name,
@@ -9420,6 +9422,7 @@ AnimationItem.prototype.trigger = function (name) {
           )
         );
         break;
+
       case "complete":
         this.triggerEvent(name, new BMCompleteEvent(name, this.frameMult));
         break;
@@ -9436,6 +9439,7 @@ AnimationItem.prototype.trigger = function (name) {
         this.triggerEvent(name);
     }
   }
+
   if (name === "enterFrame" && this.onEnterFrame) {
     this.onEnterFrame.call(
       this,
@@ -9447,6 +9451,7 @@ AnimationItem.prototype.trigger = function (name) {
       )
     );
   }
+  
   if (name === "loopComplete" && this.onLoopComplete) {
     this.onLoopComplete.call(
       this,
@@ -9535,7 +9540,6 @@ var ExpressionManager = (function(){
     'use strict';
     var ob = {};
     var Math = BMMath;
-    var window = null;
     var document = null;
 
     function $bm_isInstanceOfArray(arr) {
