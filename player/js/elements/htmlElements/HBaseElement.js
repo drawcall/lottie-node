@@ -28,6 +28,7 @@ HBaseElement.prototype = {
             this.setBlendMode();
         }
     },
+
     renderElement: function() {
         if(this.finalTransform._matMdf){
             this.transformedElement.style.transform = this.transformedElement.style.webkitTransform = this.finalTransform.mat.toCSS();
@@ -36,12 +37,14 @@ HBaseElement.prototype = {
             this.transformedElement.style.opacity = this.finalTransform.mProp.o.v;
         }
     },
+
     renderFrame: function() {
         //If it is exported as hidden (data.hd === true) no need to render
         //If it is not visible no need to render
         if (this.data.hd || this.hidden) {
             return;
         }
+
         this.renderTransform();
         this.renderRenderable();
         this.renderElement();

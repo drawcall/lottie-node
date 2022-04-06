@@ -21,6 +21,7 @@ function CanvasRenderer(animationItem, config) {
     renderConfig: this.renderConfig,
     currentGlobalAlpha: -1,
   };
+  
   this.contextData = new CVContextData();
   this.elements = [];
   this.pendingElements = [];
@@ -58,10 +59,12 @@ CanvasRenderer.prototype.ctxTransform = function (props) {
   if (props[0] === 1 && props[1] === 0 && props[4] === 0 && props[5] === 1 && props[12] === 0 && props[13] === 0) {
     return;
   }
+
   if (!this.renderConfig.clearCanvas) {
     this.canvasContext.transform(props[0], props[1], props[4], props[5], props[12], props[13]);
     return;
   }
+
   this.transformMat.cloneFromProps(props);
   var cProps = this.contextData.cTr.props;
   this.transformMat.transform(
@@ -311,24 +314,28 @@ CanvasRenderer.prototype.renderFrame = function (num, forceRender) {
     this.checkLayers(num);
   }
 
+  //// 1. prepareFrame ////
   for (i = 0; i < len; i++) {
     if (this.completeLayers || this.elements[i]) {
       this.elements[i].prepareFrame(num - this.layers[i].st);
     }
   }
-  
+
   if (this.globalData._mdf) {
+    //// 2. clearRect ////
     if (this.renderConfig.clearCanvas === true) {
       this.canvasContext.clearRect(0, 0, this.transformCanvas.w, this.transformCanvas.h);
     } else {
       this.save();
     }
 
+    //// 3. renderFrame ////
     for (i = len - 1; i >= 0; i -= 1) {
       if (this.completeLayers || this.elements[i]) {
         this.elements[i].renderFrame();
       }
     }
+
     if (this.renderConfig.clearCanvas !== true) {
       this.restore();
     }

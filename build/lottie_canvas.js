@@ -5895,6 +5895,7 @@ function CanvasRenderer(animationItem, config) {
     renderConfig: this.renderConfig,
     currentGlobalAlpha: -1,
   };
+  
   this.contextData = new CVContextData();
   this.elements = [];
   this.pendingElements = [];
@@ -5932,10 +5933,12 @@ CanvasRenderer.prototype.ctxTransform = function (props) {
   if (props[0] === 1 && props[1] === 0 && props[4] === 0 && props[5] === 1 && props[12] === 0 && props[13] === 0) {
     return;
   }
+
   if (!this.renderConfig.clearCanvas) {
     this.canvasContext.transform(props[0], props[1], props[4], props[5], props[12], props[13]);
     return;
   }
+
   this.transformMat.cloneFromProps(props);
   var cProps = this.contextData.cTr.props;
   this.transformMat.transform(
@@ -6185,24 +6188,28 @@ CanvasRenderer.prototype.renderFrame = function (num, forceRender) {
     this.checkLayers(num);
   }
 
+  //// 1. prepareFrame ////
   for (i = 0; i < len; i++) {
     if (this.completeLayers || this.elements[i]) {
       this.elements[i].prepareFrame(num - this.layers[i].st);
     }
   }
-  
+
   if (this.globalData._mdf) {
+    //// 2. clearRect ////
     if (this.renderConfig.clearCanvas === true) {
       this.canvasContext.clearRect(0, 0, this.transformCanvas.w, this.transformCanvas.h);
     } else {
       this.save();
     }
 
+    //// 3. renderFrame ////
     for (i = len - 1; i >= 0; i -= 1) {
       if (this.completeLayers || this.elements[i]) {
         this.elements[i].renderFrame();
       }
     }
+
     if (this.renderConfig.clearCanvas !== true) {
       this.restore();
     }
@@ -6507,57 +6514,49 @@ HierarchyElement.prototype = {
 	    }
 	}
 };
-/**
- * @file 
- * Handles element's layer frame update.
- * Checks layer in point and out point
- *
- */
-
-function FrameElement(){}
+function FrameElement() {}
 
 FrameElement.prototype = {
-    /**
-     * @function 
-     * Initializes frame related properties.
-     *
-     */
-    initFrame: function(){
-        //set to true when inpoint is rendered
-        this._isFirstFrame = false;
-        //list of animated properties
-        this.dynamicProperties = [];
-        // If layer has been modified in current tick this will be true
-        this._mdf = false;
-    },
-    /**
-     * @function 
-     * Calculates all dynamic values
-     *
-     * @param {number} num
-     * current frame number in Layer's time
-     * @param {boolean} isVisible
-     * if layers is currently in range
-     * 
-     */
-    prepareProperties: function(num, isVisible) {
-        var i, len = this.dynamicProperties.length;
-        for (i = 0;i < len; i += 1) {
-            if (isVisible || (this._isParent && this.dynamicProperties[i].propType === 'transform')) {
-                this.dynamicProperties[i].getValue();
-                if (this.dynamicProperties[i]._mdf) {
-                    this.globalData._mdf = true;
-                    this._mdf = true;
-                }
-            }
+  initFrame: function () {
+    // set to true when inpoint is rendered
+    this._isFirstFrame = false;
+    // list of animated properties
+    this.dynamicProperties = [];
+    // If layer has been modified in current tick this will be true
+    this._mdf = false;
+  },
+
+  /**
+   * @function
+   * Calculates all dynamic values
+   *
+   * @param {number} num
+   * current frame number in Layer's time
+   * @param {boolean} isVisible
+   * if layers is currently in range
+   *
+   */
+  prepareProperties: function (num, isVisible) {
+    var i,
+      len = this.dynamicProperties.length;
+    for (i = 0; i < len; i += 1) {
+      if (isVisible || (this._isParent && this.dynamicProperties[i].propType === 'transform')) {
+        this.dynamicProperties[i].getValue();
+        if (this.dynamicProperties[i]._mdf) {
+          this.globalData._mdf = true;
+          this._mdf = true;
         }
-    },
-    addDynamicProperty: function(prop) {
-        if(this.dynamicProperties.indexOf(prop) === -1) {
-            this.dynamicProperties.push(prop);
-        }
+      }
     }
+  },
+
+  addDynamicProperty: function (prop) {
+    if (this.dynamicProperties.indexOf(prop) === -1) {
+      this.dynamicProperties.push(prop);
+    }
+  },
 };
+
 function TransformElement(){}
 
 TransformElement.prototype = {
@@ -6632,94 +6631,93 @@ TransformElement.prototype = {
     },
     mHelper: new Matrix()
 };
-function RenderableElement(){
-
-}
+function RenderableElement() {}
 
 RenderableElement.prototype = {
-    initRenderable: function() {
-        //layer's visibility related to inpoint and outpoint. Rename isVisible to isInRange
-        this.isInRange = false;
-        //layer's display state
-        this.hidden = false;
-        // If layer's transparency equals 0, it can be hidden
-        this.isTransparent = false;
-        //list of animated components
-        this.renderableComponents = [];
-    },
-    addRenderableComponent: function(component) {
-        if(this.renderableComponents.indexOf(component) === -1) {
-            this.renderableComponents.push(component);
-        }
-    },
-    removeRenderableComponent: function(component) {
-        if(this.renderableComponents.indexOf(component) !== -1) {
-            this.renderableComponents.splice(this.renderableComponents.indexOf(component), 1);
-        }
-    },
-    prepareRenderableFrame: function(num) {
-        this.checkLayerLimits(num);
-    },
-    checkTransparency: function(){
-        if(this.finalTransform.mProp.o.v <= 0) {
-            if(!this.isTransparent && this.globalData.renderConfig.hideOnTransparent){
-                this.isTransparent = true;
-                this.hide();
-            }
-        } else if(this.isTransparent) {
-            this.isTransparent = false;
-            this.show();
-        }
-    },
-    /**
-     * @function 
-     * Initializes frame related properties.
-     *
-     * @param {number} num
-     * current frame number in Layer's time
-     * 
-     */
-    checkLayerLimits: function(num) {
-        if(this.data.ip - this.data.st <= num && this.data.op - this.data.st > num)
-        {
-            if(this.isInRange !== true){
-                this.globalData._mdf = true;
-                this._mdf = true;
-                this.isInRange = true;
-                this.show();
-            }
-        } else {
-            if(this.isInRange !== false){
-                this.globalData._mdf = true;
-                this.isInRange = false;
-                this.hide();
-            }
-        }
-    },
-    renderRenderable: function() {
-        var i, len = this.renderableComponents.length;
-        for(i = 0; i < len; i += 1) {
-            this.renderableComponents[i].renderFrame(this._isFirstFrame);
-        }
-        /*this.maskManager.renderFrame(this.finalTransform.mat);
-        this.renderableEffectsManager.renderFrame(this._isFirstFrame);*/
-    },
-    sourceRectAtTime: function(){
-        return {
-            top:0,
-            left:0,
-            width:100,
-            height:100
-        };
-    },
-    getLayerSize: function(){
-        if(this.data.ty === 5){
-            return {w:this.data.textData.width,h:this.data.textData.height};
-        }else{
-            return {w:this.data.width,h:this.data.height};
-        }
+  initRenderable: function () {
+    //layer's visibility related to inpoint and outpoint. Rename isVisible to isInRange
+    this.isInRange = false;
+    //layer's display state
+    this.hidden = false;
+    // If layer's transparency equals 0, it can be hidden
+    this.isTransparent = false;
+    //list of animated components
+    this.renderableComponents = [];
+  },
+
+  addRenderableComponent: function (component) {
+    if (this.renderableComponents.indexOf(component) === -1) {
+      this.renderableComponents.push(component);
     }
+  },
+
+  removeRenderableComponent: function (component) {
+    if (this.renderableComponents.indexOf(component) !== -1) {
+      this.renderableComponents.splice(this.renderableComponents.indexOf(component), 1);
+    }
+  },
+
+  prepareRenderableFrame: function (num) {
+    this.checkLayerLimits(num);
+  },
+
+  checkTransparency: function () {
+    if (this.finalTransform.mProp.o.v <= 0) {
+      if (!this.isTransparent && this.globalData.renderConfig.hideOnTransparent) {
+        this.isTransparent = true;
+        this.hide();
+      }
+    } else if (this.isTransparent) {
+      this.isTransparent = false;
+      this.show();
+    }
+  },
+
+  checkLayerLimits: function (num) {
+    // console.log(num, this.data.ip - this.data.st, this.data.op - this.data.st);
+    // [a-num-b]
+    if (this.data.ip - this.data.st <= num && this.data.op - this.data.st > num) {
+      if (this.isInRange !== true) {
+        this.globalData._mdf = true;
+        this._mdf = true;
+        this.isInRange = true;
+        this.show();
+      }
+    } else {
+      if (this.isInRange !== false) {
+        this.globalData._mdf = true;
+        this.isInRange = false;
+        this.hide();
+      }
+    }
+  },
+
+  renderRenderable: function () {
+    var i,
+      len = this.renderableComponents.length;
+    for (i = 0; i < len; i += 1) {
+      this.renderableComponents[i].renderFrame(this._isFirstFrame);
+    }
+  },
+
+  sourceRectAtTime: function () {
+    return {
+      top: 0,
+      left: 0,
+      width: 100,
+      height: 100,
+    };
+  },
+  
+  getLayerSize: function () {
+    if (this.data.ty === 5) {
+      return { w: this.data.textData.width, h: this.data.textData.height };
+    } else {
+      return { w: this.data.width, h: this.data.height };
+    }
+  },
 };
+
 function RenderableDOMElement() {}
 
 (function () {
@@ -6898,66 +6896,69 @@ function CVShapeData(element, data, styles, transformsManager) {
 }
 
 CVShapeData.prototype.setAsAnimated = SVGShapeData.prototype.setAsAnimated;
-function BaseElement(){
-}
+function BaseElement() {}
 
 BaseElement.prototype = {
-    checkMasks: function(){
-        if(!this.data.hasMask){
-            return false;
-        }
-        var i = 0, len = this.data.masksProperties.length;
-        while(i<len) {
-            if((this.data.masksProperties[i].mode !== 'n' && this.data.masksProperties[i].cl !== false)) {
-                return true;
-            }
-            i += 1;
-        }
-        return false;
-    },
-    initExpressions: function(){
-        this.layerInterface = LayerExpressionInterface(this);
-        if(this.data.hasMask && this.maskManager) {
-            this.layerInterface.registerMaskInterface(this.maskManager);
-        }
-        var effectsInterface = EffectsExpressionInterface.createEffectsInterface(this,this.layerInterface);
-        this.layerInterface.registerEffectsInterface(effectsInterface);
-
-        if(this.data.ty === 0 || this.data.xt){
-            this.compInterface = CompExpressionInterface(this);
-        } else if(this.data.ty === 4){
-            this.layerInterface.shapeInterface = ShapeExpressionInterface(this.shapesData,this.itemsData,this.layerInterface);
-            this.layerInterface.content = this.layerInterface.shapeInterface;
-        } else if(this.data.ty === 5){
-            this.layerInterface.textInterface = TextExpressionInterface(this);
-            this.layerInterface.text = this.layerInterface.textInterface;
-        }
-    },
-    setBlendMode: function(){
-        var blendModeValue = getBlendMode(this.data.bm);
-        var elem = this.baseElement || this.layerElement;
-
-        elem.style['mix-blend-mode'] = blendModeValue;
-    },
-    initBaseData: function(data, globalData, comp){
-        this.globalData = globalData;
-        this.comp = comp;
-        this.data = data;
-        this.layerId = createElementID();
-        
-        //Stretch factor for old animations missing this property.
-        if(!this.data.sr){
-            this.data.sr = 1;
-        }
-        // effects manager
-        this.effectsManager = new EffectsManager(this.data,this,this.dynamicProperties);
-        
-    },
-    getType: function(){
-        return this.type;
+  checkMasks: function () {
+    if (!this.data.hasMask) {
+      return false;
     }
-    ,sourceRectAtTime: function(){}
-}
+    var i = 0,
+      len = this.data.masksProperties.length;
+    while (i < len) {
+      if (this.data.masksProperties[i].mode !== 'n' && this.data.masksProperties[i].cl !== false) {
+        return true;
+      }
+      i += 1;
+    }
+    return false;
+  },
+  
+  initExpressions: function () {
+    this.layerInterface = LayerExpressionInterface(this);
+    if (this.data.hasMask && this.maskManager) {
+      this.layerInterface.registerMaskInterface(this.maskManager);
+    }
+    var effectsInterface = EffectsExpressionInterface.createEffectsInterface(this, this.layerInterface);
+    this.layerInterface.registerEffectsInterface(effectsInterface);
+
+    if (this.data.ty === 0 || this.data.xt) {
+      this.compInterface = CompExpressionInterface(this);
+    } else if (this.data.ty === 4) {
+      this.layerInterface.shapeInterface = ShapeExpressionInterface(this.shapesData, this.itemsData, this.layerInterface);
+      this.layerInterface.content = this.layerInterface.shapeInterface;
+    } else if (this.data.ty === 5) {
+      this.layerInterface.textInterface = TextExpressionInterface(this);
+      this.layerInterface.text = this.layerInterface.textInterface;
+    }
+  },
+
+  setBlendMode: function () {
+    var blendModeValue = getBlendMode(this.data.bm);
+    var elem = this.baseElement || this.layerElement;
+
+    elem.style['mix-blend-mode'] = blendModeValue;
+  },
+
+  initBaseData: function (data, globalData, comp) {
+    this.globalData = globalData;
+    this.comp = comp;
+    this.data = data;
+    this.layerId = createElementID();
+
+    //Stretch factor for old animations missing this property.
+    if (!this.data.sr) {
+      this.data.sr = 1;
+    }
+    // effects manager
+    this.effectsManager = new EffectsManager(this.data, this, this.dynamicProperties);
+  },
+  getType: function () {
+    return this.type;
+  },
+  sourceRectAtTime: function () {},
+};
+
 function NullElement(data, globalData, comp) {
   this.initFrame();
   this.initBaseData(data, globalData, comp);
@@ -7764,67 +7765,72 @@ CVContextData.prototype.reset = function() {
 	this.cTr.reset();
     this.cO = 1;
 };
-function CVBaseElement(){
-}
+function CVBaseElement() {}
 
 CVBaseElement.prototype = {
-    createElements: function(){},
-    initRendererElement: function(){},
-    createContainerElements: function(){
-        this.canvasContext = this.globalData.canvasContext;
-        this.renderableEffectsManager = new CVEffects(this);
-    },
-    createContent: function(){},
-    setBlendMode: function(){
-        var globalData = this.globalData;
-        if(globalData.blendMode !== this.data.bm) {
-            globalData.blendMode = this.data.bm;
-            var blendModeValue = getBlendMode(this.data.bm);
-            globalData.canvasContext.globalCompositeOperation = blendModeValue;
-        }
-    },
-    createRenderableComponents: function(){
-        this.maskManager = new CVMaskElement(this.data, this);
-    },
-    hideElement: function(){
-        if (!this.hidden && (!this.isInRange || this.isTransparent)) {
-            this.hidden = true;
-        }
-    },
-    showElement: function(){
-        if (this.isInRange && !this.isTransparent){
-            this.hidden = false;
-            this._isFirstFrame = true;
-            this.maskManager._isFirstFrame = true;
-        }
-    },
-    renderFrame: function() {
-        if (this.hidden || this.data.hd) {
-            return;
-        }
-        this.renderTransform();
-        this.renderRenderable();
-        this.setBlendMode();
-        var forceRealStack = this.data.ty === 0;
-        this.globalData.renderer.save(forceRealStack);
-        this.globalData.renderer.ctxTransform(this.finalTransform.mat.props);
-        this.globalData.renderer.ctxOpacity(this.finalTransform.mProp.o.v);
-        this.renderInnerContent();
-        this.globalData.renderer.restore(forceRealStack);
-        if(this.maskManager.hasMasks) {
-            this.globalData.renderer.restore(true);
-        }
-        if (this._isFirstFrame) {
-            this._isFirstFrame = false;
-        }
-    },
-    destroy: function(){
-        this.canvasContext = null;
-        this.data = null;
-        this.globalData = null;
-        this.maskManager.destroy();
-    },
-    mHelper: new Matrix()
+  createElements: function () {},
+  initRendererElement: function () {},
+  createContainerElements: function () {
+    this.canvasContext = this.globalData.canvasContext;
+    this.renderableEffectsManager = new CVEffects(this);
+  },
+
+  createContent: function () {},
+
+  setBlendMode: function () {
+    var globalData = this.globalData;
+    if (globalData.blendMode !== this.data.bm) {
+      globalData.blendMode = this.data.bm;
+      var blendModeValue = getBlendMode(this.data.bm);
+      globalData.canvasContext.globalCompositeOperation = blendModeValue;
+    }
+  },
+  
+  createRenderableComponents: function () {
+    this.maskManager = new CVMaskElement(this.data, this);
+  },
+  
+  hideElement: function () {
+    if (!this.hidden && (!this.isInRange || this.isTransparent)) {
+      this.hidden = true;
+    }
+  },
+
+  showElement: function () {
+    if (this.isInRange && !this.isTransparent) {
+      this.hidden = false;
+      this._isFirstFrame = true;
+      this.maskManager._isFirstFrame = true;
+    }
+  },
+
+  renderFrame: function () {
+    if (this.hidden || this.data.hd) {
+      return;
+    }
+    this.renderTransform();
+    this.renderRenderable();
+    this.setBlendMode();
+    var forceRealStack = this.data.ty === 0;
+    this.globalData.renderer.save(forceRealStack);
+    this.globalData.renderer.ctxTransform(this.finalTransform.mat.props);
+    this.globalData.renderer.ctxOpacity(this.finalTransform.mProp.o.v);
+    this.renderInnerContent();
+    this.globalData.renderer.restore(forceRealStack);
+    if (this.maskManager.hasMasks) {
+      this.globalData.renderer.restore(true);
+    }
+    if (this._isFirstFrame) {
+      this._isFirstFrame = false;
+    }
+  },
+  destroy: function () {
+    this.canvasContext = null;
+    this.data = null;
+    this.globalData = null;
+    this.maskManager.destroy();
+  },
+  mHelper: new Matrix(),
 };
 CVBaseElement.prototype.hide = CVBaseElement.prototype.hideElement;
 CVBaseElement.prototype.show = CVBaseElement.prototype.showElement;
@@ -9026,7 +9032,7 @@ AnimationItem.prototype.setParams = function (params) {
   if (params.wrapper || params.container) {
     this.wrapper = params.wrapper || params.container;
   }
-  
+
   var animType = params.animType ? params.animType : params.renderer ? params.renderer : 'canvas';
   this.renderer = new CanvasRenderer(this, params.rendererSettings);
   this.renderer.setProjectInterface(this.projectInterface);
@@ -9044,6 +9050,7 @@ AnimationItem.prototype.setParams = function (params) {
   this.name = params.name ? params.name : '';
   this.autoloadSegments = params.hasOwnProperty('autoloadSegments') ? params.autoloadSegments : true;
   this.assetsPath = params.assetsPath;
+  
   if (params.animationData) {
     this.configAnimation(params.animationData);
   } else if (params.path) {

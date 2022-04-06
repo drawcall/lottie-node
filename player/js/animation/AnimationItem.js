@@ -39,7 +39,7 @@ AnimationItem.prototype.setParams = function (params) {
   if (params.wrapper || params.container) {
     this.wrapper = params.wrapper || params.container;
   }
-  
+
   var animType = params.animType ? params.animType : params.renderer ? params.renderer : 'canvas';
   this.renderer = new CanvasRenderer(this, params.rendererSettings);
   this.renderer.setProjectInterface(this.projectInterface);
@@ -57,6 +57,7 @@ AnimationItem.prototype.setParams = function (params) {
   this.name = params.name ? params.name : '';
   this.autoloadSegments = params.hasOwnProperty('autoloadSegments') ? params.autoloadSegments : true;
   this.assetsPath = params.assetsPath;
+  
   if (params.animationData) {
     this.configAnimation(params.animationData);
   } else if (params.path) {
