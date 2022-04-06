@@ -6190,12 +6190,14 @@ CanvasRenderer.prototype.renderFrame = function (num, forceRender) {
       this.elements[i].prepareFrame(num - this.layers[i].st);
     }
   }
+  
   if (this.globalData._mdf) {
     if (this.renderConfig.clearCanvas === true) {
       this.canvasContext.clearRect(0, 0, this.transformCanvas.w, this.transformCanvas.h);
     } else {
       this.save();
     }
+
     for (i = len - 1; i >= 0; i -= 1) {
       if (this.completeLayers || this.elements[i]) {
         this.elements[i].renderFrame();
@@ -6720,65 +6722,66 @@ RenderableElement.prototype = {
 };
 function RenderableDOMElement() {}
 
-(function(){
-    var _prototype = {
-        initElement: function(data,globalData,comp) {
-            this.initFrame();
-            this.initBaseData(data, globalData, comp);
-            this.initTransform(data, globalData, comp);
-            this.initHierarchy();
-            this.initRenderable();
-            this.initRendererElement();
-            this.createContainerElements();
-            this.createRenderableComponents();
-            this.createContent();
-            this.hide();
-        },
-        hide: function(){
-            if (!this.hidden && (!this.isInRange || this.isTransparent)) {
-                var elem = this.baseElement || this.layerElement;
-                elem.style.display = 'none';
-                this.hidden = true;
-            }
-        },
-        show: function(){
-            if (this.isInRange && !this.isTransparent){
-                if (!this.data.hd) {
-                    var elem = this.baseElement || this.layerElement;
-                    elem.style.display = 'block';
-                }
-                this.hidden = false;
-                this._isFirstFrame = true;
-            }
-        },
-        renderFrame: function() {
-            //If it is exported as hidden (data.hd === true) no need to render
-            //If it is not visible no need to render
-            if (this.data.hd || this.hidden) {
-                return;
-            }
-            this.renderTransform();
-            this.renderRenderable();
-            this.renderElement();
-            this.renderInnerContent();
-            if (this._isFirstFrame) {
-                this._isFirstFrame = false;
-            }
-        },
-        renderInnerContent: function() {},
-        prepareFrame: function(num) {
-            this._mdf = false;
-            this.prepareRenderableFrame(num);
-            this.prepareProperties(num, this.isInRange);
-            this.checkTransparency();
-        },
-        destroy: function(){
-            this.innerElem =  null;
-            this.destroyBaseElement();
+(function () {
+  var _prototype = {
+    initElement: function (data, globalData, comp) {
+      this.initFrame();
+      this.initBaseData(data, globalData, comp);
+      this.initTransform(data, globalData, comp);
+      this.initHierarchy();
+      this.initRenderable();
+      this.initRendererElement();
+      this.createContainerElements();
+      this.createRenderableComponents();
+      this.createContent();
+      this.hide();
+    },
+    hide: function () {
+      if (!this.hidden && (!this.isInRange || this.isTransparent)) {
+        var elem = this.baseElement || this.layerElement;
+        elem.style.display = 'none';
+        this.hidden = true;
+      }
+    },
+    show: function () {
+      if (this.isInRange && !this.isTransparent) {
+        if (!this.data.hd) {
+          var elem = this.baseElement || this.layerElement;
+          elem.style.display = 'block';
         }
-    };
-    extendPrototype([RenderableElement, createProxyFunction(_prototype)], RenderableDOMElement);
-}());
+        this.hidden = false;
+        this._isFirstFrame = true;
+      }
+    },
+    renderFrame: function () {
+      //If it is exported as hidden (data.hd === true) no need to render
+      //If it is not visible no need to render
+      if (this.data.hd || this.hidden) {
+        return;
+      }
+      this.renderTransform();
+      this.renderRenderable();
+      this.renderElement();
+      this.renderInnerContent();
+      if (this._isFirstFrame) {
+        this._isFirstFrame = false;
+      }
+    },
+    renderInnerContent: function () {},
+    prepareFrame: function (num) {
+      this._mdf = false;
+      this.prepareRenderableFrame(num);
+      this.prepareProperties(num, this.isInRange);
+      this.checkTransparency();
+    },
+    destroy: function () {
+      this.innerElem = null;
+      this.destroyBaseElement();
+    },
+  };
+  extendPrototype([RenderableElement, createProxyFunction(_prototype)], RenderableDOMElement);
+})();
+
 function ProcessedElement(element, position) {
 	this.elem = element;
 	this.pos = position;
@@ -6955,35 +6958,31 @@ BaseElement.prototype = {
     }
     ,sourceRectAtTime: function(){}
 }
-function NullElement(data,globalData,comp){
-    this.initFrame();
-	this.initBaseData(data, globalData, comp);
-    this.initFrame();
-    this.initTransform(data, globalData, comp);
-    this.initHierarchy();
+function NullElement(data, globalData, comp) {
+  this.initFrame();
+  this.initBaseData(data, globalData, comp);
+  this.initFrame();
+  this.initTransform(data, globalData, comp);
+  this.initHierarchy();
 }
 
-NullElement.prototype.prepareFrame = function(num) {
-    this.prepareProperties(num, true);
+NullElement.prototype.prepareFrame = function (num) {
+  this.prepareProperties(num, true);
 };
 
-NullElement.prototype.renderFrame = function() {
+NullElement.prototype.renderFrame = function () {};
+
+NullElement.prototype.getBaseElement = function () {
+  return null;
 };
 
-NullElement.prototype.getBaseElement = function() {
-	return null;
-};
+NullElement.prototype.destroy = function () {};
 
-NullElement.prototype.destroy = function() {
-};
+NullElement.prototype.sourceRectAtTime = function () {};
 
-NullElement.prototype.sourceRectAtTime = function() {
-};
+NullElement.prototype.hide = function () {};
 
-NullElement.prototype.hide = function() {
-};
-
-extendPrototype([BaseElement,TransformElement,HierarchyElement,FrameElement], NullElement);
+extendPrototype([BaseElement, TransformElement, HierarchyElement, FrameElement], NullElement);
 
 function SVGBaseElement(){
 }
@@ -7142,249 +7141,245 @@ SVGBaseElement.prototype = {
         this.matteElement.setAttribute("mask", "url(" + locationHref + "#" + id + ")");
     }
 };
-function IShapeElement(){
-}
+function IShapeElement() {}
 
 IShapeElement.prototype = {
-    addShapeToModifiers: function(data) {
-        var i, len = this.shapeModifiers.length;
-        for(i=0;i<len;i+=1){
-            this.shapeModifiers[i].addShape(data);
-        }
-    },
-    isShapeInAnimatedModifiers: function(data) {
-        var i = 0, len = this.shapeModifiers.length;
-        while(i < len) {
-            if(this.shapeModifiers[i].isAnimatedWithShape(data)) {
-                return true;
-            }
-        }
-        return false;
-    },
-    renderModifiers: function() {
-        if(!this.shapeModifiers.length){
-            return;
-        }
-        var i, len = this.shapes.length;
-        for(i=0;i<len;i+=1){
-            this.shapes[i].sh.reset();
-        }
-
-        len = this.shapeModifiers.length;
-        for(i=len-1;i>=0;i-=1){
-            this.shapeModifiers[i].processShapes(this._isFirstFrame);
-        }
-    },
-    lcEnum: {
-        '1': 'butt',
-        '2': 'round',
-        '3': 'square'
-    },
-    ljEnum: {
-        '1': 'miter',
-        '2': 'round',
-        '3': 'bevel'
-    },
-    searchProcessedElement: function(elem){
-        var elements = this.processedElements;
-        var i = 0, len = elements.length;
-        while (i < len) {
-            if (elements[i].elem === elem) {
-                return elements[i].pos;
-            }
-            i += 1;
-        }
-        return 0;
-    },
-    addProcessedElement: function(elem, pos){
-        var elements = this.processedElements;
-        var i = elements.length;
-        while(i) {
-            i -= 1;
-            if (elements[i].elem === elem) {
-                elements[i].pos = pos;
-                return;
-            }
-        }
-        elements.push(new ProcessedElement(elem, pos));
-    },
-    prepareFrame: function(num) {
-        this.prepareRenderableFrame(num);
-        this.prepareProperties(num, this.isInRange);
+  addShapeToModifiers: function (data) {
+    var i,
+      len = this.shapeModifiers.length;
+    for (i = 0; i < len; i += 1) {
+      this.shapeModifiers[i].addShape(data);
     }
-};
-function ITextElement(){
-}
+  },
+  isShapeInAnimatedModifiers: function (data) {
+    var i = 0,
+      len = this.shapeModifiers.length;
+    while (i < len) {
+      if (this.shapeModifiers[i].isAnimatedWithShape(data)) {
+        return true;
+      }
+    }
+    return false;
+  },
+  renderModifiers: function () {
+    if (!this.shapeModifiers.length) {
+      return;
+    }
+    var i,
+      len = this.shapes.length;
+    for (i = 0; i < len; i += 1) {
+      this.shapes[i].sh.reset();
+    }
 
-ITextElement.prototype.initElement = function(data,globalData,comp){
-    this.lettersChangedFlag = true;
-    this.initFrame();
-    this.initBaseData(data, globalData, comp);
-    this.textProperty = new TextProperty(this, data.t, this.dynamicProperties);
-    this.textAnimator = new TextAnimatorProperty(data.t, this.renderType, this);
-    this.initTransform(data, globalData, comp);
-    this.initHierarchy();
-    this.initRenderable();
-    this.initRendererElement();
-    this.createContainerElements();
-    this.createRenderableComponents();
-    this.createContent();
-    this.hide();
-    this.textAnimator.searchProperties(this.dynamicProperties);
-};
+    len = this.shapeModifiers.length;
+    for (i = len - 1; i >= 0; i -= 1) {
+      this.shapeModifiers[i].processShapes(this._isFirstFrame);
+    }
+  },
+  lcEnum: {
+    1: 'butt',
+    2: 'round',
+    3: 'square',
+  },
+  ljEnum: {
+    1: 'miter',
+    2: 'round',
+    3: 'bevel',
+  },
+  searchProcessedElement: function (elem) {
+    var elements = this.processedElements;
+    var i = 0,
+      len = elements.length;
+    while (i < len) {
+      if (elements[i].elem === elem) {
+        return elements[i].pos;
+      }
+      i += 1;
+    }
+    return 0;
+  },
+  addProcessedElement: function (elem, pos) {
+    var elements = this.processedElements;
+    var i = elements.length;
+    while (i) {
+      i -= 1;
+      if (elements[i].elem === elem) {
+        elements[i].pos = pos;
+        return;
+      }
+    }
+    elements.push(new ProcessedElement(elem, pos));
+  },
 
-ITextElement.prototype.prepareFrame = function(num) {
-    this._mdf = false;
+  prepareFrame: function (num) {
     this.prepareRenderableFrame(num);
     this.prepareProperties(num, this.isInRange);
-    if(this.textProperty._mdf || this.textProperty._isFirstFrame) {
-        this.buildNewText();
-        this.textProperty._isFirstFrame = false;
-        this.textProperty._mdf = false;
-    }
+  },
 };
 
-ITextElement.prototype.createPathShape = function(matrixHelper, shapes) {
-    var j,jLen = shapes.length;
-    var k, kLen, pathNodes;
-    var shapeStr = '';
-    for(j=0;j<jLen;j+=1){
-        pathNodes = shapes[j].ks.k;
-        shapeStr += buildShapeString(pathNodes, pathNodes.i.length, true, matrixHelper);
-    }
-    return shapeStr;
+function ITextElement() {}
+
+ITextElement.prototype.initElement = function (data, globalData, comp) {
+  this.lettersChangedFlag = true;
+  this.initFrame();
+  this.initBaseData(data, globalData, comp);
+  this.textProperty = new TextProperty(this, data.t, this.dynamicProperties);
+  this.textAnimator = new TextAnimatorProperty(data.t, this.renderType, this);
+  this.initTransform(data, globalData, comp);
+  this.initHierarchy();
+  this.initRenderable();
+  this.initRendererElement();
+  this.createContainerElements();
+  this.createRenderableComponents();
+  this.createContent();
+  this.hide();
+  this.textAnimator.searchProperties(this.dynamicProperties);
 };
 
-ITextElement.prototype.updateDocumentData = function(newData, index) {
-    this.textProperty.updateDocumentData(newData, index);
+ITextElement.prototype.prepareFrame = function (num) {
+  this._mdf = false;
+  this.prepareRenderableFrame(num);
+  this.prepareProperties(num, this.isInRange);
+  if (this.textProperty._mdf || this.textProperty._isFirstFrame) {
+    this.buildNewText();
+    this.textProperty._isFirstFrame = false;
+    this.textProperty._mdf = false;
+  }
 };
 
-ITextElement.prototype.canResizeFont = function(_canResize) {
-    this.textProperty.canResizeFont(_canResize);
+ITextElement.prototype.createPathShape = function (matrixHelper, shapes) {
+  var j,
+    jLen = shapes.length;
+  var k, kLen, pathNodes;
+  var shapeStr = '';
+  for (j = 0; j < jLen; j += 1) {
+    pathNodes = shapes[j].ks.k;
+    shapeStr += buildShapeString(pathNodes, pathNodes.i.length, true, matrixHelper);
+  }
+  return shapeStr;
 };
 
-ITextElement.prototype.setMinimumFontSize = function(_fontSize) {
-    this.textProperty.setMinimumFontSize(_fontSize);
+ITextElement.prototype.updateDocumentData = function (newData, index) {
+  this.textProperty.updateDocumentData(newData, index);
 };
 
-ITextElement.prototype.applyTextPropertiesToMatrix = function(documentData, matrixHelper, lineNumber, xPos, yPos) {
-    if(documentData.ps){
-        matrixHelper.translate(documentData.ps[0],documentData.ps[1] + documentData.ascent,0);
-    }
-    matrixHelper.translate(0,-documentData.ls,0);
-    switch(documentData.j){
-        case 1:
-            matrixHelper.translate(documentData.justifyOffset + (documentData.boxWidth - documentData.lineWidths[lineNumber]),0,0);
-            break;
-        case 2:
-            matrixHelper.translate(documentData.justifyOffset + (documentData.boxWidth - documentData.lineWidths[lineNumber] )/2,0,0);
-            break;
-    }
-    matrixHelper.translate(xPos, yPos, 0);
+ITextElement.prototype.canResizeFont = function (_canResize) {
+  this.textProperty.canResizeFont(_canResize);
 };
 
+ITextElement.prototype.setMinimumFontSize = function (_fontSize) {
+  this.textProperty.setMinimumFontSize(_fontSize);
+};
 
-ITextElement.prototype.buildColor = function(colorData) {
-    return 'rgb(' + Math.round(colorData[0]*255) + ',' + Math.round(colorData[1]*255) + ',' + Math.round(colorData[2]*255) + ')';
+ITextElement.prototype.applyTextPropertiesToMatrix = function (documentData, matrixHelper, lineNumber, xPos, yPos) {
+  if (documentData.ps) {
+    matrixHelper.translate(documentData.ps[0], documentData.ps[1] + documentData.ascent, 0);
+  }
+  matrixHelper.translate(0, -documentData.ls, 0);
+  switch (documentData.j) {
+    case 1:
+      matrixHelper.translate(documentData.justifyOffset + (documentData.boxWidth - documentData.lineWidths[lineNumber]), 0, 0);
+      break;
+    case 2:
+      matrixHelper.translate(documentData.justifyOffset + (documentData.boxWidth - documentData.lineWidths[lineNumber]) / 2, 0, 0);
+      break;
+  }
+  matrixHelper.translate(xPos, yPos, 0);
+};
+
+ITextElement.prototype.buildColor = function (colorData) {
+  return 'rgb(' + Math.round(colorData[0] * 255) + ',' + Math.round(colorData[1] * 255) + ',' + Math.round(colorData[2] * 255) + ')';
 };
 
 ITextElement.prototype.emptyProp = new LetterProps();
 
-ITextElement.prototype.destroy = function(){
-    
-};
-function ICompElement(){}
+ITextElement.prototype.destroy = function () {};
+
+function ICompElement() {}
 
 extendPrototype([BaseElement, TransformElement, HierarchyElement, FrameElement, RenderableDOMElement], ICompElement);
 
-ICompElement.prototype.initElement = function(data,globalData,comp) {
-    this.initFrame();
-    this.initBaseData(data, globalData, comp);
-    this.initTransform(data, globalData, comp);
-    this.initRenderable();
-    this.initHierarchy();
-    this.initRendererElement();
-    this.createContainerElements();
-    this.createRenderableComponents();
-    if(this.data.xt || !globalData.progressiveLoad){
-        this.buildAllItems();
-    }
-    this.hide();
+ICompElement.prototype.initElement = function (data, globalData, comp) {
+  this.initFrame();
+  this.initBaseData(data, globalData, comp);
+  this.initTransform(data, globalData, comp);
+  this.initRenderable();
+  this.initHierarchy();
+  this.initRendererElement();
+  this.createContainerElements();
+  this.createRenderableComponents();
+  if (this.data.xt || !globalData.progressiveLoad) {
+    this.buildAllItems();
+  }
+
+  this.hide();
 };
 
-/*ICompElement.prototype.hide = function(){
-    if(!this.hidden){
-        this.hideElement();
-        var i,len = this.elements.length;
-        for( i = 0; i < len; i+=1 ){
-            if(this.elements[i]){
-                this.elements[i].hide();
-            }
-        }
-    }
-};*/
+ICompElement.prototype.prepareFrame = function (num) {
+  this._mdf = false;
+  this.prepareRenderableFrame(num);
+  this.prepareProperties(num, this.isInRange);
+  if (!this.isInRange && !this.data.xt) {
+    return;
+  }
 
-ICompElement.prototype.prepareFrame = function(num){
-    this._mdf = false;
-    this.prepareRenderableFrame(num);
-    this.prepareProperties(num, this.isInRange);
-    if(!this.isInRange && !this.data.xt){
-        return;
+  if (!this.tm._placeholder) {
+    var timeRemapped = this.tm.v;
+    if (timeRemapped === this.data.op) {
+      timeRemapped = this.data.op - 1;
     }
-
-    if (!this.tm._placeholder) {
-        var timeRemapped = this.tm.v;
-        if(timeRemapped === this.data.op){
-            timeRemapped = this.data.op - 1;
-        }
-        this.renderedFrame = timeRemapped;
-    } else {
-        this.renderedFrame = num/this.data.sr;
+    this.renderedFrame = timeRemapped;
+  } else {
+    this.renderedFrame = num / this.data.sr;
+  }
+  var i,
+    len = this.elements.length;
+  if (!this.completeLayers) {
+    this.checkLayers(this.renderedFrame);
+  }
+  
+  //This iteration needs to be backwards because of how expressions connect between each other
+  for (i = len - 1; i >= 0; i -= 1) {
+    if (this.completeLayers || this.elements[i]) {
+      this.elements[i].prepareFrame(this.renderedFrame - this.layers[i].st);
+      if (this.elements[i]._mdf) {
+        this._mdf = true;
+      }
     }
-    var i,len = this.elements.length;
-    if(!this.completeLayers){
-        this.checkLayers(this.renderedFrame);
-    }
-    //This iteration needs to be backwards because of how expressions connect between each other
-    for( i = len - 1; i >= 0; i -= 1 ){
-        if(this.completeLayers || this.elements[i]){
-            this.elements[i].prepareFrame(this.renderedFrame - this.layers[i].st);
-            if(this.elements[i]._mdf) {
-                this._mdf = true;
-            }
-        }
-    }
+  }
 };
 
-ICompElement.prototype.renderInnerContent = function() {
-    var i,len = this.layers.length;
-    for( i = 0; i < len; i += 1 ){
-        if(this.completeLayers || this.elements[i]){
-            this.elements[i].renderFrame();
-        }
+ICompElement.prototype.renderInnerContent = function () {
+  var i,
+    len = this.layers.length;
+  for (i = 0; i < len; i += 1) {
+    if (this.completeLayers || this.elements[i]) {
+      this.elements[i].renderFrame();
     }
+  }
 };
 
-ICompElement.prototype.setElements = function(elems){
-    this.elements = elems;
+ICompElement.prototype.setElements = function (elems) {
+  this.elements = elems;
 };
 
-ICompElement.prototype.getElements = function(){
-    return this.elements;
+ICompElement.prototype.getElements = function () {
+  return this.elements;
 };
 
-ICompElement.prototype.destroyElements = function(){
-    var i,len = this.layers.length;
-    for( i = 0; i < len; i+=1 ){
-        if(this.elements[i]){
-            this.elements[i].destroy();
-        }
+ICompElement.prototype.destroyElements = function () {
+  var i,
+    len = this.layers.length;
+  for (i = 0; i < len; i += 1) {
+    if (this.elements[i]) {
+      this.elements[i].destroy();
     }
+  }
 };
 
-ICompElement.prototype.destroy = function(){
-    this.destroyElements();
-    this.destroyBaseElement();
+ICompElement.prototype.destroy = function () {
+  this.destroyElements();
+  this.destroyBaseElement();
 };
 
 function IImageElement(data,globalData,comp){
@@ -11633,36 +11628,35 @@ var TransformExpressionInterface = (function (){
         return _thisFunction;
     };
 }());
-var ProjectInterface = (function (){
+var ProjectInterface = (function () {
+  function registerComposition(comp) {
+    this.compositions.push(comp);
+  }
 
-    function registerComposition(comp){
-        this.compositions.push(comp);
+  return function () {
+    function _thisProjectFunction(name) {
+      var i = 0,
+        len = this.compositions.length;
+      while (i < len) {
+        if (this.compositions[i].data && this.compositions[i].data.nm === name) {
+          if (this.compositions[i].prepareFrame && this.compositions[i].data.xt) {
+            this.compositions[i].prepareFrame(this.currentFrame);
+          }
+          return this.compositions[i].compInterface;
+        }
+        i += 1;
+      }
     }
 
-    return function(){
-        function _thisProjectFunction(name){
-            var i = 0, len = this.compositions.length;
-            while(i<len){
-                if(this.compositions[i].data && this.compositions[i].data.nm === name){
-                    if(this.compositions[i].prepareFrame && this.compositions[i].data.xt) {
-                        this.compositions[i].prepareFrame(this.currentFrame);
-                    }
-                    return this.compositions[i].compInterface;
-                }
-                i+=1;
-            }
-        }
+    _thisProjectFunction.compositions = [];
+    _thisProjectFunction.currentFrame = 0;
 
-        _thisProjectFunction.compositions = [];
-        _thisProjectFunction.currentFrame = 0;
+    _thisProjectFunction.registerComposition = registerComposition;
 
-        _thisProjectFunction.registerComposition = registerComposition;
+    return _thisProjectFunction;
+  };
+})();
 
-
-
-        return _thisProjectFunction;
-    };
-}());
 var EffectsExpressionInterface = (function (){
     var ob = {
         createEffectsInterface: createEffectsInterface

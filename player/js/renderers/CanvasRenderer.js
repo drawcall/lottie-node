@@ -316,12 +316,14 @@ CanvasRenderer.prototype.renderFrame = function (num, forceRender) {
       this.elements[i].prepareFrame(num - this.layers[i].st);
     }
   }
+  
   if (this.globalData._mdf) {
     if (this.renderConfig.clearCanvas === true) {
       this.canvasContext.clearRect(0, 0, this.transformCanvas.w, this.transformCanvas.h);
     } else {
       this.save();
     }
+
     for (i = len - 1; i >= 0; i -= 1) {
       if (this.completeLayers || this.elements[i]) {
         this.elements[i].renderFrame();
