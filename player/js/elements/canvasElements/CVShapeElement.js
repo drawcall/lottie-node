@@ -56,10 +56,12 @@ CVShapeElement.prototype.createStyleElement = function (data, transforms) {
     if (data.lj == 1) {
       styleElem.ml = data.ml;
     }
+
     elementData.w = PropertyFactory.getProp(this, data.w, 0, null, this);
     if (!elementData.w.k) {
       styleElem.wi = elementData.w.v;
     }
+
     if (data.d) {
       var d = new DashProperty(this, data.d, 'canvas', this);
       elementData.d = d;
@@ -71,6 +73,7 @@ CVShapeElement.prototype.createStyleElement = function (data, transforms) {
   } else {
     styleElem.r = data.r === 2 ? 'evenodd' : 'nonzero';
   }
+
   this.stylesList.push(styleElem);
   elementData.style = styleElem;
   return elementData;
@@ -94,6 +97,7 @@ CVShapeElement.prototype.createTransformElement = function (data) {
       mProps: TransformPropertyFactory.getTransformProperty(this, data, this),
     },
   };
+
   return elementData;
 };
 
@@ -164,7 +168,7 @@ CVShapeElement.prototype.searchShapes = function (arr, itemsData, prevViewData, 
     modifier,
     currentTransform;
   var ownTransforms = [].concat(transforms);
-
+  
   for (i = len; i >= 0; i -= 1) {
     processedPos = this.searchProcessedElement(arr[i]);
     if (!processedPos) {
@@ -225,8 +229,10 @@ CVShapeElement.prototype.searchShapes = function (arr, itemsData, prevViewData, 
       }
       ownModifiers.push(modifier);
     }
+
     this.addProcessedElement(arr[i], i + 1);
   }
+
   this.removeTransformFromStyleList();
   this.closeStyles(ownStyles);
   len = ownModifiers.length;
@@ -240,6 +246,7 @@ CVShapeElement.prototype.renderInnerContent = function () {
   this.transformHelper._opMdf = false;
   this.renderModifiers();
   this.transformsManager.processSequences(this._isFirstFrame);
+  // Logger.setNum(40).log(JSON.stringify(this.shapesData))
   this.renderShape(this.transformHelper, this.shapesData, this.itemsData, true);
 };
 
@@ -265,6 +272,7 @@ CVShapeElement.prototype.drawLayer = function () {
     ctx = this.globalData.canvasContext,
     type,
     currentStyle;
+
   for (i = 0; i < len; i += 1) {
     currentStyle = this.stylesList[i];
     type = currentStyle.type;
@@ -277,6 +285,7 @@ CVShapeElement.prototype.drawLayer = function () {
     ) {
       continue;
     }
+
     renderer.save();
     elems = currentStyle.elements;
     if (type === 'st' || type === 'gs') {
@@ -288,10 +297,12 @@ CVShapeElement.prototype.drawLayer = function () {
     } else {
       ctx.fillStyle = type === 'fl' ? currentStyle.co : currentStyle.grd;
     }
+
     renderer.ctxOpacity(currentStyle.coOp);
     if (type !== 'st' && type !== 'gs') {
       ctx.beginPath();
     }
+    
     renderer.ctxTransform(currentStyle.preTransforms.finalTransform.props);
     jLen = elems.length;
     for (j = 0; j < jLen; j += 1) {
@@ -314,6 +325,7 @@ CVShapeElement.prototype.drawLayer = function () {
           ctx.closePath();
         }
       }
+
       if (type === 'st' || type === 'gs') {
         ctx.stroke();
         if (currentStyle.da) {
@@ -321,9 +333,11 @@ CVShapeElement.prototype.drawLayer = function () {
         }
       }
     }
+
     if (type !== 'st' && type !== 'gs') {
       ctx.fill(currentStyle.r);
     }
+
     renderer.restore();
   }
 };
@@ -333,6 +347,7 @@ CVShapeElement.prototype.renderShape = function (parentTransform, items, data, i
     len = items.length - 1;
   var groupTransform;
   groupTransform = parentTransform;
+
   for (i = len; i >= 0; i -= 1) {
     if (items[i].ty == 'tr') {
       groupTransform = data[i].transform;
@@ -351,6 +366,7 @@ CVShapeElement.prototype.renderShape = function (parentTransform, items, data, i
       //
     }
   }
+
   if (isMain) {
     this.drawLayer();
   }
@@ -366,6 +382,7 @@ CVShapeElement.prototype.renderStyledShape = function (styledShape, shape) {
       jLen = paths._length;
     shapeNodes.length = 0;
     var groupTransformMat = styledShape.transforms.finalTransform;
+
     for (j = 0; j < jLen; j += 1) {
       var pathNodes = paths.shapes[j];
       if (pathNodes && pathNodes.v) {

@@ -19,10 +19,12 @@ IShapeElement.prototype = {
     }
     return false;
   },
+
   renderModifiers: function () {
     if (!this.shapeModifiers.length) {
       return;
     }
+    
     var i,
       len = this.shapes.length;
     for (i = 0; i < len; i += 1) {

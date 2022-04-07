@@ -41,6 +41,7 @@ CVBaseElement.prototype = {
     if (this.hidden || this.data.hd) {
       return;
     }
+
     this.renderTransform();
     this.renderRenderable();
     this.setBlendMode();
@@ -50,6 +51,7 @@ CVBaseElement.prototype = {
     this.globalData.renderer.ctxOpacity(this.finalTransform.mProp.o.v);
     this.renderInnerContent();
     this.globalData.renderer.restore(forceRealStack);
+
     if (this.maskManager.hasMasks) {
       this.globalData.renderer.restore(true);
     }
@@ -57,6 +59,7 @@ CVBaseElement.prototype = {
       this._isFirstFrame = false;
     }
   },
+  
   destroy: function () {
     this.canvasContext = null;
     this.data = null;

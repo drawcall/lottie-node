@@ -3,8 +3,8 @@ BaseRenderer.prototype.checkLayers = function (num) {
   var i,
     len = this.layers.length,
     data;
-    
   this.completeLayers = true;
+
   for (i = len - 1; i >= 0; i--) {
     if (!this.elements[i]) {
       data = this.layers[i];
@@ -14,9 +14,16 @@ BaseRenderer.prototype.checkLayers = function (num) {
     }
     this.completeLayers = this.elements[i] ? this.completeLayers : false;
   }
+
   this.checkPendingElements();
 };
 
+// 2: image，图片
+// 0: comp，合成图层
+// 1: solid;
+// 3: null;
+// 4: shape，形状图层
+// 5: text，文字
 BaseRenderer.prototype.createItem = function (layer) {
   switch (layer.ty) {
     case 2:
@@ -34,6 +41,7 @@ BaseRenderer.prototype.createItem = function (layer) {
     case 13:
       return this.createCamera(layer);
   }
+
   return this.createNull(layer);
 };
 
@@ -56,7 +64,6 @@ BaseRenderer.prototype.includeLayers = function (newLayers) {
     len = newLayers.length;
   var j,
     jLen = this.layers.length;
-
   for (i = 0; i < len; i += 1) {
     j = 0;
     while (j < jLen) {

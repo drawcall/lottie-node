@@ -33,6 +33,9 @@ const intLottie = () => {
 
   const dir = path.join(__dirname, "__output");
   fs.ensureDir(dir);
+
+  // 92-105
+  ani.goToAndStop(15.00009, true);
   id = setInterval(renderFrame, 1000 / 15, dir);
 };
 

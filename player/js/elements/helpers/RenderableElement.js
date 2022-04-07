@@ -41,7 +41,7 @@ RenderableElement.prototype = {
   },
 
   checkLayerLimits: function (num) {
-    // console.log(num, this.data.ip - this.data.st, this.data.op - this.data.st);
+    // ip-开始帧 | st-开始时间 | op-持续帧长
     // [a-num-b]
     if (this.data.ip - this.data.st <= num && this.data.op - this.data.st > num) {
       if (this.isInRange !== true) {

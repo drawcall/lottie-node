@@ -1,4 +1,4 @@
-const util = require("util");
+const util = require('util');
 
 function CanvasRenderer(animationItem, config) {
   this.animationItem = animationItem;
@@ -298,13 +298,19 @@ CanvasRenderer.prototype.destroy = function () {
   this.destroyed = true;
 };
 
+CanvasRenderer.prototype.drawRect = function () {
+  const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+  const color = this.canvasContext.fillStyle;
+  this.canvasContext.fillStyle = randomColor;
+  this.canvasContext.fillRect(0, 0, this.transformCanvas.w / 2, this.transformCanvas.h / 2);
+};
+
 CanvasRenderer.prototype.renderFrame = function (num, forceRender) {
   if ((this.renderedFrame === num && this.renderConfig.clearCanvas === true && !forceRender) || this.destroyed || num === -1) {
     //console.log("结束~");
     return;
   }
-  
-  Logger.setNum(2).log(util.inspect(this.globalData));
+
   this.renderedFrame = num;
   this.globalData.frameNum = num - this.animationItem._isFirstFrame;
   this.globalData.frameId += 1;
@@ -313,6 +319,7 @@ CanvasRenderer.prototype.renderFrame = function (num, forceRender) {
 
   var i,
     len = this.layers.length;
+
   if (!this.completeLayers) {
     this.checkLayers(num);
   }
@@ -328,6 +335,7 @@ CanvasRenderer.prototype.renderFrame = function (num, forceRender) {
     //// 2. clearRect ////
     if (this.renderConfig.clearCanvas === true) {
       this.canvasContext.clearRect(0, 0, this.transformCanvas.w, this.transformCanvas.h);
+      //this.drawRect();
     } else {
       this.save();
     }

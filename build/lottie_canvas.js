@@ -2103,447 +2103,473 @@ var FontManager = (function(){
     return Font;
 
 }());
-var PropertyFactory = (function(){
+var PropertyFactory = (function () {
+  var initFrame = initialDefaultFrame;
+  var math_abs = Math.abs;
 
-    var initFrame = initialDefaultFrame;
-    var math_abs = Math.abs;
+  function interpolateValue(frameNum, caching) {
+    var offsetTime = this.offsetTime;
+    var newValue;
+    if (this.propType === 'multidimensional') {
+      newValue = createTypedArray('float32', this.pv.length);
+    }
+    var iterationIndex = caching.lastIndex;
+    var i = iterationIndex;
+    var len = this.keyframes.length - 1,
+      flag = true;
+    var keyData, nextKeyData;
 
-    function interpolateValue(frameNum, caching) {
-        var offsetTime = this.offsetTime;
-        var newValue;
-        if (this.propType === 'multidimensional') {
-            newValue = createTypedArray('float32', this.pv.length);
+    while (flag) {
+      keyData = this.keyframes[i];
+      nextKeyData = this.keyframes[i + 1];
+      if (i === len - 1 && frameNum >= nextKeyData.t - offsetTime) {
+        if (keyData.h) {
+          keyData = nextKeyData;
         }
-        var iterationIndex = caching.lastIndex;
-        var i = iterationIndex;
-        var len = this.keyframes.length - 1, flag = true;
-        var keyData, nextKeyData;
+        iterationIndex = 0;
+        break;
+      }
+      if (nextKeyData.t - offsetTime > frameNum) {
+        iterationIndex = i;
+        break;
+      }
+      if (i < len - 1) {
+        i += 1;
+      } else {
+        iterationIndex = 0;
+        flag = false;
+      }
+    }
 
+    var k, kLen, perc, jLen, j, fnc;
+    var nextKeyTime = nextKeyData.t - offsetTime;
+    var keyTime = keyData.t - offsetTime;
+    var endValue;
+    if (keyData.to) {
+      if (!keyData.bezierData) {
+        keyData.bezierData = bez.buildBezierData(keyData.s, nextKeyData.s || keyData.e, keyData.to, keyData.ti);
+      }
+      var bezierData = keyData.bezierData;
+      if (frameNum >= nextKeyTime || frameNum < keyTime) {
+        var ind = frameNum >= nextKeyTime ? bezierData.points.length - 1 : 0;
+        kLen = bezierData.points[ind].point.length;
+        for (k = 0; k < kLen; k += 1) {
+          newValue[k] = bezierData.points[ind].point[k];
+        }
+        // caching._lastKeyframeIndex = -1;
+      } else {
+        if (keyData.__fnct) {
+          fnc = keyData.__fnct;
+        } else {
+          fnc = BezierFactory.getBezierEasing(keyData.o.x, keyData.o.y, keyData.i.x, keyData.i.y, keyData.n).get;
+          keyData.__fnct = fnc;
+        }
+        perc = fnc((frameNum - keyTime) / (nextKeyTime - keyTime));
+        var distanceInLine = bezierData.segmentLength * perc;
+
+        var segmentPerc;
+        var addedLength = caching.lastFrame < frameNum && caching._lastKeyframeIndex === i ? caching._lastAddedLength : 0;
+        j = caching.lastFrame < frameNum && caching._lastKeyframeIndex === i ? caching._lastPoint : 0;
+        flag = true;
+        jLen = bezierData.points.length;
         while (flag) {
-            keyData = this.keyframes[i];
-            nextKeyData = this.keyframes[i + 1];
-            if (i === len - 1 && frameNum >= nextKeyData.t - offsetTime){
-                if(keyData.h){
-                    keyData = nextKeyData;
-                }
-                iterationIndex = 0;
-                break;
+          addedLength += bezierData.points[j].partialLength;
+          if (distanceInLine === 0 || perc === 0 || j === bezierData.points.length - 1) {
+            kLen = bezierData.points[j].point.length;
+            for (k = 0; k < kLen; k += 1) {
+              newValue[k] = bezierData.points[j].point[k];
             }
-            if ((nextKeyData.t - offsetTime) > frameNum){
-                iterationIndex = i;
-                break;
+            break;
+          } else if (distanceInLine >= addedLength && distanceInLine < addedLength + bezierData.points[j + 1].partialLength) {
+            segmentPerc = (distanceInLine - addedLength) / bezierData.points[j + 1].partialLength;
+            kLen = bezierData.points[j].point.length;
+            for (k = 0; k < kLen; k += 1) {
+              newValue[k] =
+                bezierData.points[j].point[k] + (bezierData.points[j + 1].point[k] - bezierData.points[j].point[k]) * segmentPerc;
             }
-            if (i < len - 1){
-                i += 1;
-            } else {
-                iterationIndex = 0;
-                flag = false;
-            }
+            break;
+          }
+          if (j < jLen - 1) {
+            j += 1;
+          } else {
+            flag = false;
+          }
         }
-
-        var k, kLen, perc, jLen, j, fnc;
-        var nextKeyTime = nextKeyData.t - offsetTime;
-        var keyTime = keyData.t - offsetTime;
-        var endValue;
-        if (keyData.to) {
-            if (!keyData.bezierData) {
-                keyData.bezierData = bez.buildBezierData(keyData.s, nextKeyData.s || keyData.e, keyData.to, keyData.ti);
-            }
-            var bezierData = keyData.bezierData;
-            if (frameNum >= nextKeyTime || frameNum < keyTime) {
-                var ind = frameNum >= nextKeyTime ? bezierData.points.length - 1 : 0;
-                kLen = bezierData.points[ind].point.length;
-                for (k = 0; k < kLen; k += 1) {
-                    newValue[k] = bezierData.points[ind].point[k];
-                }
-                // caching._lastKeyframeIndex = -1;
-            } else {
-                if (keyData.__fnct) {
-                    fnc = keyData.__fnct;
-                } else {
-                    fnc = BezierFactory.getBezierEasing(keyData.o.x, keyData.o.y, keyData.i.x, keyData.i.y, keyData.n).get;
-                    keyData.__fnct = fnc;
-                }
-                perc = fnc((frameNum - keyTime) / (nextKeyTime - keyTime));
-                var distanceInLine = bezierData.segmentLength*perc;
-
-                var segmentPerc;
-                var addedLength =  (caching.lastFrame < frameNum && caching._lastKeyframeIndex === i) ? caching._lastAddedLength : 0;
-                j =  (caching.lastFrame < frameNum && caching._lastKeyframeIndex === i) ? caching._lastPoint : 0;
-                flag = true;
-                jLen = bezierData.points.length;
-                while (flag) {
-                    addedLength += bezierData.points[j].partialLength;
-                    if (distanceInLine === 0 || perc === 0 || j === bezierData.points.length - 1) {
-                        kLen = bezierData.points[j].point.length;
-                        for (k = 0; k < kLen; k += 1) {
-                            newValue[k] = bezierData.points[j].point[k];
-                        }
-                        break;
-                    } else if (distanceInLine >= addedLength && distanceInLine < addedLength + bezierData.points[j + 1].partialLength) {
-                        segmentPerc = (distanceInLine - addedLength) / bezierData.points[j + 1].partialLength;
-                        kLen = bezierData.points[j].point.length;
-                        for (k = 0; k < kLen; k += 1) {
-                            newValue[k] = bezierData.points[j].point[k] + (bezierData.points[j + 1].point[k] - bezierData.points[j].point[k]) * segmentPerc;
-                        }
-                        break;
-                    }
-                    if (j < jLen - 1){
-                        j += 1;
-                    } else {
-                        flag = false;
-                    }
-                }
-                caching._lastPoint = j;
-                caching._lastAddedLength = addedLength - bezierData.points[j].partialLength;
-                caching._lastKeyframeIndex = i;
-            }
+        caching._lastPoint = j;
+        caching._lastAddedLength = addedLength - bezierData.points[j].partialLength;
+        caching._lastKeyframeIndex = i;
+      }
+    } else {
+      var outX, outY, inX, inY, keyValue;
+      len = keyData.s.length;
+      endValue = nextKeyData.s || keyData.e;
+      if (this.sh && keyData.h !== 1) {
+        if (frameNum >= nextKeyTime) {
+          newValue[0] = endValue[0];
+          newValue[1] = endValue[1];
+          newValue[2] = endValue[2];
+        } else if (frameNum <= keyTime) {
+          newValue[0] = keyData.s[0];
+          newValue[1] = keyData.s[1];
+          newValue[2] = keyData.s[2];
         } else {
-            var outX, outY, inX, inY, keyValue;
-            len = keyData.s.length;
-            endValue = nextKeyData.s || keyData.e;
-            if (this.sh && keyData.h !== 1) {
-                if (frameNum >= nextKeyTime) {
-                    newValue[0] = endValue[0];
-                    newValue[1] = endValue[1];
-                    newValue[2] = endValue[2];
-                } else if (frameNum <= keyTime) {
-                    newValue[0] = keyData.s[0];
-                    newValue[1] = keyData.s[1];
-                    newValue[2] = keyData.s[2];
-                } else {
-                    var quatStart = createQuaternion(keyData.s);
-                    var quatEnd = createQuaternion(endValue);
-                    var time = (frameNum - keyTime) / (nextKeyTime - keyTime);
-                    quaternionToEuler(newValue, slerp(quatStart, quatEnd, time));
-                }
-                
-            } else {
-                for(i = 0; i < len; i += 1) {
-                    if (keyData.h !== 1) {
-                        if (frameNum >= nextKeyTime) {
-                            perc = 1;
-                        } else if(frameNum < keyTime) {
-                            perc = 0;
-                        } else {
-                            if(keyData.o.x.constructor === Array) {
-                                if (!keyData.__fnct) {
-                                    keyData.__fnct = [];
-                                }
-                                if (!keyData.__fnct[i]) {
-                                    outX = (typeof keyData.o.x[i] === 'undefined') ? keyData.o.x[0] : keyData.o.x[i];
-                                    outY = (typeof keyData.o.y[i] === 'undefined') ? keyData.o.y[0] : keyData.o.y[i];
-                                    inX = (typeof keyData.i.x[i] === 'undefined') ? keyData.i.x[0] : keyData.i.x[i];
-                                    inY = (typeof keyData.i.y[i] === 'undefined') ? keyData.i.y[0] : keyData.i.y[i];
-                                    fnc = BezierFactory.getBezierEasing(outX, outY, inX, inY).get;
-                                    keyData.__fnct[i] = fnc;
-                                } else {
-                                    fnc = keyData.__fnct[i];
-                                }
-                            } else {
-                                if (!keyData.__fnct) {
-                                    outX = keyData.o.x;
-                                    outY = keyData.o.y;
-                                    inX = keyData.i.x;
-                                    inY = keyData.i.y;
-                                    fnc = BezierFactory.getBezierEasing(outX, outY, inX, inY).get;
-                                    keyData.__fnct = fnc;
-                                } else {
-                                    fnc = keyData.__fnct;
-                                }
-                            }
-                            perc = fnc((frameNum - keyTime) / (nextKeyTime - keyTime ));
-                        }
-                    }
-
-                    endValue = nextKeyData.s || keyData.e;
-                    keyValue = keyData.h === 1 ? keyData.s[i] : keyData.s[i] + (endValue[i] - keyData.s[i]) * perc;
-
-                    if (this.propType === 'multidimensional') {
-                        newValue[i] = keyValue;
-                    } else {
-                        newValue = keyValue;
-                    }
-                }
-            }
+          var quatStart = createQuaternion(keyData.s);
+          var quatEnd = createQuaternion(endValue);
+          var time = (frameNum - keyTime) / (nextKeyTime - keyTime);
+          quaternionToEuler(newValue, slerp(quatStart, quatEnd, time));
         }
-        caching.lastIndex = iterationIndex;
-        return newValue;
-    }
-
-    //based on @Toji's https://github.com/toji/gl-matrix/
-    function slerp(a, b, t) {
-        var out = [];
-        var ax = a[0], ay = a[1], az = a[2], aw = a[3],
-        bx = b[0], by = b[1], bz = b[2], bw = b[3]
-
-        var omega, cosom, sinom, scale0, scale1;
-
-        cosom = ax * bx + ay * by + az * bz + aw * bw;
-        if (cosom < 0.0) {
-            cosom = -cosom;
-            bx = -bx;
-            by = -by;
-            bz = -bz;
-            bw = -bw;
-        }
-        if ((1.0 - cosom) > 0.000001) {
-            omega = Math.acos(cosom);
-            sinom = Math.sin(omega);
-            scale0 = Math.sin((1.0 - t) * omega) / sinom;
-            scale1 = Math.sin(t * omega) / sinom;
-        } else {
-            scale0 = 1.0 - t;
-            scale1 = t;
-        }
-        out[0] = scale0 * ax + scale1 * bx;
-        out[1] = scale0 * ay + scale1 * by;
-        out[2] = scale0 * az + scale1 * bz;
-        out[3] = scale0 * aw + scale1 * bw;
-
-        return out;
-    }
-
-    function quaternionToEuler(out, quat) {
-        var qx = quat[0];
-        var qy = quat[1];
-        var qz = quat[2];
-        var qw = quat[3];
-        var heading = Math.atan2(2*qy*qw-2*qx*qz , 1 - 2*qy*qy - 2*qz*qz)
-        var attitude = Math.asin(2*qx*qy + 2*qz*qw) 
-        var bank = Math.atan2(2*qx*qw-2*qy*qz , 1 - 2*qx*qx - 2*qz*qz);
-        out[0] = heading/degToRads;
-        out[1] = attitude/degToRads;
-        out[2] = bank/degToRads;
-    }
-
-    function createQuaternion(values) {
-        var heading = values[0] * degToRads;
-        var attitude = values[1] * degToRads;
-        var bank = values[2] * degToRads;
-        var c1 = Math.cos(heading / 2);
-        var c2 = Math.cos(attitude / 2);
-        var c3 = Math.cos(bank / 2);
-        var s1 = Math.sin(heading / 2);
-        var s2 = Math.sin(attitude / 2);
-        var s3 = Math.sin(bank / 2);
-        var w = c1 * c2 * c3 - s1 * s2 * s3;
-        var x = s1 * s2 * c3 + c1 * c2 * s3;
-        var y = s1 * c2 * c3 + c1 * s2 * s3;
-        var z = c1 * s2 * c3 - s1 * c2 * s3;
-
-        return [x,y,z,w];
-    }
-
-    function getValueAtCurrentTime(){
-        var frameNum = this.comp.renderedFrame - this.offsetTime;
-        var initTime = this.keyframes[0].t - this.offsetTime;
-        var endTime = this.keyframes[this.keyframes.length- 1].t-this.offsetTime;
-        if(!(frameNum === this._caching.lastFrame || (this._caching.lastFrame !== initFrame && ((this._caching.lastFrame >= endTime && frameNum >= endTime) || (this._caching.lastFrame < initTime && frameNum < initTime))))){
-            if(this._caching.lastFrame >= frameNum) {
-                this._caching._lastKeyframeIndex = -1;
-                this._caching.lastIndex = 0;
-            }
-
-            var renderResult = this.interpolateValue(frameNum, this._caching);
-            this.pv = renderResult;
-        }
-        this._caching.lastFrame = frameNum;
-        return this.pv;
-    }
-
-    function setVValue(val) {
-        var multipliedValue;
-        if(this.propType === 'unidimensional') {
-            multipliedValue = val * this.mult;
-            if(math_abs(this.v - multipliedValue) > 0.00001) {
-                this.v = multipliedValue;
-                this._mdf = true;
-            }
-        } else {
-            var i = 0, len = this.v.length;
-            while (i < len) {
-                multipliedValue = val[i] * this.mult;
-                if (math_abs(this.v[i] - multipliedValue) > 0.00001) {
-                    this.v[i] = multipliedValue;
-                    this._mdf = true;
-                }
-                i += 1;
-            }
-        }
-    }
-
-    function processEffectsSequence() {
-        if (this.elem.globalData.frameId === this.frameId || !this.effectsSequence.length) {
-            return;
-        }
-        if(this.lock) {
-            this.setVValue(this.pv);
-            return;
-        }
-        this.lock = true;
-        this._mdf = this._isFirstFrame;
-        var multipliedValue;
-        var i, len = this.effectsSequence.length;
-        var finalValue = this.kf ? this.pv : this.data.k;
-        for(i = 0; i < len; i += 1) {
-            finalValue = this.effectsSequence[i](finalValue);
-        }
-        this.setVValue(finalValue);
-        this._isFirstFrame = false;
-        this.lock = false;
-        this.frameId = this.elem.globalData.frameId;
-    }
-
-    function addEffect(effectFunction) {
-        this.effectsSequence.push(effectFunction);
-        this.container.addDynamicProperty(this);
-    }
-
-    function ValueProperty(elem, data, mult, container){
-        this.propType = 'unidimensional';
-        this.mult = mult || 1;
-        this.data = data;
-        this.v = mult ? data.k * mult : data.k;
-        this.pv = data.k;
-        this._mdf = false;
-        this.elem = elem;
-        this.container = container;
-        this.comp = elem.comp;
-        this.k = false;
-        this.kf = false;
-        this.vel = 0;
-        this.effectsSequence = [];
-        this._isFirstFrame = true;
-        this.getValue = processEffectsSequence;
-        this.setVValue = setVValue;
-        this.addEffect = addEffect;
-    }
-
-    function MultiDimensionalProperty(elem, data, mult, container) {
-        this.propType = 'multidimensional';
-        this.mult = mult || 1;
-        this.data = data;
-        this._mdf = false;
-        this.elem = elem;
-        this.container = container;
-        this.comp = elem.comp;
-        this.k = false;
-        this.kf = false;
-        this.frameId = -1;
-        var i, len = data.k.length;
-        this.v = createTypedArray('float32', len);
-        this.pv = createTypedArray('float32', len);
-        var arr = createTypedArray('float32', len);
-        this.vel = createTypedArray('float32', len);
+      } else {
         for (i = 0; i < len; i += 1) {
-            this.v[i] = data.k[i] * this.mult;
-            this.pv[i] = data.k[i];
-        }
-        this._isFirstFrame = true;
-        this.effectsSequence = [];
-        this.getValue = processEffectsSequence;
-        this.setVValue = setVValue;
-        this.addEffect = addEffect;
-    }
-
-    function KeyframedValueProperty(elem, data, mult, container) {
-        this.propType = 'unidimensional';
-        this.keyframes = data.k;
-        this.offsetTime = elem.data.st;
-        this.frameId = -1;
-        this._caching = {lastFrame: initFrame, lastIndex: 0, value: 0, _lastKeyframeIndex: -1};
-        this.k = true;
-        this.kf = true;
-        this.data = data;
-        this.mult = mult || 1;
-        this.elem = elem;
-        this.container = container;
-        this.comp = elem.comp;
-        this.v = initFrame;
-        this.pv = initFrame;
-        this._isFirstFrame = true;
-        this.getValue = processEffectsSequence;
-        this.setVValue = setVValue;
-        this.interpolateValue = interpolateValue;
-        this.effectsSequence = [getValueAtCurrentTime.bind(this)];
-        this.addEffect = addEffect;
-    }
-
-    function KeyframedMultidimensionalProperty(elem, data, mult, container){
-        this.propType = 'multidimensional';
-        var i, len = data.k.length;
-        var s, e,to,ti;
-        for (i = 0; i < len - 1; i += 1) {
-            if (data.k[i].to && data.k[i].s && data.k[i].e) {
-                s = data.k[i].s;
-                e = data.k[i].e;
-                to = data.k[i].to;
-                ti = data.k[i].ti;
-                if((s.length === 2 && !(s[0] === e[0] && s[1] === e[1]) && bez.pointOnLine2D(s[0],s[1],e[0],e[1],s[0] + to[0],s[1] + to[1]) && bez.pointOnLine2D(s[0],s[1],e[0],e[1],e[0] + ti[0],e[1] + ti[1])) || (s.length === 3 && !(s[0] === e[0] && s[1] === e[1] && s[2] === e[2]) && bez.pointOnLine3D(s[0],s[1],s[2],e[0],e[1],e[2],s[0] + to[0],s[1] + to[1],s[2] + to[2]) && bez.pointOnLine3D(s[0],s[1],s[2],e[0],e[1],e[2],e[0] + ti[0],e[1] + ti[1],e[2] + ti[2]))){
-                    data.k[i].to = null;
-                    data.k[i].ti = null;
+          if (keyData.h !== 1) {
+            if (frameNum >= nextKeyTime) {
+              perc = 1;
+            } else if (frameNum < keyTime) {
+              perc = 0;
+            } else {
+              if (keyData.o.x.constructor === Array) {
+                if (!keyData.__fnct) {
+                  keyData.__fnct = [];
                 }
-                if(s[0] === e[0] && s[1] === e[1] && to[0] === 0 && to[1] === 0 && ti[0] === 0 && ti[1] === 0) {
-                    if(s.length === 2 || (s[2] === e[2] && to[2] === 0 && ti[2] === 0)) {
-                        data.k[i].to = null;
-                        data.k[i].ti = null;
-                    }
+                if (!keyData.__fnct[i]) {
+                  outX = typeof keyData.o.x[i] === 'undefined' ? keyData.o.x[0] : keyData.o.x[i];
+                  outY = typeof keyData.o.y[i] === 'undefined' ? keyData.o.y[0] : keyData.o.y[i];
+                  inX = typeof keyData.i.x[i] === 'undefined' ? keyData.i.x[0] : keyData.i.x[i];
+                  inY = typeof keyData.i.y[i] === 'undefined' ? keyData.i.y[0] : keyData.i.y[i];
+                  fnc = BezierFactory.getBezierEasing(outX, outY, inX, inY).get;
+                  keyData.__fnct[i] = fnc;
+                } else {
+                  fnc = keyData.__fnct[i];
                 }
+              } else {
+                if (!keyData.__fnct) {
+                  outX = keyData.o.x;
+                  outY = keyData.o.y;
+                  inX = keyData.i.x;
+                  inY = keyData.i.y;
+                  fnc = BezierFactory.getBezierEasing(outX, outY, inX, inY).get;
+                  keyData.__fnct = fnc;
+                } else {
+                  fnc = keyData.__fnct;
+                }
+              }
+              perc = fnc((frameNum - keyTime) / (nextKeyTime - keyTime));
             }
-        }
-        this.effectsSequence = [getValueAtCurrentTime.bind(this)];
-        this.keyframes = data.k;
-        this.offsetTime = elem.data.st;
-        this.k = true;
-        this.kf = true;
-        this._isFirstFrame = true;
-        this.mult = mult || 1;
-        this.elem = elem;
-        this.container = container;
-        this.comp = elem.comp;
-        this.getValue = processEffectsSequence;
-        this.setVValue = setVValue;
-        this.interpolateValue = interpolateValue;
-        this.frameId = -1;
-        var arrLen = data.k[0].s.length;
-        this.v = createTypedArray('float32', arrLen);
-        this.pv = createTypedArray('float32', arrLen);
-        for (i = 0; i < arrLen; i += 1) {
-            this.v[i] = initFrame;
-            this.pv[i] = initFrame;
-        }
-        this._caching={lastFrame:initFrame,lastIndex:0,value:createTypedArray('float32', arrLen)};
-        this.addEffect = addEffect;
-    }
+          }
 
-    function getProp(elem,data,type, mult, container) {
-        var p;
-        if(!data.k.length){
-            p = new ValueProperty(elem,data, mult, container);
-        }else if(typeof(data.k[0]) === 'number'){
-            p = new MultiDimensionalProperty(elem,data, mult, container);
-        }else{
-            switch(type){
-                case 0:
-                    p = new KeyframedValueProperty(elem,data,mult, container);
-                    break;
-                case 1:
-                    p = new KeyframedMultidimensionalProperty(elem,data,mult, container);
-                    break;
-            }
-        }
-        if(p.effectsSequence.length){
-            container.addDynamicProperty(p);
-        }
-        return p;
-    }
+          endValue = nextKeyData.s || keyData.e;
+          keyValue = keyData.h === 1 ? keyData.s[i] : keyData.s[i] + (endValue[i] - keyData.s[i]) * perc;
 
-    var ob = {
-        getProp: getProp
-    };
-    return ob;
-}());
+          if (this.propType === 'multidimensional') {
+            newValue[i] = keyValue;
+          } else {
+            newValue = keyValue;
+          }
+        }
+      }
+    }
+    caching.lastIndex = iterationIndex;
+    return newValue;
+  }
+
+  //based on @Toji's https://github.com/toji/gl-matrix/
+  function slerp(a, b, t) {
+    var out = [];
+    var ax = a[0],
+      ay = a[1],
+      az = a[2],
+      aw = a[3],
+      bx = b[0],
+      by = b[1],
+      bz = b[2],
+      bw = b[3];
+
+    var omega, cosom, sinom, scale0, scale1;
+
+    cosom = ax * bx + ay * by + az * bz + aw * bw;
+    if (cosom < 0.0) {
+      cosom = -cosom;
+      bx = -bx;
+      by = -by;
+      bz = -bz;
+      bw = -bw;
+    }
+    if (1.0 - cosom > 0.000001) {
+      omega = Math.acos(cosom);
+      sinom = Math.sin(omega);
+      scale0 = Math.sin((1.0 - t) * omega) / sinom;
+      scale1 = Math.sin(t * omega) / sinom;
+    } else {
+      scale0 = 1.0 - t;
+      scale1 = t;
+    }
+    out[0] = scale0 * ax + scale1 * bx;
+    out[1] = scale0 * ay + scale1 * by;
+    out[2] = scale0 * az + scale1 * bz;
+    out[3] = scale0 * aw + scale1 * bw;
+
+    return out;
+  }
+
+  function quaternionToEuler(out, quat) {
+    var qx = quat[0];
+    var qy = quat[1];
+    var qz = quat[2];
+    var qw = quat[3];
+    var heading = Math.atan2(2 * qy * qw - 2 * qx * qz, 1 - 2 * qy * qy - 2 * qz * qz);
+    var attitude = Math.asin(2 * qx * qy + 2 * qz * qw);
+    var bank = Math.atan2(2 * qx * qw - 2 * qy * qz, 1 - 2 * qx * qx - 2 * qz * qz);
+    out[0] = heading / degToRads;
+    out[1] = attitude / degToRads;
+    out[2] = bank / degToRads;
+  }
+
+  function createQuaternion(values) {
+    var heading = values[0] * degToRads;
+    var attitude = values[1] * degToRads;
+    var bank = values[2] * degToRads;
+    var c1 = Math.cos(heading / 2);
+    var c2 = Math.cos(attitude / 2);
+    var c3 = Math.cos(bank / 2);
+    var s1 = Math.sin(heading / 2);
+    var s2 = Math.sin(attitude / 2);
+    var s3 = Math.sin(bank / 2);
+    var w = c1 * c2 * c3 - s1 * s2 * s3;
+    var x = s1 * s2 * c3 + c1 * c2 * s3;
+    var y = s1 * c2 * c3 + c1 * s2 * s3;
+    var z = c1 * s2 * c3 - s1 * c2 * s3;
+
+    return [x, y, z, w];
+  }
+
+  function getValueAtCurrentTime() {
+    var frameNum = this.comp.renderedFrame - this.offsetTime;
+    var initTime = this.keyframes[0].t - this.offsetTime;
+    var endTime = this.keyframes[this.keyframes.length - 1].t - this.offsetTime;
+    if (
+      !(
+        frameNum === this._caching.lastFrame ||
+        (this._caching.lastFrame !== initFrame &&
+          ((this._caching.lastFrame >= endTime && frameNum >= endTime) || (this._caching.lastFrame < initTime && frameNum < initTime)))
+      )
+    ) {
+      if (this._caching.lastFrame >= frameNum) {
+        this._caching._lastKeyframeIndex = -1;
+        this._caching.lastIndex = 0;
+      }
+
+      var renderResult = this.interpolateValue(frameNum, this._caching);
+      this.pv = renderResult;
+    }
+    this._caching.lastFrame = frameNum;
+    return this.pv;
+  }
+
+  function setVValue(val) {
+    var multipliedValue;
+    if (this.propType === 'unidimensional') {
+      multipliedValue = val * this.mult;
+      if (math_abs(this.v - multipliedValue) > 0.00001) {
+        this.v = multipliedValue;
+        this._mdf = true;
+      }
+    } else {
+      var i = 0,
+        len = this.v.length;
+      while (i < len) {
+        multipliedValue = val[i] * this.mult;
+        if (math_abs(this.v[i] - multipliedValue) > 0.00001) {
+          this.v[i] = multipliedValue;
+          this._mdf = true;
+        }
+        i += 1;
+      }
+    }
+  }
+
+  function processEffectsSequence() {
+    if (this.elem.globalData.frameId === this.frameId || !this.effectsSequence.length) {
+      return;
+    }
+    if (this.lock) {
+      this.setVValue(this.pv);
+      return;
+    }
+    this.lock = true;
+    this._mdf = this._isFirstFrame;
+    var multipliedValue;
+    var i,
+      len = this.effectsSequence.length;
+    var finalValue = this.kf ? this.pv : this.data.k;
+    for (i = 0; i < len; i += 1) {
+      finalValue = this.effectsSequence[i](finalValue);
+    }
+    this.setVValue(finalValue);
+    this._isFirstFrame = false;
+    this.lock = false;
+    this.frameId = this.elem.globalData.frameId;
+  }
+
+  function addEffect(effectFunction) {
+    this.effectsSequence.push(effectFunction);
+    this.container.addDynamicProperty(this);
+  }
+
+  function ValueProperty(elem, data, mult, container) {
+    this.propType = 'unidimensional';
+    this.mult = mult || 1;
+    this.data = data;
+    this.v = mult ? data.k * mult : data.k;
+    this.pv = data.k;
+    this._mdf = false;
+    this.elem = elem;
+    this.container = container;
+    this.comp = elem.comp;
+    this.k = false;
+    this.kf = false;
+    this.vel = 0;
+    this.effectsSequence = [];
+    this._isFirstFrame = true;
+    this.getValue = processEffectsSequence;
+    this.setVValue = setVValue;
+    this.addEffect = addEffect;
+  }
+
+  function MultiDimensionalProperty(elem, data, mult, container) {
+    this.propType = 'multidimensional';
+    this.mult = mult || 1;
+    this.data = data;
+    this._mdf = false;
+    this.elem = elem;
+    this.container = container;
+    this.comp = elem.comp;
+    this.k = false;
+    this.kf = false;
+    this.frameId = -1;
+    var i,
+      len = data.k.length;
+    this.v = createTypedArray('float32', len);
+    this.pv = createTypedArray('float32', len);
+    var arr = createTypedArray('float32', len);
+    this.vel = createTypedArray('float32', len);
+    for (i = 0; i < len; i += 1) {
+      this.v[i] = data.k[i] * this.mult;
+      this.pv[i] = data.k[i];
+    }
+    this._isFirstFrame = true;
+    this.effectsSequence = [];
+    this.getValue = processEffectsSequence;
+    this.setVValue = setVValue;
+    this.addEffect = addEffect;
+  }
+
+  function KeyframedValueProperty(elem, data, mult, container) {
+    this.propType = 'unidimensional';
+    this.keyframes = data.k;
+    this.offsetTime = elem.data.st;
+    this.frameId = -1;
+    this._caching = { lastFrame: initFrame, lastIndex: 0, value: 0, _lastKeyframeIndex: -1 };
+    this.k = true;
+    this.kf = true;
+    this.data = data;
+    this.mult = mult || 1;
+    this.elem = elem;
+    this.container = container;
+    this.comp = elem.comp;
+    this.v = initFrame;
+    this.pv = initFrame;
+    this._isFirstFrame = true;
+    this.getValue = processEffectsSequence;
+    this.setVValue = setVValue;
+    this.interpolateValue = interpolateValue;
+    this.effectsSequence = [getValueAtCurrentTime.bind(this)];
+    this.addEffect = addEffect;
+  }
+
+  function KeyframedMultidimensionalProperty(elem, data, mult, container) {
+    this.propType = 'multidimensional';
+    var i,
+      len = data.k.length;
+    var s, e, to, ti;
+    for (i = 0; i < len - 1; i += 1) {
+      if (data.k[i].to && data.k[i].s && data.k[i].e) {
+        s = data.k[i].s;
+        e = data.k[i].e;
+        to = data.k[i].to;
+        ti = data.k[i].ti;
+        if (
+          (s.length === 2 &&
+            !(s[0] === e[0] && s[1] === e[1]) &&
+            bez.pointOnLine2D(s[0], s[1], e[0], e[1], s[0] + to[0], s[1] + to[1]) &&
+            bez.pointOnLine2D(s[0], s[1], e[0], e[1], e[0] + ti[0], e[1] + ti[1])) ||
+          (s.length === 3 &&
+            !(s[0] === e[0] && s[1] === e[1] && s[2] === e[2]) &&
+            bez.pointOnLine3D(s[0], s[1], s[2], e[0], e[1], e[2], s[0] + to[0], s[1] + to[1], s[2] + to[2]) &&
+            bez.pointOnLine3D(s[0], s[1], s[2], e[0], e[1], e[2], e[0] + ti[0], e[1] + ti[1], e[2] + ti[2]))
+        ) {
+          data.k[i].to = null;
+          data.k[i].ti = null;
+        }
+        if (s[0] === e[0] && s[1] === e[1] && to[0] === 0 && to[1] === 0 && ti[0] === 0 && ti[1] === 0) {
+          if (s.length === 2 || (s[2] === e[2] && to[2] === 0 && ti[2] === 0)) {
+            data.k[i].to = null;
+            data.k[i].ti = null;
+          }
+        }
+      }
+    }
+    this.effectsSequence = [getValueAtCurrentTime.bind(this)];
+    this.keyframes = data.k;
+    this.offsetTime = elem.data.st;
+    this.k = true;
+    this.kf = true;
+    this._isFirstFrame = true;
+    this.mult = mult || 1;
+    this.elem = elem;
+    this.container = container;
+    this.comp = elem.comp;
+    this.getValue = processEffectsSequence;
+    this.setVValue = setVValue;
+    this.interpolateValue = interpolateValue;
+    this.frameId = -1;
+    var arrLen = data.k[0].s.length;
+    this.v = createTypedArray('float32', arrLen);
+    this.pv = createTypedArray('float32', arrLen);
+    for (i = 0; i < arrLen; i += 1) {
+      this.v[i] = initFrame;
+      this.pv[i] = initFrame;
+    }
+    this._caching = { lastFrame: initFrame, lastIndex: 0, value: createTypedArray('float32', arrLen) };
+    this.addEffect = addEffect;
+  }
+
+  function getProp(elem, data, type, mult, container) {
+    var p;
+    if (!data.k.length) {
+      p = new ValueProperty(elem, data, mult, container);
+    } else if (typeof data.k[0] === 'number') {
+      p = new MultiDimensionalProperty(elem, data, mult, container);
+    } else {
+      switch (type) {
+        case 0:
+          p = new KeyframedValueProperty(elem, data, mult, container);
+          break;
+        case 1:
+          p = new KeyframedMultidimensionalProperty(elem, data, mult, container);
+          break;
+      }
+    }
+    if (p.effectsSequence.length) {
+      container.addDynamicProperty(p);
+    }
+    return p;
+  }
+
+  var ob = {
+    getProp: getProp,
+  };
+  return ob;
+})();
+
 var TransformPropertyFactory = (function() {
 
     function applyToMatrix(mat) {
@@ -2851,572 +2877,596 @@ ShapePath.prototype.reverse = function() {
     }
     return newPath;
 };
-var ShapePropertyFactory = (function(){
+var ShapePropertyFactory = (function () {
+  var initFrame = -999999;
 
-    var initFrame = -999999;
+  function interpolateShape(frameNum, previousValue, caching) {
+    var iterationIndex = caching.lastIndex;
+    var keyPropS, keyPropE, isHold, j, k, jLen, kLen, perc, vertexValue;
+    var kf = this.keyframes;
+    
+    if (frameNum < kf[0].t - this.offsetTime) {
+      keyPropS = kf[0].s[0];
+      isHold = true;
+      iterationIndex = 0;
+    } else if (frameNum >= kf[kf.length - 1].t - this.offsetTime) {
+      keyPropS = kf[kf.length - 1].s ? kf[kf.length - 1].s[0] : kf[kf.length - 2].e[0];
 
-    function interpolateShape(frameNum, previousValue, caching) {
-        var iterationIndex = caching.lastIndex;
-        var keyPropS,keyPropE,isHold, j, k, jLen, kLen, perc, vertexValue;
-        var kf = this.keyframes;
-        if(frameNum < kf[0].t-this.offsetTime){
-            keyPropS = kf[0].s[0];
-            isHold = true;
-            iterationIndex = 0;
-        }else if(frameNum >= kf[kf.length - 1].t-this.offsetTime){
-            keyPropS = kf[kf.length - 1].s ? kf[kf.length - 1].s[0] : kf[kf.length - 2].e[0];
-            /*if(kf[kf.length - 1].s){
-                keyPropS = kf[kf.length - 1].s[0];
-            }else{
-                keyPropS = kf[kf.length - 2].e[0];
-            }*/
-            isHold = true;
-        }else{
-            var i = iterationIndex;
-            var len = kf.length- 1,flag = true,keyData,nextKeyData;
-            while(flag){
-                keyData = kf[i];
-                nextKeyData = kf[i+1];
-                if((nextKeyData.t - this.offsetTime) > frameNum){
-                    break;
-                }
-                if(i < len - 1){
-                    i += 1;
-                }else{
-                    flag = false;
-                }
-            }
-            isHold = keyData.h === 1;
-            iterationIndex = i;
-            if(!isHold){
-                if(frameNum >= nextKeyData.t-this.offsetTime){
-                    perc = 1;
-                }else if(frameNum < keyData.t-this.offsetTime){
-                    perc = 0;
-                }else{
-                    var fnc;
-                    if(keyData.__fnct){
-                        fnc = keyData.__fnct;
-                    }else{
-                        fnc = BezierFactory.getBezierEasing(keyData.o.x,keyData.o.y,keyData.i.x,keyData.i.y).get;
-                        keyData.__fnct = fnc;
-                    }
-                    perc = fnc((frameNum-(keyData.t-this.offsetTime))/((nextKeyData.t-this.offsetTime)-(keyData.t-this.offsetTime)));
-                }
-                keyPropE = nextKeyData.s ? nextKeyData.s[0] : keyData.e[0];
-            }
-            keyPropS = keyData.s[0];
+      isHold = true;
+    } else {
+      var i = iterationIndex;
+      var len = kf.length - 1,
+        flag = true,
+        keyData,
+        nextKeyData;
+      while (flag) {
+        keyData = kf[i];
+        nextKeyData = kf[i + 1];
+        if (nextKeyData.t - this.offsetTime > frameNum) {
+          break;
         }
-        jLen = previousValue._length;
-        kLen = keyPropS.i[0].length;
-        caching.lastIndex = iterationIndex;
-
-        for(j=0;j<jLen;j+=1){
-            for(k=0;k<kLen;k+=1){
-                vertexValue = isHold ? keyPropS.i[j][k] :  keyPropS.i[j][k]+(keyPropE.i[j][k]-keyPropS.i[j][k])*perc;
-                previousValue.i[j][k] = vertexValue;
-                vertexValue = isHold ? keyPropS.o[j][k] :  keyPropS.o[j][k]+(keyPropE.o[j][k]-keyPropS.o[j][k])*perc;
-                previousValue.o[j][k] = vertexValue;
-                vertexValue = isHold ? keyPropS.v[j][k] :  keyPropS.v[j][k]+(keyPropE.v[j][k]-keyPropS.v[j][k])*perc;
-                previousValue.v[j][k] = vertexValue;
-            }
+        if (i < len - 1) {
+          i += 1;
+        } else {
+          flag = false;
         }
+      }
+
+      isHold = keyData.h === 1;
+      iterationIndex = i;
+      if (!isHold) {
+        if (frameNum >= nextKeyData.t - this.offsetTime) {
+          perc = 1;
+        } else if (frameNum < keyData.t - this.offsetTime) {
+          perc = 0;
+        } else {
+          var fnc;
+          if (keyData.__fnct) {
+            fnc = keyData.__fnct;
+          } else {
+            fnc = BezierFactory.getBezierEasing(keyData.o.x, keyData.o.y, keyData.i.x, keyData.i.y).get;
+            keyData.__fnct = fnc;
+          }
+          perc = fnc((frameNum - (keyData.t - this.offsetTime)) / (nextKeyData.t - this.offsetTime - (keyData.t - this.offsetTime)));
+        }
+        keyPropE = nextKeyData.s ? nextKeyData.s[0] : keyData.e[0];
+      }
+      keyPropS = keyData.s[0];
+    }
+    jLen = previousValue._length;
+    kLen = keyPropS.i[0].length;
+    caching.lastIndex = iterationIndex;
+
+    for (j = 0; j < jLen; j += 1) {
+      for (k = 0; k < kLen; k += 1) {
+        vertexValue = isHold ? keyPropS.i[j][k] : keyPropS.i[j][k] + (keyPropE.i[j][k] - keyPropS.i[j][k]) * perc;
+        previousValue.i[j][k] = vertexValue;
+        vertexValue = isHold ? keyPropS.o[j][k] : keyPropS.o[j][k] + (keyPropE.o[j][k] - keyPropS.o[j][k]) * perc;
+        previousValue.o[j][k] = vertexValue;
+        vertexValue = isHold ? keyPropS.v[j][k] : keyPropS.v[j][k] + (keyPropE.v[j][k] - keyPropS.v[j][k]) * perc;
+        previousValue.v[j][k] = vertexValue;
+      }
+    }
+  }
+
+  function interpolateShapeCurrentTime() {
+    var frameNum = this.comp.renderedFrame - this.offsetTime;
+    var initTime = this.keyframes[0].t - this.offsetTime;
+    var endTime = this.keyframes[this.keyframes.length - 1].t - this.offsetTime;
+    var lastFrame = this._caching.lastFrame;
+    if (!(lastFrame !== initFrame && ((lastFrame < initTime && frameNum < initTime) || (lastFrame > endTime && frameNum > endTime)))) {
+      ////
+      this._caching.lastIndex = lastFrame < frameNum ? this._caching.lastIndex : 0;
+      this.interpolateShape(frameNum, this.pv, this._caching);
+      ////
+    }
+    this._caching.lastFrame = frameNum;
+    return this.pv;
+  }
+
+  function resetShape() {
+    this.paths = this.localShapeCollection;
+  }
+
+  function shapesEqual(shape1, shape2) {
+    if (shape1._length !== shape2._length || shape1.c !== shape2.c) {
+      return false;
+    }
+    var i,
+      len = shape1._length;
+    for (i = 0; i < len; i += 1) {
+      if (
+        shape1.v[i][0] !== shape2.v[i][0] ||
+        shape1.v[i][1] !== shape2.v[i][1] ||
+        shape1.o[i][0] !== shape2.o[i][0] ||
+        shape1.o[i][1] !== shape2.o[i][1] ||
+        shape1.i[i][0] !== shape2.i[i][0] ||
+        shape1.i[i][1] !== shape2.i[i][1]
+      ) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function setVValue(newPath) {
+    if (!shapesEqual(this.v, newPath)) {
+      this.v = shape_pool.clone(newPath);
+      this.localShapeCollection.releaseShapes();
+      this.localShapeCollection.addShape(this.v);
+      this._mdf = true;
+      this.paths = this.localShapeCollection;
+    }
+  }
+
+  function processEffectsSequence() {
+    if (this.elem.globalData.frameId === this.frameId) {
+      return;
+    } else if (!this.effectsSequence.length) {
+      this._mdf = false;
+      return;
+    }
+    if (this.lock) {
+      this.setVValue(this.pv);
+      return;
+    }
+    this.lock = true;
+    this._mdf = false;
+    var finalValue = this.kf ? this.pv : this.data.ks ? this.data.ks.k : this.data.pt.k;
+    var i,
+      len = this.effectsSequence.length;
+    for (i = 0; i < len; i += 1) {
+      finalValue = this.effectsSequence[i](finalValue);
+    }
+    this.setVValue(finalValue);
+    this.lock = false;
+    this.frameId = this.elem.globalData.frameId;
+  }
+
+  function ShapeProperty(elem, data, type) {
+    this.propType = 'shape';
+    this.comp = elem.comp;
+    this.container = elem;
+    this.elem = elem;
+    this.data = data;
+    this.k = false;
+    this.kf = false;
+    this._mdf = false;
+    var pathData = type === 3 ? data.pt.k : data.ks.k;
+    this.v = shape_pool.clone(pathData);
+    this.pv = shape_pool.clone(this.v);
+    this.localShapeCollection = shapeCollection_pool.newShapeCollection();
+    this.paths = this.localShapeCollection;
+    this.paths.addShape(this.v);
+    this.reset = resetShape;
+    this.effectsSequence = [];
+  }
+
+  function addEffect(effectFunction) {
+    this.effectsSequence.push(effectFunction);
+    this.container.addDynamicProperty(this);
+  }
+
+  ShapeProperty.prototype.interpolateShape = interpolateShape;
+  ShapeProperty.prototype.getValue = processEffectsSequence;
+  ShapeProperty.prototype.setVValue = setVValue;
+  ShapeProperty.prototype.addEffect = addEffect;
+
+  function KeyframedShapeProperty(elem, data, type) {
+    this.propType = 'shape';
+    this.comp = elem.comp;
+    this.elem = elem;
+    this.container = elem;
+    this.offsetTime = elem.data.st;
+    this.keyframes = type === 3 ? data.pt.k : data.ks.k;
+    this.k = true;
+    this.kf = true;
+    var i,
+      len = this.keyframes[0].s[0].i.length;
+    var jLen = this.keyframes[0].s[0].i[0].length;
+    this.v = shape_pool.newElement();
+    this.v.setPathData(this.keyframes[0].s[0].c, len);
+    this.pv = shape_pool.clone(this.v);
+    this.localShapeCollection = shapeCollection_pool.newShapeCollection();
+    this.paths = this.localShapeCollection;
+    this.paths.addShape(this.v);
+    this.lastFrame = initFrame;
+    this.reset = resetShape;
+    this._caching = { lastFrame: initFrame, lastIndex: 0 };
+    this.effectsSequence = [interpolateShapeCurrentTime.bind(this)];
+  }
+
+  KeyframedShapeProperty.prototype.getValue = processEffectsSequence;
+  KeyframedShapeProperty.prototype.interpolateShape = interpolateShape;
+  KeyframedShapeProperty.prototype.setVValue = setVValue;
+  KeyframedShapeProperty.prototype.addEffect = addEffect;
+
+  var EllShapeProperty = (function () {
+    var cPoint = roundCorner;
+
+    function EllShapeProperty(elem, data) {
+      this.v = shape_pool.newElement();
+      this.v.setPathData(true, 4);
+      this.localShapeCollection = shapeCollection_pool.newShapeCollection();
+      this.paths = this.localShapeCollection;
+      this.localShapeCollection.addShape(this.v);
+      this.d = data.d;
+      this.elem = elem;
+      this.comp = elem.comp;
+      this.frameId = -1;
+      this.initDynamicPropertyContainer(elem);
+      this.p = PropertyFactory.getProp(elem, data.p, 1, 0, this);
+      this.s = PropertyFactory.getProp(elem, data.s, 1, 0, this);
+      if (this.dynamicProperties.length) {
+        this.k = true;
+      } else {
+        this.k = false;
+        this.convertEllToPath();
+      }
     }
 
-    function interpolateShapeCurrentTime(){
-        var frameNum = this.comp.renderedFrame - this.offsetTime;
-        var initTime = this.keyframes[0].t - this.offsetTime;
-        var endTime = this.keyframes[this.keyframes.length - 1].t - this.offsetTime;
-        var lastFrame = this._caching.lastFrame;
-        if(!(lastFrame !== initFrame && ((lastFrame < initTime && frameNum < initTime) || (lastFrame > endTime && frameNum > endTime)))){
-            ////
-            this._caching.lastIndex = lastFrame < frameNum ? this._caching.lastIndex : 0;
-            this.interpolateShape(frameNum, this.pv, this._caching);
-            ////
-        }
-        this._caching.lastFrame = frameNum;
-        return this.pv;
-    }
-
-    function resetShape(){
-        this.paths = this.localShapeCollection;
-    }
-
-    function shapesEqual(shape1, shape2) {
-        if(shape1._length !== shape2._length || shape1.c !== shape2.c){
-            return false;
-        }
-        var i, len = shape1._length;
-        for(i = 0; i < len; i += 1) {
-            if(shape1.v[i][0] !== shape2.v[i][0] 
-            || shape1.v[i][1] !== shape2.v[i][1] 
-            || shape1.o[i][0] !== shape2.o[i][0] 
-            || shape1.o[i][1] !== shape2.o[i][1] 
-            || shape1.i[i][0] !== shape2.i[i][0] 
-            || shape1.i[i][1] !== shape2.i[i][1]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    function setVValue(newPath) {
-        if(!shapesEqual(this.v, newPath)) {
-            this.v = shape_pool.clone(newPath);
-            this.localShapeCollection.releaseShapes();
-            this.localShapeCollection.addShape(this.v);
-            this._mdf = true;
-            this.paths = this.localShapeCollection;
-        }
-    }
-
-    function processEffectsSequence() {
+    EllShapeProperty.prototype = {
+      reset: resetShape,
+      getValue: function () {
         if (this.elem.globalData.frameId === this.frameId) {
-            return;
-        } else if (!this.effectsSequence.length) {
-            this._mdf = false;
-            return;
+          return;
         }
-        if (this.lock) {
-            this.setVValue(this.pv);
-            return;
-        }
-        this.lock = true;
-        this._mdf = false;
-        var finalValue = this.kf ? this.pv : this.data.ks ? this.data.ks.k : this.data.pt.k;
-        var i, len = this.effectsSequence.length;
-        for(i = 0; i < len; i += 1) {
-            finalValue = this.effectsSequence[i](finalValue);
-        }
-        this.setVValue(finalValue);
-        this.lock = false;
         this.frameId = this.elem.globalData.frameId;
+        this.iterateDynamicProperties();
+
+        if (this._mdf) {
+          this.convertEllToPath();
+        }
+      },
+      convertEllToPath: function () {
+        var p0 = this.p.v[0],
+          p1 = this.p.v[1],
+          s0 = this.s.v[0] / 2,
+          s1 = this.s.v[1] / 2;
+        var _cw = this.d !== 3;
+        var _v = this.v;
+        _v.v[0][0] = p0;
+        _v.v[0][1] = p1 - s1;
+        _v.v[1][0] = _cw ? p0 + s0 : p0 - s0;
+        _v.v[1][1] = p1;
+        _v.v[2][0] = p0;
+        _v.v[2][1] = p1 + s1;
+        _v.v[3][0] = _cw ? p0 - s0 : p0 + s0;
+        _v.v[3][1] = p1;
+        _v.i[0][0] = _cw ? p0 - s0 * cPoint : p0 + s0 * cPoint;
+        _v.i[0][1] = p1 - s1;
+        _v.i[1][0] = _cw ? p0 + s0 : p0 - s0;
+        _v.i[1][1] = p1 - s1 * cPoint;
+        _v.i[2][0] = _cw ? p0 + s0 * cPoint : p0 - s0 * cPoint;
+        _v.i[2][1] = p1 + s1;
+        _v.i[3][0] = _cw ? p0 - s0 : p0 + s0;
+        _v.i[3][1] = p1 + s1 * cPoint;
+        _v.o[0][0] = _cw ? p0 + s0 * cPoint : p0 - s0 * cPoint;
+        _v.o[0][1] = p1 - s1;
+        _v.o[1][0] = _cw ? p0 + s0 : p0 - s0;
+        _v.o[1][1] = p1 + s1 * cPoint;
+        _v.o[2][0] = _cw ? p0 - s0 * cPoint : p0 + s0 * cPoint;
+        _v.o[2][1] = p1 + s1;
+        _v.o[3][0] = _cw ? p0 - s0 : p0 + s0;
+        _v.o[3][1] = p1 - s1 * cPoint;
+      },
     };
 
-    function ShapeProperty(elem, data, type){
-        this.propType = 'shape';
-        this.comp = elem.comp;
-        this.container = elem;
-        this.elem = elem;
-        this.data = data;
+    extendPrototype([DynamicPropertyContainer], EllShapeProperty);
+
+    return EllShapeProperty;
+  })();
+
+  var StarShapeProperty = (function () {
+    function StarShapeProperty(elem, data) {
+      this.v = shape_pool.newElement();
+      this.v.setPathData(true, 0);
+      this.elem = elem;
+      this.comp = elem.comp;
+      this.data = data;
+      this.frameId = -1;
+      this.d = data.d;
+      this.initDynamicPropertyContainer(elem);
+      if (data.sy === 1) {
+        this.ir = PropertyFactory.getProp(elem, data.ir, 0, 0, this);
+        this.is = PropertyFactory.getProp(elem, data.is, 0, 0.01, this);
+        this.convertToPath = this.convertStarToPath;
+      } else {
+        this.convertToPath = this.convertPolygonToPath;
+      }
+      this.pt = PropertyFactory.getProp(elem, data.pt, 0, 0, this);
+      this.p = PropertyFactory.getProp(elem, data.p, 1, 0, this);
+      this.r = PropertyFactory.getProp(elem, data.r, 0, degToRads, this);
+      this.or = PropertyFactory.getProp(elem, data.or, 0, 0, this);
+      this.os = PropertyFactory.getProp(elem, data.os, 0, 0.01, this);
+      this.localShapeCollection = shapeCollection_pool.newShapeCollection();
+      this.localShapeCollection.addShape(this.v);
+      this.paths = this.localShapeCollection;
+      if (this.dynamicProperties.length) {
+        this.k = true;
+      } else {
         this.k = false;
-        this.kf = false;
-        this._mdf = false;
-        var pathData = type === 3 ? data.pt.k : data.ks.k;
-        this.v = shape_pool.clone(pathData);
-        this.pv = shape_pool.clone(this.v);
-        this.localShapeCollection = shapeCollection_pool.newShapeCollection();
-        this.paths = this.localShapeCollection;
-        this.paths.addShape(this.v);
-        this.reset = resetShape;
-        this.effectsSequence = [];
+        this.convertToPath();
+      }
     }
 
-    function addEffect(effectFunction) {
-        this.effectsSequence.push(effectFunction);
-        this.container.addDynamicProperty(this);
-    }
+    StarShapeProperty.prototype = {
+      reset: resetShape,
+      getValue: function () {
+        if (this.elem.globalData.frameId === this.frameId) {
+          return;
+        }
+        this.frameId = this.elem.globalData.frameId;
+        this.iterateDynamicProperties();
+        if (this._mdf) {
+          this.convertToPath();
+        }
+      },
+      convertStarToPath: function () {
+        var numPts = Math.floor(this.pt.v) * 2;
+        var angle = (Math.PI * 2) / numPts;
+        var longFlag = true;
+        var longRad = this.or.v;
+        var shortRad = this.ir.v;
+        var longRound = this.os.v;
+        var shortRound = this.is.v;
+        var longPerimSegment = (2 * Math.PI * longRad) / (numPts * 2);
+        var shortPerimSegment = (2 * Math.PI * shortRad) / (numPts * 2);
+        var i,
+          rad,
+          roundness,
+          perimSegment,
+          currentAng = -Math.PI / 2;
+        currentAng += this.r.v;
+        var dir = this.data.d === 3 ? -1 : 1;
+        this.v._length = 0;
+        for (i = 0; i < numPts; i += 1) {
+          rad = longFlag ? longRad : shortRad;
+          roundness = longFlag ? longRound : shortRound;
+          perimSegment = longFlag ? longPerimSegment : shortPerimSegment;
+          var x = rad * Math.cos(currentAng);
+          var y = rad * Math.sin(currentAng);
+          var ox = x === 0 && y === 0 ? 0 : y / Math.sqrt(x * x + y * y);
+          var oy = x === 0 && y === 0 ? 0 : -x / Math.sqrt(x * x + y * y);
+          x += +this.p.v[0];
+          y += +this.p.v[1];
+          this.v.setTripleAt(
+            x,
+            y,
+            x - ox * perimSegment * roundness * dir,
+            y - oy * perimSegment * roundness * dir,
+            x + ox * perimSegment * roundness * dir,
+            y + oy * perimSegment * roundness * dir,
+            i,
+            true
+          );
 
-    ShapeProperty.prototype.interpolateShape = interpolateShape;
-    ShapeProperty.prototype.getValue = processEffectsSequence;
-    ShapeProperty.prototype.setVValue = setVValue;
-    ShapeProperty.prototype.addEffect = addEffect;
+          longFlag = !longFlag;
+          currentAng += angle * dir;
+        }
+      },
 
-    function KeyframedShapeProperty(elem,data,type){
-        this.propType = 'shape';
-        this.comp = elem.comp;
-        this.elem = elem;
-        this.container = elem;
-        this.offsetTime = elem.data.st;
-        this.keyframes = type === 3 ? data.pt.k : data.ks.k;
+      convertPolygonToPath: function () {
+        var numPts = Math.floor(this.pt.v);
+        var angle = (Math.PI * 2) / numPts;
+        var rad = this.or.v;
+        var roundness = this.os.v;
+        var perimSegment = (2 * Math.PI * rad) / (numPts * 4);
+        var i,
+          currentAng = -Math.PI / 2;
+        var dir = this.data.d === 3 ? -1 : 1;
+        currentAng += this.r.v;
+        this.v._length = 0;
+
+        for (i = 0; i < numPts; i += 1) {
+          var x = rad * Math.cos(currentAng);
+          var y = rad * Math.sin(currentAng);
+          var ox = x === 0 && y === 0 ? 0 : y / Math.sqrt(x * x + y * y);
+          var oy = x === 0 && y === 0 ? 0 : -x / Math.sqrt(x * x + y * y);
+          x += +this.p.v[0];
+          y += +this.p.v[1];
+          this.v.setTripleAt(
+            x,
+            y,
+            x - ox * perimSegment * roundness * dir,
+            y - oy * perimSegment * roundness * dir,
+            x + ox * perimSegment * roundness * dir,
+            y + oy * perimSegment * roundness * dir,
+            i,
+            true
+          );
+          currentAng += angle * dir;
+        }
+        this.paths.length = 0;
+        this.paths[0] = this.v;
+      },
+    };
+    extendPrototype([DynamicPropertyContainer], StarShapeProperty);
+
+    return StarShapeProperty;
+  })();
+
+  var RectShapeProperty = (function () {
+    function RectShapeProperty(elem, data) {
+      this.v = shape_pool.newElement();
+      this.v.c = true;
+      this.localShapeCollection = shapeCollection_pool.newShapeCollection();
+      this.localShapeCollection.addShape(this.v);
+      this.paths = this.localShapeCollection;
+      this.elem = elem;
+      this.comp = elem.comp;
+      this.frameId = -1;
+      this.d = data.d;
+      this.initDynamicPropertyContainer(elem);
+      this.p = PropertyFactory.getProp(elem, data.p, 1, 0, this);
+      this.s = PropertyFactory.getProp(elem, data.s, 1, 0, this);
+      this.r = PropertyFactory.getProp(elem, data.r, 0, 0, this);
+      if (this.dynamicProperties.length) {
         this.k = true;
-        this.kf = true;
-        var i, len = this.keyframes[0].s[0].i.length;
-        var jLen = this.keyframes[0].s[0].i[0].length;
-        this.v = shape_pool.newElement();
-        this.v.setPathData(this.keyframes[0].s[0].c, len);
-        this.pv = shape_pool.clone(this.v);
-        this.localShapeCollection = shapeCollection_pool.newShapeCollection();
-        this.paths = this.localShapeCollection;
-        this.paths.addShape(this.v);
-        this.lastFrame = initFrame;
-        this.reset = resetShape;
-        this._caching = {lastFrame: initFrame, lastIndex: 0};
-        this.effectsSequence = [interpolateShapeCurrentTime.bind(this)];
-    }
-    KeyframedShapeProperty.prototype.getValue = processEffectsSequence;
-    KeyframedShapeProperty.prototype.interpolateShape = interpolateShape;
-    KeyframedShapeProperty.prototype.setVValue = setVValue;
-    KeyframedShapeProperty.prototype.addEffect = addEffect;
-
-    var EllShapeProperty = (function(){
-
-        var cPoint = roundCorner;
-
-        function EllShapeProperty(elem,data) {
-            /*this.v = {
-                v: createSizedArray(4),
-                i: createSizedArray(4),
-                o: createSizedArray(4),
-                c: true
-            };*/
-            this.v = shape_pool.newElement();
-            this.v.setPathData(true, 4);
-            this.localShapeCollection = shapeCollection_pool.newShapeCollection();
-            this.paths = this.localShapeCollection;
-            this.localShapeCollection.addShape(this.v);
-            this.d = data.d;
-            this.elem = elem;
-            this.comp = elem.comp;
-            this.frameId = -1;
-            this.initDynamicPropertyContainer(elem);
-            this.p = PropertyFactory.getProp(elem,data.p,1,0,this);
-            this.s = PropertyFactory.getProp(elem,data.s,1,0,this);
-            if(this.dynamicProperties.length){
-                this.k = true;
-            }else{
-                this.k = false;
-                this.convertEllToPath();
-            }
-        };
-
-        EllShapeProperty.prototype = {
-            reset: resetShape,
-            getValue: function (){
-                if(this.elem.globalData.frameId === this.frameId){
-                    return;
-                }
-                this.frameId = this.elem.globalData.frameId;
-                this.iterateDynamicProperties();
-
-                if(this._mdf){
-                    this.convertEllToPath();
-                }
-            },
-            convertEllToPath: function() {
-                var p0 = this.p.v[0], p1 = this.p.v[1], s0 = this.s.v[0]/2, s1 = this.s.v[1]/2;
-                var _cw = this.d !== 3;
-                var _v = this.v;
-                _v.v[0][0] = p0;
-                _v.v[0][1] = p1 - s1;
-                _v.v[1][0] = _cw ? p0 + s0 : p0 - s0;
-                _v.v[1][1] = p1;
-                _v.v[2][0] = p0;
-                _v.v[2][1] = p1 + s1;
-                _v.v[3][0] = _cw ? p0 - s0 : p0 + s0;
-                _v.v[3][1] = p1;
-                _v.i[0][0] = _cw ? p0 - s0 * cPoint : p0 + s0 * cPoint;
-                _v.i[0][1] = p1 - s1;
-                _v.i[1][0] = _cw ? p0 + s0 : p0 - s0;
-                _v.i[1][1] = p1 - s1 * cPoint;
-                _v.i[2][0] = _cw ? p0 + s0 * cPoint : p0 - s0 * cPoint;
-                _v.i[2][1] = p1 + s1;
-                _v.i[3][0] = _cw ? p0 - s0 : p0 + s0;
-                _v.i[3][1] = p1 + s1 * cPoint;
-                _v.o[0][0] = _cw ? p0 + s0 * cPoint : p0 - s0 * cPoint;
-                _v.o[0][1] = p1 - s1;
-                _v.o[1][0] = _cw ? p0 + s0 : p0 - s0;
-                _v.o[1][1] = p1 + s1 * cPoint;
-                _v.o[2][0] = _cw ? p0 - s0 * cPoint : p0 + s0 * cPoint;
-                _v.o[2][1] = p1 + s1;
-                _v.o[3][0] = _cw ? p0 - s0 : p0 + s0;
-                _v.o[3][1] = p1 - s1 * cPoint;
-            }
-        }
-
-        extendPrototype([DynamicPropertyContainer], EllShapeProperty);
-
-        return EllShapeProperty;
-    }());
-
-    var StarShapeProperty = (function() {
-
-        function StarShapeProperty(elem,data) {
-            this.v = shape_pool.newElement();
-            this.v.setPathData(true, 0);
-            this.elem = elem;
-            this.comp = elem.comp;
-            this.data = data;
-            this.frameId = -1;
-            this.d = data.d;
-            this.initDynamicPropertyContainer(elem);
-            if(data.sy === 1){
-                this.ir = PropertyFactory.getProp(elem,data.ir,0,0,this);
-                this.is = PropertyFactory.getProp(elem,data.is,0,0.01,this);
-                this.convertToPath = this.convertStarToPath;
-            } else {
-                this.convertToPath = this.convertPolygonToPath;
-            }
-            this.pt = PropertyFactory.getProp(elem,data.pt,0,0,this);
-            this.p = PropertyFactory.getProp(elem,data.p,1,0,this);
-            this.r = PropertyFactory.getProp(elem,data.r,0,degToRads,this);
-            this.or = PropertyFactory.getProp(elem,data.or,0,0,this);
-            this.os = PropertyFactory.getProp(elem,data.os,0,0.01,this);
-            this.localShapeCollection = shapeCollection_pool.newShapeCollection();
-            this.localShapeCollection.addShape(this.v);
-            this.paths = this.localShapeCollection;
-            if(this.dynamicProperties.length){
-                this.k = true;
-            }else{
-                this.k = false;
-                this.convertToPath();
-            }
-        };
-
-        StarShapeProperty.prototype = {
-            reset: resetShape,
-            getValue: function() {
-                if(this.elem.globalData.frameId === this.frameId){
-                    return;
-                }
-                this.frameId = this.elem.globalData.frameId;
-                this.iterateDynamicProperties();
-                if(this._mdf){
-                    this.convertToPath();
-                }
-            },
-            convertStarToPath: function() {
-                var numPts = Math.floor(this.pt.v)*2;
-                var angle = Math.PI*2/numPts;
-                /*this.v.v.length = numPts;
-                this.v.i.length = numPts;
-                this.v.o.length = numPts;*/
-                var longFlag = true;
-                var longRad = this.or.v;
-                var shortRad = this.ir.v;
-                var longRound = this.os.v;
-                var shortRound = this.is.v;
-                var longPerimSegment = 2*Math.PI*longRad/(numPts*2);
-                var shortPerimSegment = 2*Math.PI*shortRad/(numPts*2);
-                var i, rad,roundness,perimSegment, currentAng = -Math.PI/ 2;
-                currentAng += this.r.v;
-                var dir = this.data.d === 3 ? -1 : 1;
-                this.v._length = 0;
-                for(i=0;i<numPts;i+=1){
-                    rad = longFlag ? longRad : shortRad;
-                    roundness = longFlag ? longRound : shortRound;
-                    perimSegment = longFlag ? longPerimSegment : shortPerimSegment;
-                    var x = rad * Math.cos(currentAng);
-                    var y = rad * Math.sin(currentAng);
-                    var ox = x === 0 && y === 0 ? 0 : y/Math.sqrt(x*x + y*y);
-                    var oy = x === 0 && y === 0 ? 0 : -x/Math.sqrt(x*x + y*y);
-                    x +=  + this.p.v[0];
-                    y +=  + this.p.v[1];
-                    this.v.setTripleAt(x,y,x-ox*perimSegment*roundness*dir,y-oy*perimSegment*roundness*dir,x+ox*perimSegment*roundness*dir,y+oy*perimSegment*roundness*dir, i, true);
-
-                    /*this.v.v[i] = [x,y];
-                    this.v.i[i] = [x+ox*perimSegment*roundness*dir,y+oy*perimSegment*roundness*dir];
-                    this.v.o[i] = [x-ox*perimSegment*roundness*dir,y-oy*perimSegment*roundness*dir];
-                    this.v._length = numPts;*/
-                    longFlag = !longFlag;
-                    currentAng += angle*dir;
-                }
-            },
-            convertPolygonToPath: function() {
-                var numPts = Math.floor(this.pt.v);
-                var angle = Math.PI*2/numPts;
-                var rad = this.or.v;
-                var roundness = this.os.v;
-                var perimSegment = 2*Math.PI*rad/(numPts*4);
-                var i, currentAng = -Math.PI/ 2;
-                var dir = this.data.d === 3 ? -1 : 1;
-                currentAng += this.r.v;
-                this.v._length = 0;
-                for(i=0;i<numPts;i+=1){
-                    var x = rad * Math.cos(currentAng);
-                    var y = rad * Math.sin(currentAng);
-                    var ox = x === 0 && y === 0 ? 0 : y/Math.sqrt(x*x + y*y);
-                    var oy = x === 0 && y === 0 ? 0 : -x/Math.sqrt(x*x + y*y);
-                    x +=  + this.p.v[0];
-                    y +=  + this.p.v[1];
-                    this.v.setTripleAt(x,y,x-ox*perimSegment*roundness*dir,y-oy*perimSegment*roundness*dir,x+ox*perimSegment*roundness*dir,y+oy*perimSegment*roundness*dir, i, true);
-                    currentAng += angle*dir;
-                }
-                this.paths.length = 0;
-                this.paths[0] = this.v;
-            }
-
-        }
-        extendPrototype([DynamicPropertyContainer], StarShapeProperty);
-
-        return StarShapeProperty;
-    }());
-
-    var RectShapeProperty = (function() {
-
-         function RectShapeProperty(elem,data) {
-            this.v = shape_pool.newElement();
-            this.v.c = true;
-            this.localShapeCollection = shapeCollection_pool.newShapeCollection();
-            this.localShapeCollection.addShape(this.v);
-            this.paths = this.localShapeCollection;
-            this.elem = elem;
-            this.comp = elem.comp;
-            this.frameId = -1;
-            this.d = data.d;
-            this.initDynamicPropertyContainer(elem);
-            this.p = PropertyFactory.getProp(elem,data.p,1,0,this);
-            this.s = PropertyFactory.getProp(elem,data.s,1,0,this);
-            this.r = PropertyFactory.getProp(elem,data.r,0,0,this);
-            if(this.dynamicProperties.length){
-                this.k = true;
-            }else{
-                this.k = false;
-                this.convertRectToPath();
-            }
-        };
-
-        RectShapeProperty.prototype = {
-            convertRectToPath: function (){
-                var p0 = this.p.v[0], p1 = this.p.v[1], v0 = this.s.v[0]/2, v1 = this.s.v[1]/2;
-                var round = bm_min(v0,v1,this.r.v);
-                var cPoint = round*(1-roundCorner);
-                this.v._length = 0;
-
-                if(this.d === 2 || this.d === 1) {
-                    this.v.setTripleAt(p0+v0, p1-v1+round,p0+v0, p1-v1+round,p0+v0,p1-v1+cPoint,0, true);
-                    this.v.setTripleAt(p0+v0, p1+v1-round,p0+v0, p1+v1-cPoint,p0+v0, p1+v1-round,1, true);
-                    if(round!== 0){
-                        this.v.setTripleAt(p0+v0-round, p1+v1,p0+v0-round,p1+v1,p0+v0-cPoint,p1+v1,2, true);
-                        this.v.setTripleAt(p0-v0+round,p1+v1,p0-v0+cPoint,p1+v1,p0-v0+round,p1+v1,3, true);
-                        this.v.setTripleAt(p0-v0,p1+v1-round,p0-v0,p1+v1-round,p0-v0,p1+v1-cPoint,4, true);
-                        this.v.setTripleAt(p0-v0,p1-v1+round,p0-v0,p1-v1+cPoint,p0-v0,p1-v1+round,5, true);
-                        this.v.setTripleAt(p0-v0+round,p1-v1,p0-v0+round,p1-v1,p0-v0+cPoint,p1-v1,6, true);
-                        this.v.setTripleAt(p0+v0-round,p1-v1,p0+v0-cPoint,p1-v1,p0+v0-round,p1-v1,7, true);
-                    } else {
-                        this.v.setTripleAt(p0-v0,p1+v1,p0-v0+cPoint,p1+v1,p0-v0,p1+v1,2);
-                        this.v.setTripleAt(p0-v0,p1-v1,p0-v0,p1-v1+cPoint,p0-v0,p1-v1,3);
-                    }
-                }else{
-                    this.v.setTripleAt(p0+v0,p1-v1+round,p0+v0,p1-v1+cPoint,p0+v0,p1-v1+round,0, true);
-                    if(round!== 0){
-                        this.v.setTripleAt(p0+v0-round,p1-v1,p0+v0-round,p1-v1,p0+v0-cPoint,p1-v1,1, true);
-                        this.v.setTripleAt(p0-v0+round,p1-v1,p0-v0+cPoint,p1-v1,p0-v0+round,p1-v1,2, true);
-                        this.v.setTripleAt(p0-v0,p1-v1+round,p0-v0,p1-v1+round,p0-v0,p1-v1+cPoint,3, true);
-                        this.v.setTripleAt(p0-v0,p1+v1-round,p0-v0,p1+v1-cPoint,p0-v0,p1+v1-round,4, true);
-                        this.v.setTripleAt(p0-v0+round,p1+v1,p0-v0+round,p1+v1,p0-v0+cPoint,p1+v1,5, true);
-                        this.v.setTripleAt(p0+v0-round,p1+v1,p0+v0-cPoint,p1+v1,p0+v0-round,p1+v1,6, true);
-                        this.v.setTripleAt(p0+v0,p1+v1-round,p0+v0,p1+v1-round,p0+v0,p1+v1-cPoint,7, true);
-                    } else {
-                        this.v.setTripleAt(p0-v0,p1-v1,p0-v0+cPoint,p1-v1,p0-v0,p1-v1,1, true);
-                        this.v.setTripleAt(p0-v0,p1+v1,p0-v0,p1+v1-cPoint,p0-v0,p1+v1,2, true);
-                        this.v.setTripleAt(p0+v0,p1+v1,p0+v0-cPoint,p1+v1,p0+v0,p1+v1,3, true);
-
-                    }
-                }
-            },
-            getValue: function(frameNum){
-                if(this.elem.globalData.frameId === this.frameId){
-                    return;
-                }
-                this.frameId = this.elem.globalData.frameId;
-                this.iterateDynamicProperties();
-                if(this._mdf){
-                    this.convertRectToPath();
-                }
-
-            },
-            reset: resetShape
-        }
-        extendPrototype([DynamicPropertyContainer], RectShapeProperty);
-
-        return RectShapeProperty;
-    }());
-
-    function getShapeProp(elem,data,type){
-        var prop;
-        if(type === 3 || type === 4){
-            var dataProp = type === 3 ? data.pt : data.ks;
-            var keys = dataProp.k;
-            if(keys.length){
-                prop = new KeyframedShapeProperty(elem, data, type);
-            }else{
-                prop = new ShapeProperty(elem, data, type);
-            }
-        }else if(type === 5){
-            prop = new RectShapeProperty(elem, data);
-        }else if(type === 6){
-            prop = new EllShapeProperty(elem, data);
-        }else if(type === 7){
-            prop = new StarShapeProperty(elem, data);
-        }
-        if(prop.k){
-            elem.addDynamicProperty(prop);
-        }
-        return prop;
+      } else {
+        this.k = false;
+        this.convertRectToPath();
+      }
     }
 
-    function getConstructorFunction() {
-        return ShapeProperty;
-    }
+    RectShapeProperty.prototype = {
+      convertRectToPath: function () {
+        var p0 = this.p.v[0],
+          p1 = this.p.v[1],
+          v0 = this.s.v[0] / 2,
+          v1 = this.s.v[1] / 2;
+        var round = bm_min(v0, v1, this.r.v);
+        var cPoint = round * (1 - roundCorner);
+        this.v._length = 0;
 
-    function getKeyframedConstructorFunction() {
-        return KeyframedShapeProperty;
-    }
-
-    var ob = {};
-    ob.getShapeProp = getShapeProp;
-    ob.getConstructorFunction = getConstructorFunction;
-    ob.getKeyframedConstructorFunction = getKeyframedConstructorFunction;
-    return ob;
-}());
-var ShapeModifiers = (function(){
-    var ob = {};
-    var modifiers = {};
-    ob.registerModifier = registerModifier;
-    ob.getModifier = getModifier;
-
-    function registerModifier(nm,factory){
-        if(!modifiers[nm]){
-            modifiers[nm] = factory;
+        if (this.d === 2 || this.d === 1) {
+          this.v.setTripleAt(p0 + v0, p1 - v1 + round, p0 + v0, p1 - v1 + round, p0 + v0, p1 - v1 + cPoint, 0, true);
+          this.v.setTripleAt(p0 + v0, p1 + v1 - round, p0 + v0, p1 + v1 - cPoint, p0 + v0, p1 + v1 - round, 1, true);
+          if (round !== 0) {
+            this.v.setTripleAt(p0 + v0 - round, p1 + v1, p0 + v0 - round, p1 + v1, p0 + v0 - cPoint, p1 + v1, 2, true);
+            this.v.setTripleAt(p0 - v0 + round, p1 + v1, p0 - v0 + cPoint, p1 + v1, p0 - v0 + round, p1 + v1, 3, true);
+            this.v.setTripleAt(p0 - v0, p1 + v1 - round, p0 - v0, p1 + v1 - round, p0 - v0, p1 + v1 - cPoint, 4, true);
+            this.v.setTripleAt(p0 - v0, p1 - v1 + round, p0 - v0, p1 - v1 + cPoint, p0 - v0, p1 - v1 + round, 5, true);
+            this.v.setTripleAt(p0 - v0 + round, p1 - v1, p0 - v0 + round, p1 - v1, p0 - v0 + cPoint, p1 - v1, 6, true);
+            this.v.setTripleAt(p0 + v0 - round, p1 - v1, p0 + v0 - cPoint, p1 - v1, p0 + v0 - round, p1 - v1, 7, true);
+          } else {
+            this.v.setTripleAt(p0 - v0, p1 + v1, p0 - v0 + cPoint, p1 + v1, p0 - v0, p1 + v1, 2);
+            this.v.setTripleAt(p0 - v0, p1 - v1, p0 - v0, p1 - v1 + cPoint, p0 - v0, p1 - v1, 3);
+          }
+        } else {
+          this.v.setTripleAt(p0 + v0, p1 - v1 + round, p0 + v0, p1 - v1 + cPoint, p0 + v0, p1 - v1 + round, 0, true);
+          if (round !== 0) {
+            this.v.setTripleAt(p0 + v0 - round, p1 - v1, p0 + v0 - round, p1 - v1, p0 + v0 - cPoint, p1 - v1, 1, true);
+            this.v.setTripleAt(p0 - v0 + round, p1 - v1, p0 - v0 + cPoint, p1 - v1, p0 - v0 + round, p1 - v1, 2, true);
+            this.v.setTripleAt(p0 - v0, p1 - v1 + round, p0 - v0, p1 - v1 + round, p0 - v0, p1 - v1 + cPoint, 3, true);
+            this.v.setTripleAt(p0 - v0, p1 + v1 - round, p0 - v0, p1 + v1 - cPoint, p0 - v0, p1 + v1 - round, 4, true);
+            this.v.setTripleAt(p0 - v0 + round, p1 + v1, p0 - v0 + round, p1 + v1, p0 - v0 + cPoint, p1 + v1, 5, true);
+            this.v.setTripleAt(p0 + v0 - round, p1 + v1, p0 + v0 - cPoint, p1 + v1, p0 + v0 - round, p1 + v1, 6, true);
+            this.v.setTripleAt(p0 + v0, p1 + v1 - round, p0 + v0, p1 + v1 - round, p0 + v0, p1 + v1 - cPoint, 7, true);
+          } else {
+            this.v.setTripleAt(p0 - v0, p1 - v1, p0 - v0 + cPoint, p1 - v1, p0 - v0, p1 - v1, 1, true);
+            this.v.setTripleAt(p0 - v0, p1 + v1, p0 - v0, p1 + v1 - cPoint, p0 - v0, p1 + v1, 2, true);
+            this.v.setTripleAt(p0 + v0, p1 + v1, p0 + v0 - cPoint, p1 + v1, p0 + v0, p1 + v1, 3, true);
+          }
         }
-    }
+      },
 
-    function getModifier(nm,elem, data){
-        return new modifiers[nm](elem, data);
-    }
-
-    return ob;
-}());
-
-function ShapeModifier(){}
-ShapeModifier.prototype.initModifierProperties = function(){};
-ShapeModifier.prototype.addShapeToModifier = function(){};
-ShapeModifier.prototype.addShape = function(data){
-    if (!this.closed) {
-        // Adding shape to dynamic properties. It covers the case where a shape has no effects applied, to reset it's _mdf state on every tick.
-        data.sh.container.addDynamicProperty(data.sh);
-        var shapeData = {shape:data.sh, data: data, localShapeCollection:shapeCollection_pool.newShapeCollection()};
-        this.shapes.push(shapeData);
-        this.addShapeToModifier(shapeData);
-        if (this._isAnimated) {
-            data.setAsAnimated();
+      getValue: function (frameNum) {
+        if (this.elem.globalData.frameId === this.frameId) {
+          return;
         }
+        this.frameId = this.elem.globalData.frameId;
+        this.iterateDynamicProperties();
+        if (this._mdf) {
+          this.convertRectToPath();
+        }
+      },
+
+      reset: resetShape,
+    };
+    extendPrototype([DynamicPropertyContainer], RectShapeProperty);
+
+    return RectShapeProperty;
+  })();
+
+  function getShapeProp(elem, data, type) {
+    var prop;
+    if (type === 3 || type === 4) {
+      var dataProp = type === 3 ? data.pt : data.ks;
+      var keys = dataProp.k;
+      if (keys.length) {
+        prop = new KeyframedShapeProperty(elem, data, type);
+      } else {
+        prop = new ShapeProperty(elem, data, type);
+      }
+    } else if (type === 5) {
+      prop = new RectShapeProperty(elem, data);
+    } else if (type === 6) {
+      prop = new EllShapeProperty(elem, data);
+    } else if (type === 7) {
+      prop = new StarShapeProperty(elem, data);
     }
+    if (prop.k) {
+      elem.addDynamicProperty(prop);
+    }
+    return prop;
+  }
+
+  function getConstructorFunction() {
+    return ShapeProperty;
+  }
+
+  function getKeyframedConstructorFunction() {
+    return KeyframedShapeProperty;
+  }
+
+  var ob = {};
+  ob.getShapeProp = getShapeProp;
+  ob.getConstructorFunction = getConstructorFunction;
+  ob.getKeyframedConstructorFunction = getKeyframedConstructorFunction;
+  return ob;
+})();
+
+var ShapeModifiers = (function () {
+  var ob = {};
+  var modifiers = {};
+  ob.registerModifier = registerModifier;
+  ob.getModifier = getModifier;
+
+  function registerModifier(nm, factory) {
+    if (!modifiers[nm]) {
+      modifiers[nm] = factory;
+    }
+  }
+
+  function getModifier(nm, elem, data) {
+    return new modifiers[nm](elem, data);
+  }
+
+  return ob;
+})();
+
+function ShapeModifier() {}
+ShapeModifier.prototype.initModifierProperties = function () {};
+ShapeModifier.prototype.addShapeToModifier = function () {};
+ShapeModifier.prototype.addShape = function (data) {
+  if (!this.closed) {
+    // Adding shape to dynamic properties. It covers the case where a shape has no effects applied, to reset it's _mdf state on every tick.
+    data.sh.container.addDynamicProperty(data.sh);
+    var shapeData = { shape: data.sh, data: data, localShapeCollection: shapeCollection_pool.newShapeCollection() };
+    this.shapes.push(shapeData);
+    this.addShapeToModifier(shapeData);
+    if (this._isAnimated) {
+      data.setAsAnimated();
+    }
+  }
 };
-ShapeModifier.prototype.init = function(elem,data){
-    this.shapes = [];
-    this.elem = elem;
-    this.initDynamicPropertyContainer(elem);
-    this.initModifierProperties(elem,data);
-    this.frameId = initialDefaultFrame;
-    this.closed = false;
-    this.k = false;
-    if(this.dynamicProperties.length){
-        this.k = true;
-    }else{
-        this.getValue(true);
-    }
+
+ShapeModifier.prototype.init = function (elem, data) {
+  this.shapes = [];
+  this.elem = elem;
+  this.initDynamicPropertyContainer(elem);
+  this.initModifierProperties(elem, data);
+  this.frameId = initialDefaultFrame;
+  this.closed = false;
+  this.k = false;
+  if (this.dynamicProperties.length) {
+    this.k = true;
+  } else {
+    this.getValue(true);
+  }
 };
-ShapeModifier.prototype.processKeys = function(){
-    if(this.elem.globalData.frameId === this.frameId){
-        return;
-    }
-    this.frameId = this.elem.globalData.frameId;
-    this.iterateDynamicProperties();
+
+ShapeModifier.prototype.processKeys = function () {
+  if (this.elem.globalData.frameId === this.frameId) {
+    return;
+  }
+  this.frameId = this.elem.globalData.frameId;
+  this.iterateDynamicProperties();
 };
 
 extendPrototype([DynamicPropertyContainer], ShapeModifier);
+
 function TrimModifier(){
 }
 extendPrototype([ShapeModifier], TrimModifier);
@@ -4320,32 +4370,33 @@ var featureSupport = (function () {
   return ob;
 })();
 
-var filtersFactory = (function(){
-	var ob = {};
-	ob.createFilter = createFilter;
-	ob.createAlphaToLuminanceFilter = createAlphaToLuminanceFilter;
+var filtersFactory = (function () {
+  var ob = {};
+  ob.createFilter = createFilter;
+  ob.createAlphaToLuminanceFilter = createAlphaToLuminanceFilter;
 
-	function createFilter(filId){
-        	var fil = createNS('filter');
-        	fil.setAttribute('id',filId);
-                fil.setAttribute('filterUnits','objectBoundingBox');
-                fil.setAttribute('x','0%');
-                fil.setAttribute('y','0%');
-                fil.setAttribute('width','100%');
-                fil.setAttribute('height','100%');
-                return fil;
-	}
+  function createFilter(filId) {
+    var fil = createNS('filter');
+    fil.setAttribute('id', filId);
+    fil.setAttribute('filterUnits', 'objectBoundingBox');
+    fil.setAttribute('x', '0%');
+    fil.setAttribute('y', '0%');
+    fil.setAttribute('width', '100%');
+    fil.setAttribute('height', '100%');
+    return fil;
+  }
 
-	function createAlphaToLuminanceFilter(){
-                var feColorMatrix = createNS('feColorMatrix');
-                feColorMatrix.setAttribute('type','matrix');
-                feColorMatrix.setAttribute('color-interpolation-filters','sRGB');
-                feColorMatrix.setAttribute('values','0 0 0 1 0  0 0 0 1 0  0 0 0 1 0  0 0 0 1 1');
-                return feColorMatrix;
-	}
+  function createAlphaToLuminanceFilter() {
+    var feColorMatrix = createNS('feColorMatrix');
+    feColorMatrix.setAttribute('type', 'matrix');
+    feColorMatrix.setAttribute('color-interpolation-filters', 'sRGB');
+    feColorMatrix.setAttribute('values', '0 0 0 1 0  0 0 0 1 0  0 0 0 1 0  0 0 0 1 1');
+    return feColorMatrix;
+  }
 
-	return ob;
-}());
+  return ob;
+})();
+
 var fs = require('fs');
 
 var assetLoader = (function () {
@@ -5757,8 +5808,8 @@ BaseRenderer.prototype.checkLayers = function (num) {
   var i,
     len = this.layers.length,
     data;
-    
   this.completeLayers = true;
+
   for (i = len - 1; i >= 0; i--) {
     if (!this.elements[i]) {
       data = this.layers[i];
@@ -5768,9 +5819,16 @@ BaseRenderer.prototype.checkLayers = function (num) {
     }
     this.completeLayers = this.elements[i] ? this.completeLayers : false;
   }
+
   this.checkPendingElements();
 };
 
+// 2: image，图片
+// 0: comp，合成图层
+// 1: solid;
+// 3: null;
+// 4: shape，形状图层
+// 5: text，文字
 BaseRenderer.prototype.createItem = function (layer) {
   switch (layer.ty) {
     case 2:
@@ -5788,6 +5846,7 @@ BaseRenderer.prototype.createItem = function (layer) {
     case 13:
       return this.createCamera(layer);
   }
+
   return this.createNull(layer);
 };
 
@@ -5810,7 +5869,6 @@ BaseRenderer.prototype.includeLayers = function (newLayers) {
     len = newLayers.length;
   var j,
     jLen = this.layers.length;
-
   for (i = 0; i < len; i += 1) {
     j = 0;
     while (j < jLen) {
@@ -5888,7 +5946,7 @@ BaseRenderer.prototype.setupGlobalData = function (animData, fontsContainer) {
   };
 };
 
-const util = require("util");
+const util = require('util');
 
 function CanvasRenderer(animationItem, config) {
   this.animationItem = animationItem;
@@ -6188,13 +6246,19 @@ CanvasRenderer.prototype.destroy = function () {
   this.destroyed = true;
 };
 
+CanvasRenderer.prototype.drawRect = function () {
+  const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+  const color = this.canvasContext.fillStyle;
+  this.canvasContext.fillStyle = randomColor;
+  this.canvasContext.fillRect(0, 0, this.transformCanvas.w / 2, this.transformCanvas.h / 2);
+};
+
 CanvasRenderer.prototype.renderFrame = function (num, forceRender) {
   if ((this.renderedFrame === num && this.renderConfig.clearCanvas === true && !forceRender) || this.destroyed || num === -1) {
     //console.log("结束~");
     return;
   }
-  
-  Logger.setNum(2).log(util.inspect(this.globalData));
+
   this.renderedFrame = num;
   this.globalData.frameNum = num - this.animationItem._isFirstFrame;
   this.globalData.frameId += 1;
@@ -6203,6 +6267,7 @@ CanvasRenderer.prototype.renderFrame = function (num, forceRender) {
 
   var i,
     len = this.layers.length;
+
   if (!this.completeLayers) {
     this.checkLayers(num);
   }
@@ -6218,6 +6283,7 @@ CanvasRenderer.prototype.renderFrame = function (num, forceRender) {
     //// 2. clearRect ////
     if (this.renderConfig.clearCanvas === true) {
       this.canvasContext.clearRect(0, 0, this.transformCanvas.w, this.transformCanvas.h);
+      //this.drawRect();
     } else {
       this.save();
     }
@@ -6732,7 +6798,7 @@ RenderableElement.prototype = {
   },
 
   checkLayerLimits: function (num) {
-    // console.log(num, this.data.ip - this.data.st, this.data.op - this.data.st);
+    // ip-开始帧 | st-开始时间 | op-持续帧长
     // [a-num-b]
     if (this.data.ip - this.data.st <= num && this.data.op - this.data.st > num) {
       if (this.isInRange !== true) {
@@ -6843,30 +6909,32 @@ function ProcessedElement(element, position) {
 	this.pos = position;
 }
 function SVGShapeData(transformers, level, shape) {
-    this.caches = [];
-    this.styles = [];
-    this.transformers = transformers;
-    this.lStr = '';
-    this.sh = shape;
-    this.lvl = level;
-    //TODO find if there are some cases where _isAnimated can be false. 
-    // For now, since shapes add up with other shapes. They have to be calculated every time.
-    // One way of finding out is checking if all styles associated to this shape depend only of this shape
-    this._isAnimated = !!shape.k;
-    // TODO: commenting this for now since all shapes are animated
-    var i = 0, len = transformers.length;
-    while(i < len) {
-    	if(transformers[i].mProps.dynamicProperties.length) {
-    		this._isAnimated = true;
-    		break;
-    	}
-    	i += 1;
+  this.caches = [];
+  this.styles = [];
+  this.transformers = transformers;
+  this.lStr = '';
+  this.sh = shape;
+  this.lvl = level;
+  //TODO find if there are some cases where _isAnimated can be false.
+  // For now, since shapes add up with other shapes. They have to be calculated every time.
+  // One way of finding out is checking if all styles associated to this shape depend only of this shape
+  this._isAnimated = !!shape.k;
+  // TODO: commenting this for now since all shapes are animated
+  var i = 0,
+    len = transformers.length;
+  while (i < len) {
+    if (transformers[i].mProps.dynamicProperties.length) {
+      this._isAnimated = true;
+      break;
     }
+    i += 1;
+  }
 }
 
-SVGShapeData.prototype.setAsAnimated = function() {
-    this._isAnimated = true;
-}
+SVGShapeData.prototype.setAsAnimated = function () {
+  this._isAnimated = true;
+};
+
 function ShapeGroupData() {
 	this.it = [];
     this.prevViewData = [];
@@ -6929,31 +6997,35 @@ ShapeTransformManager.prototype = {
 	}
 }
 function CVShapeData(element, data, styles, transformsManager) {
-    this.styledShapes = [];
-    this.tr = [0,0,0,0,0,0];
-    var ty = 4;
-    if(data.ty == 'rc'){
-        ty = 5;
-    }else if(data.ty == 'el'){
-        ty = 6;
-    }else if(data.ty == 'sr'){
-        ty = 7;
+  this.styledShapes = [];
+  this.tr = [0, 0, 0, 0, 0, 0];
+  var ty = 4;
+  if (data.ty == 'rc') {
+    ty = 5;
+  } else if (data.ty == 'el') {
+    ty = 6;
+  } else if (data.ty == 'sr') {
+    ty = 7;
+  }
+  
+  this.sh = ShapePropertyFactory.getShapeProp(element, data, ty, element);
+  var i,
+    len = styles.length,
+    styledShape;
+  for (i = 0; i < len; i += 1) {
+    if (!styles[i].closed) {
+      styledShape = {
+        transforms: transformsManager.addTransformSequence(styles[i].transforms),
+        trNodes: [],
+      };
+      this.styledShapes.push(styledShape);
+      styles[i].elements.push(styledShape);
     }
-    this.sh = ShapePropertyFactory.getShapeProp(element,data,ty,element);
-    var i , len = styles.length,styledShape;
-    for (i = 0; i < len; i += 1) {
-        if (!styles[i].closed) {
-            styledShape = {
-                transforms: transformsManager.addTransformSequence(styles[i].transforms),
-                trNodes: []
-            }
-            this.styledShapes.push(styledShape);
-            styles[i].elements.push(styledShape);
-        }
-    }
+  }
 }
 
 CVShapeData.prototype.setAsAnimated = SVGShapeData.prototype.setAsAnimated;
+
 function BaseElement() {}
 
 BaseElement.prototype = {
@@ -7221,10 +7293,12 @@ IShapeElement.prototype = {
     }
     return false;
   },
+
   renderModifiers: function () {
     if (!this.shapeModifiers.length) {
       return;
     }
+    
     var i,
       len = this.shapes.length;
     for (i = 0; i < len; i += 1) {
@@ -7381,9 +7455,8 @@ ICompElement.prototype.prepareFrame = function (num) {
   this._mdf = false;
   this.prepareRenderableFrame(num);
   this.prepareProperties(num, this.isInRange);
-  if (!this.isInRange && !this.data.xt) {
-    return;
-  }
+  
+  if (!this.isInRange && !this.data.xt) return;
 
   if (!this.tm._placeholder) {
     var timeRemapped = this.tm.v;
@@ -7394,13 +7467,15 @@ ICompElement.prototype.prepareFrame = function (num) {
   } else {
     this.renderedFrame = num / this.data.sr;
   }
+
   var i,
     len = this.elements.length;
+
   if (!this.completeLayers) {
     this.checkLayers(this.renderedFrame);
   }
   
-  //This iteration needs to be backwards because of how expressions connect between each other
+  // 由于表达式彼此之间的连接方式，此迭代需要向后进行
   for (i = len - 1; i >= 0; i -= 1) {
     if (this.completeLayers || this.elements[i]) {
       this.elements[i].prepareFrame(this.renderedFrame - this.layers[i].st);
@@ -7444,43 +7519,43 @@ ICompElement.prototype.destroy = function () {
   this.destroyBaseElement();
 };
 
-function IImageElement(data,globalData,comp){
-    this.assetData = globalData.getAssetData(data.refId);
-    this.initElement(data,globalData,comp);
-    this.sourceRect = {top:0,left:0,width:this.assetData.w,height:this.assetData.h};
+function IImageElement(data, globalData, comp) {
+  this.assetData = globalData.getAssetData(data.refId);
+  this.initElement(data, globalData, comp);
+  this.sourceRect = { top: 0, left: 0, width: this.assetData.w, height: this.assetData.h };
 }
 
-extendPrototype([BaseElement,TransformElement,SVGBaseElement,HierarchyElement,FrameElement,RenderableDOMElement], IImageElement);
+extendPrototype([BaseElement, TransformElement, SVGBaseElement, HierarchyElement, FrameElement, RenderableDOMElement], IImageElement);
 
-IImageElement.prototype.createContent = function(){
+IImageElement.prototype.createContent = function () {
+  var assetPath = this.globalData.getAssetsPath(this.assetData);
 
-    var assetPath = this.globalData.getAssetsPath(this.assetData);
+  this.innerElem = createNS('image');
+  this.innerElem.setAttribute('width', this.assetData.w + 'px');
+  this.innerElem.setAttribute('height', this.assetData.h + 'px');
+  this.innerElem.setAttribute('preserveAspectRatio', this.assetData.pr || this.globalData.renderConfig.imagePreserveAspectRatio);
+  this.innerElem.setAttributeNS('http://www.w3.org/1999/xlink', 'href', assetPath);
 
-    this.innerElem = createNS('image');
-    this.innerElem.setAttribute('width',this.assetData.w+"px");
-    this.innerElem.setAttribute('height',this.assetData.h+"px");
-    this.innerElem.setAttribute('preserveAspectRatio',this.assetData.pr || this.globalData.renderConfig.imagePreserveAspectRatio);
-    this.innerElem.setAttributeNS('http://www.w3.org/1999/xlink','href',assetPath);
-    
-    this.layerElement.appendChild(this.innerElem);
+  this.layerElement.appendChild(this.innerElem);
 };
 
-IImageElement.prototype.sourceRectAtTime = function() {
-	return this.sourceRect;
-}
-function ISolidElement(data,globalData,comp){
-    this.initElement(data,globalData,comp);
+IImageElement.prototype.sourceRectAtTime = function () {
+  return this.sourceRect;
+};
+
+function ISolidElement(data, globalData, comp) {
+  this.initElement(data, globalData, comp);
 }
 extendPrototype([IImageElement], ISolidElement);
 
-ISolidElement.prototype.createContent = function(){
-
-    var rect = createNS('rect');
-    rect.setAttribute('width',this.data.sw);
-    rect.setAttribute('height',this.data.sh);
-    rect.setAttribute('fill',this.data.sc);
-    this.layerElement.appendChild(rect);
+ISolidElement.prototype.createContent = function () {
+  var rect = createNS('rect');
+  rect.setAttribute('width', this.data.sw);
+  rect.setAttribute('height', this.data.sh);
+  rect.setAttribute('fill', this.data.sc);
+  this.layerElement.appendChild(rect);
 };
+
 function SVGShapeElement(data,globalData,comp){
     //List of drawable elements
     this.shapes = [];
@@ -7872,6 +7947,7 @@ CVBaseElement.prototype = {
     if (this.hidden || this.data.hd) {
       return;
     }
+
     this.renderTransform();
     this.renderRenderable();
     this.setBlendMode();
@@ -7881,6 +7957,7 @@ CVBaseElement.prototype = {
     this.globalData.renderer.ctxOpacity(this.finalTransform.mProp.o.v);
     this.renderInnerContent();
     this.globalData.renderer.restore(forceRealStack);
+
     if (this.maskManager.hasMasks) {
       this.globalData.renderer.restore(true);
     }
@@ -7888,6 +7965,7 @@ CVBaseElement.prototype = {
       this._isFirstFrame = false;
     }
   },
+  
   destroy: function () {
     this.canvasContext = null;
     this.data = null;
@@ -8117,10 +8195,12 @@ CVShapeElement.prototype.createStyleElement = function (data, transforms) {
     if (data.lj == 1) {
       styleElem.ml = data.ml;
     }
+
     elementData.w = PropertyFactory.getProp(this, data.w, 0, null, this);
     if (!elementData.w.k) {
       styleElem.wi = elementData.w.v;
     }
+
     if (data.d) {
       var d = new DashProperty(this, data.d, 'canvas', this);
       elementData.d = d;
@@ -8132,6 +8212,7 @@ CVShapeElement.prototype.createStyleElement = function (data, transforms) {
   } else {
     styleElem.r = data.r === 2 ? 'evenodd' : 'nonzero';
   }
+
   this.stylesList.push(styleElem);
   elementData.style = styleElem;
   return elementData;
@@ -8155,6 +8236,7 @@ CVShapeElement.prototype.createTransformElement = function (data) {
       mProps: TransformPropertyFactory.getTransformProperty(this, data, this),
     },
   };
+
   return elementData;
 };
 
@@ -8225,7 +8307,7 @@ CVShapeElement.prototype.searchShapes = function (arr, itemsData, prevViewData, 
     modifier,
     currentTransform;
   var ownTransforms = [].concat(transforms);
-
+  
   for (i = len; i >= 0; i -= 1) {
     processedPos = this.searchProcessedElement(arr[i]);
     if (!processedPos) {
@@ -8286,8 +8368,10 @@ CVShapeElement.prototype.searchShapes = function (arr, itemsData, prevViewData, 
       }
       ownModifiers.push(modifier);
     }
+
     this.addProcessedElement(arr[i], i + 1);
   }
+
   this.removeTransformFromStyleList();
   this.closeStyles(ownStyles);
   len = ownModifiers.length;
@@ -8301,6 +8385,7 @@ CVShapeElement.prototype.renderInnerContent = function () {
   this.transformHelper._opMdf = false;
   this.renderModifiers();
   this.transformsManager.processSequences(this._isFirstFrame);
+  // Logger.setNum(40).log(JSON.stringify(this.shapesData))
   this.renderShape(this.transformHelper, this.shapesData, this.itemsData, true);
 };
 
@@ -8326,6 +8411,7 @@ CVShapeElement.prototype.drawLayer = function () {
     ctx = this.globalData.canvasContext,
     type,
     currentStyle;
+
   for (i = 0; i < len; i += 1) {
     currentStyle = this.stylesList[i];
     type = currentStyle.type;
@@ -8338,6 +8424,7 @@ CVShapeElement.prototype.drawLayer = function () {
     ) {
       continue;
     }
+
     renderer.save();
     elems = currentStyle.elements;
     if (type === 'st' || type === 'gs') {
@@ -8349,10 +8436,12 @@ CVShapeElement.prototype.drawLayer = function () {
     } else {
       ctx.fillStyle = type === 'fl' ? currentStyle.co : currentStyle.grd;
     }
+
     renderer.ctxOpacity(currentStyle.coOp);
     if (type !== 'st' && type !== 'gs') {
       ctx.beginPath();
     }
+    
     renderer.ctxTransform(currentStyle.preTransforms.finalTransform.props);
     jLen = elems.length;
     for (j = 0; j < jLen; j += 1) {
@@ -8375,6 +8464,7 @@ CVShapeElement.prototype.drawLayer = function () {
           ctx.closePath();
         }
       }
+
       if (type === 'st' || type === 'gs') {
         ctx.stroke();
         if (currentStyle.da) {
@@ -8382,9 +8472,11 @@ CVShapeElement.prototype.drawLayer = function () {
         }
       }
     }
+
     if (type !== 'st' && type !== 'gs') {
       ctx.fill(currentStyle.r);
     }
+
     renderer.restore();
   }
 };
@@ -8394,6 +8486,7 @@ CVShapeElement.prototype.renderShape = function (parentTransform, items, data, i
     len = items.length - 1;
   var groupTransform;
   groupTransform = parentTransform;
+
   for (i = len; i >= 0; i -= 1) {
     if (items[i].ty == 'tr') {
       groupTransform = data[i].transform;
@@ -8412,6 +8505,7 @@ CVShapeElement.prototype.renderShape = function (parentTransform, items, data, i
       //
     }
   }
+
   if (isMain) {
     this.drawLayer();
   }
@@ -8427,6 +8521,7 @@ CVShapeElement.prototype.renderStyledShape = function (styledShape, shape) {
       jLen = paths._length;
     shapeNodes.length = 0;
     var groupTransformMat = styledShape.transforms.finalTransform;
+
     for (j = 0; j < jLen; j += 1) {
       var pathNodes = paths.shapes[j];
       if (pathNodes && pathNodes.v) {
@@ -9280,6 +9375,7 @@ AnimationItem.prototype.goToAndStop = function (value, isFrame, name) {
   if (name && this.name != name) {
     return;
   }
+  
   if (isFrame) {
     this.setCurrentRawFrameAndGoto(value);
   } else {

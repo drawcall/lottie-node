@@ -283,6 +283,7 @@ AnimationItem.prototype.goToAndStop = function (value, isFrame, name) {
   if (name && this.name != name) {
     return;
   }
+  
   if (isFrame) {
     this.setCurrentRawFrameAndGoto(value);
   } else {
