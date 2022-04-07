@@ -60,6 +60,7 @@ IShapeElement.prototype = {
     }
     return 0;
   },
+  
   addProcessedElement: function (elem, pos) {
     var elements = this.processedElements;
     var i = elements.length;

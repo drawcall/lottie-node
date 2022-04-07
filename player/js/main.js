@@ -18,4 +18,12 @@ var Logger = {
     }
     return this;
   },
+  json: function (data) {
+    if (typeof data !== 'object') {
+      this.log(data);
+    } else {
+      this.log(JSON.stringify(data, null, 4));
+    }
+    return this;
+  },
 };

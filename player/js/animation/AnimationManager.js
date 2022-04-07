@@ -141,7 +141,7 @@ var animationManager = (function () {
   function activate() {
     if (!_isFrozen && playingAnimationsNum) {
       if (_stopped) {
-        global.requestAnimationFrame(first);
+        //global.requestAnimationFrame(first);
         _stopped = false;
       }
     }

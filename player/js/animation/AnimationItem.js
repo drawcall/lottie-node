@@ -180,6 +180,7 @@ AnimationItem.prototype.configAnimation = function (animData) {
     this.updaFrameModifier();
     this.waitForFontsLoaded();
   } catch (error) {
+    console.error(error);
     this.triggerConfigError(error);
   }
 };
@@ -197,10 +198,7 @@ AnimationItem.prototype.checkLoaded = function () {
     this.renderer.initItems();
 
     this.gotoFrame();
-
-    if (this.autoplay) {
-      this.play();
-    }
+    if (this.autoplay) this.play();
   }
 };
 

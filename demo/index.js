@@ -35,7 +35,7 @@ const intLottie = () => {
   fs.ensureDir(dir);
 
   // 92-105
-  ani.goToAndStop(15.00009, true);
+  ani.goToAndStop(104.9999999999999, true);
   id = setInterval(renderFrame, 1000 / 15, dir);
 };
 

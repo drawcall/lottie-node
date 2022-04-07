@@ -31,6 +31,14 @@ var Logger = {
     }
     return this;
   },
+  json: function (data) {
+    if (typeof data !== 'object') {
+      this.log(data);
+    } else {
+      this.log(JSON.stringify(data, null, 4));
+    }
+    return this;
+  },
 };
 
 var subframeEnabled = true;
@@ -7310,6 +7318,7 @@ IShapeElement.prototype = {
     }
     return 0;
   },
+  
   addProcessedElement: function (elem, pos) {
     var elements = this.processedElements;
     var i = elements.length;
@@ -8283,7 +8292,7 @@ CVShapeElement.prototype.searchShapes = function (arr, itemsData, prevViewData, 
     modifier,
     currentTransform;
   var ownTransforms = [].concat(transforms);
-  
+
   for (i = len; i >= 0; i -= 1) {
     processedPos = this.searchProcessedElement(arr[i]);
     if (!processedPos) {
@@ -8291,6 +8300,7 @@ CVShapeElement.prototype.searchShapes = function (arr, itemsData, prevViewData, 
     } else {
       itemsData[i] = prevViewData[processedPos - 1];
     }
+
     if (arr[i].ty == 'fl' || arr[i].ty == 'st' || arr[i].ty == 'gf' || arr[i].ty == 'gs') {
       if (!processedPos) {
         itemsData[i] = this.createStyleElement(arr[i], ownTransforms);
@@ -8308,12 +8318,14 @@ CVShapeElement.prototype.searchShapes = function (arr, itemsData, prevViewData, 
           itemsData[i].prevViewData[j] = itemsData[i].it[j];
         }
       }
+
       this.searchShapes(arr[i].it, itemsData[i].it, itemsData[i].prevViewData, shouldRender, ownTransforms);
     } else if (arr[i].ty == 'tr') {
       if (!processedPos) {
         currentTransform = this.createTransformElement(arr[i]);
         itemsData[i] = currentTransform;
       }
+
       ownTransforms.push(itemsData[i]);
       this.addTransformToStyleList(itemsData[i]);
     } else if (arr[i].ty == 'sh' || arr[i].ty == 'rc' || arr[i].ty == 'el' || arr[i].ty == 'sr') {
@@ -8330,6 +8342,7 @@ CVShapeElement.prototype.searchShapes = function (arr, itemsData, prevViewData, 
         modifier = itemsData[i];
         modifier.closed = false;
       }
+
       ownModifiers.push(modifier);
     } else if (arr[i].ty == 'rp') {
       if (!processedPos) {
@@ -8342,6 +8355,7 @@ CVShapeElement.prototype.searchShapes = function (arr, itemsData, prevViewData, 
         modifier = itemsData[i];
         modifier.closed = true;
       }
+
       ownModifiers.push(modifier);
     }
 
@@ -8391,6 +8405,7 @@ CVShapeElement.prototype.drawLayer = function () {
   for (i = 0; i < len; i += 1) {
     currentStyle = this.stylesList[i];
     type = currentStyle.type;
+    //Logger.setNum(100).json(currentStyle.data);
 
     if (
       ((type === 'st' || type === 'gs') && currentStyle.wi === 0) ||
@@ -8417,7 +8432,7 @@ CVShapeElement.prototype.drawLayer = function () {
     if (type !== 'st' && type !== 'gs') {
       ctx.beginPath();
     }
-    
+
     renderer.ctxTransform(currentStyle.preTransforms.finalTransform.props);
     jLen = elems.length;
     for (j = 0; j < jLen; j += 1) {
@@ -9034,7 +9049,7 @@ var animationManager = (function () {
   function activate() {
     if (!_isFrozen && playingAnimationsNum) {
       if (_stopped) {
-        global.requestAnimationFrame(first);
+        //global.requestAnimationFrame(first);
         _stopped = false;
       }
     }
@@ -9248,6 +9263,7 @@ AnimationItem.prototype.configAnimation = function (animData) {
     this.updaFrameModifier();
     this.waitForFontsLoaded();
   } catch (error) {
+    console.error(error);
     this.triggerConfigError(error);
   }
 };
@@ -9265,10 +9281,7 @@ AnimationItem.prototype.checkLoaded = function () {
     this.renderer.initItems();
 
     this.gotoFrame();
-
-    if (this.autoplay) {
-      this.play();
-    }
+    if (this.autoplay) this.play();
   }
 };
 
@@ -10808,38 +10821,36 @@ var expressionHelpers = (function(){
     };
 }());
 (function addDecorator() {
-
-    function searchExpressions(){
-        if(this.data.d.x){
-            this.calculateExpression = ExpressionManager.initiateExpression.bind(this)(this.elem,this.data.d,this);
-            this.addEffect(this.getExpressionValue.bind(this));
-            return true;
-        }
+  function searchExpressions() {
+    if (this.data.d.x) {
+      this.calculateExpression = ExpressionManager.initiateExpression.bind(this)(this.elem, this.data.d, this);
+      this.addEffect(this.getExpressionValue.bind(this));
+      return true;
     }
+  }
 
-    TextProperty.prototype.getExpressionValue = function(currentValue, text) {
-        var newValue = this.calculateExpression(text);
-        if(currentValue.t !== newValue) {
-            var newData = {};
-            this.copyData(newData, currentValue);
-            newData.t = newValue.toString();
-            newData.__complete = false;
-            return newData;
-        }
-        return currentValue;
+  TextProperty.prototype.getExpressionValue = function (currentValue, text) {
+    var newValue = this.calculateExpression(text);
+    if (currentValue.t !== newValue) {
+      var newData = {};
+      this.copyData(newData, currentValue);
+      newData.t = newValue.toString();
+      newData.__complete = false;
+      return newData;
     }
+    return currentValue;
+  };
 
-    TextProperty.prototype.searchProperty = function(){
+  TextProperty.prototype.searchProperty = function () {
+    var isKeyframed = this.searchKeyframes();
+    var hasExpressions = this.searchExpressions();
+    this.kf = isKeyframed || hasExpressions;
+    return this.kf;
+  };
 
-        var isKeyframed = this.searchKeyframes();
-        var hasExpressions = this.searchExpressions();
-        this.kf = isKeyframed || hasExpressions;
-        return this.kf;
-    };
+  TextProperty.prototype.searchExpressions = searchExpressions;
+})();
 
-    TextProperty.prototype.searchExpressions = searchExpressions;
-    
-}());
 var ShapeExpressionInterface = (function(){
 
     function iterateElements(shapes,view, propertyGroup){
