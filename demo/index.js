@@ -3,19 +3,17 @@ const fs = require('fs-extra');
 const lottie = require('../build/lottie_canvas.js');
 const { Canvas, Image } = require('canvas');
 
+const i = 2;
+const j = 9;
 const num = 50;
 const delta = 33 * 4;
-const i = 2;
-const j = 1;
-const file = i == 4 ? `test/data${i}/d${j}/data.json` : `test/data${i}/d${j}.json`;
-const frame = 1;
 
 let id = 0;
 let index = 0;
-let now;
-let canvas, ani;
+let canvas, ani, now;
 
 const saveType = 'image/png';
+const file = i == 4 ? `test/data${i}/d${j}/data.json` : `test/data${i}/d${j}.json`;
 
 const removeFiles = () => {
   fs.remove(path.join(__dirname, './__output'));
@@ -37,8 +35,7 @@ const intLottie = () => {
   const dir = path.join(__dirname, '__output');
   fs.ensureDir(dir);
 
-  // 92-105
-  ani.goToAndStop(frame, true);
+  ani.goToAndStop(1, true);
   id = setInterval(renderFrame, 1000 / 15, dir);
 };
 

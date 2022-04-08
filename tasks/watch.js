@@ -25,7 +25,6 @@ function runScript(scriptPath, processArguments, callback) {
 }
 
 watch.watchTree(path.join(__dirname, "../player/js"), function (f, curr, prev) {
-  //console.log(f, curr);
   runScript(path.join(__dirname, "./build.js"), ["reduced"], function (err) {
     if (err) throw err;
     console.log("--------------------------------");

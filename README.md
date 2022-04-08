@@ -8,7 +8,7 @@ For the first time, designers can create **and ship** beautiful animations witho
 
 View documentation, FAQ, help, examples, and more at [airbnb.io/lottie](http://airbnb.io/lottie/)
 
-![Example4](gifs/Example4.gif)
+![Example4](gifs/demo.gif)
 
 # Installation
 
@@ -50,14 +50,14 @@ It takes an object as a unique param with:
 It returns the animation instance you can control with play, pause, setSpeed, etc.
 
 ```js
-const lottie = require("lottie-nodejs");
+const lottie = require('lottie-nodejs');
 
 const ani = lottie.loadAnimation({
   container: element, // the dom element that will contain the animation
-  renderer: "canvas",
+  renderer: 'canvas',
   loop: true,
   autoplay: false,
-  path: "data.json", // the path to the animation json
+  path: 'data.json', // the path to the animation json
 });
 
 setInterval(() => {
