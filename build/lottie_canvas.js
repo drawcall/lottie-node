@@ -258,45 +258,47 @@ var rgbToHex = (function(){
         return '#' + colorMap[r] + colorMap[g] + colorMap[b];
     };
 }());
-function BaseEvent(){}
+function BaseEvent() {}
 BaseEvent.prototype = {
-	triggerEvent: function (eventName, args) {
-	    if (this._cbs[eventName]) {
-	        var len = this._cbs[eventName].length;
-	        for (var i = 0; i < len; i++){
-	            this._cbs[eventName][i](args);
-	        }
-	    }
-	},
-	addEventListener: function (eventName, callback) {
-	    if (!this._cbs[eventName]){
-	        this._cbs[eventName] = [];
-	    }
-	    this._cbs[eventName].push(callback);
+  triggerEvent: function (eventName, args) {
+    if (this._cbs[eventName]) {
+      var len = this._cbs[eventName].length;
+      for (var i = 0; i < len; i++) {
+        this._cbs[eventName][i](args);
+      }
+    }
+  },
+  addEventListener: function (eventName, callback) {
+    if (!this._cbs[eventName]) {
+      this._cbs[eventName] = [];
+    }
+    this._cbs[eventName].push(callback);
 
-		return function() {
-			this.removeEventListener(eventName, callback);
-		}.bind(this);
-	},
-	removeEventListener: function (eventName,callback){
-	    if (!callback){
-	        this._cbs[eventName] = null;
-	    }else if(this._cbs[eventName]){
-	        var i = 0, len = this._cbs[eventName].length;
-	        while(i<len){
-	            if(this._cbs[eventName][i] === callback){
-	                this._cbs[eventName].splice(i,1);
-	                i -=1;
-	                len -= 1;
-	            }
-	            i += 1;
-	        }
-	        if(!this._cbs[eventName].length){
-	            this._cbs[eventName] = null;
-	        }
-	    }
-	}
+    return function () {
+      this.removeEventListener(eventName, callback);
+    }.bind(this);
+  },
+  removeEventListener: function (eventName, callback) {
+    if (!callback) {
+      this._cbs[eventName] = null;
+    } else if (this._cbs[eventName]) {
+      var i = 0,
+        len = this._cbs[eventName].length;
+      while (i < len) {
+        if (this._cbs[eventName][i] === callback) {
+          this._cbs[eventName].splice(i, 1);
+          i -= 1;
+          len -= 1;
+        }
+        i += 1;
+      }
+      if (!this._cbs[eventName].length) {
+        this._cbs[eventName] = null;
+      }
+    }
+  },
 };
+
 var createTypedArray = (function(){
 	function createRegularArray(type, len){
 		var i = 0, arr = [], value;
@@ -820,385 +822,421 @@ var Matrix = (function(){
  */
 
 (function (pool, math) {
-//
-// The following constants are related to IEEE 754 limits.
-//
-    var global = this,
-        width = 256,        // each RC4 output is 0 <= x < 256
-        chunks = 6,         // at least six RC4 outputs for each double
-        digits = 52,        // there are 52 significant digits in a double
-        rngname = 'random', // rngname: name for Math.random and Math.seedrandom
-        startdenom = math.pow(width, chunks),
-        significance = math.pow(2, digits),
-        overflow = significance * 2,
-        mask = width - 1,
-        nodecrypto;         // node.js crypto module, initialized at the bottom.
+  //
+  // The following constants are related to IEEE 754 limits.
+  //
+  var global = this,
+    width = 256, // each RC4 output is 0 <= x < 256
+    chunks = 6, // at least six RC4 outputs for each double
+    digits = 52, // there are 52 significant digits in a double
+    rngname = 'random', // rngname: name for Math.random and Math.seedrandom
+    startdenom = math.pow(width, chunks),
+    significance = math.pow(2, digits),
+    overflow = significance * 2,
+    mask = width - 1,
+    nodecrypto; // node.js crypto module, initialized at the bottom.
 
-//
-// seedrandom()
-// This is the seedrandom function described above.
-//
-    function seedrandom(seed, options, callback) {
-        var key = [];
-        options = (options === true) ? { entropy: true } : (options || {});
+  //
+  // seedrandom()
+  // This is the seedrandom function described above.
+  //
+  function seedrandom(seed, options, callback) {
+    var key = [];
+    options = options === true ? { entropy: true } : options || {};
 
-        // Flatten the seed string or build one from local entropy if needed.
-        var shortseed = mixkey(flatten(
-            options.entropy ? [seed, tostring(pool)] :
-                (seed === null) ? autoseed() : seed, 3), key);
+    // Flatten the seed string or build one from local entropy if needed.
+    var shortseed = mixkey(flatten(options.entropy ? [seed, tostring(pool)] : seed === null ? autoseed() : seed, 3), key);
 
-        // Use the seed to initialize an ARC4 generator.
-        var arc4 = new ARC4(key);
+    // Use the seed to initialize an ARC4 generator.
+    var arc4 = new ARC4(key);
 
-        // This function returns a random double in [0, 1) that contains
-        // randomness in every bit of the mantissa of the IEEE 754 value.
-        var prng = function() {
-            var n = arc4.g(chunks),             // Start with a numerator n < 2 ^ 48
-                d = startdenom,                 //   and denominator d = 2 ^ 48.
-                x = 0;                          //   and no 'extra last byte'.
-            while (n < significance) {          // Fill up all significant digits by
-                n = (n + x) * width;              //   shifting numerator and
-                d *= width;                       //   denominator and generating a
-                x = arc4.g(1);                    //   new least-significant-byte.
-            }
-            while (n >= overflow) {             // To avoid rounding up, before adding
-                n /= 2;                           //   last byte, shift everything
-                d /= 2;                           //   right using integer math until
-                x >>>= 1;                         //   we have exactly the desired bits.
-            }
-            return (n + x) / d;                 // Form the number within [0, 1).
-        };
-
-        prng.int32 = function() { return arc4.g(4) | 0; };
-        prng.quick = function() { return arc4.g(4) / 0x100000000; };
-        prng.double = prng;
-
-        // Mix the randomness into accumulated entropy.
-        mixkey(tostring(arc4.S), pool);
-
-        // Calling convention: what to return as a function of prng, seed, is_math.
-        return (options.pass || callback ||
-        function(prng, seed, is_math_call, state) {
-            if (state) {
-                // Load the arc4 state from the given state if it has an S array.
-                if (state.S) { copy(state, arc4); }
-                // Only provide the .state method if requested via options.state.
-                prng.state = function() { return copy(arc4, {}); };
-            }
-
-            // If called as a method of Math (Math.seedrandom()), mutate
-            // Math.random because that is how seedrandom.js has worked since v1.0.
-            if (is_math_call) { math[rngname] = prng; return seed; }
-
-            // Otherwise, it is a newer calling convention, so return the
-            // prng directly.
-            else return prng;
-        })(
-            prng,
-            shortseed,
-            'global' in options ? options.global : (this == math),
-            options.state);
-    }
-    math['seed' + rngname] = seedrandom;
-
-//
-// ARC4
-//
-// An ARC4 implementation.  The constructor takes a key in the form of
-// an array of at most (width) integers that should be 0 <= x < (width).
-//
-// The g(count) method returns a pseudorandom integer that concatenates
-// the next (count) outputs from ARC4.  Its return value is a number x
-// that is in the range 0 <= x < (width ^ count).
-//
-    function ARC4(key) {
-        var t, keylen = key.length,
-            me = this, i = 0, j = me.i = me.j = 0, s = me.S = [];
-
-        // The empty key [] is treated as [0].
-        if (!keylen) { key = [keylen++]; }
-
-        // Set up S using the standard key scheduling algorithm.
-        while (i < width) {
-            s[i] = i++;
-        }
-        for (i = 0; i < width; i++) {
-            s[i] = s[j = mask & (j + key[i % keylen] + (t = s[i]))];
-            s[j] = t;
-        }
-
-        // The "g" method returns the next (count) outputs as one number.
-        me.g = function(count) {
-            // Using instance members instead of closure state nearly doubles speed.
-            var t, r = 0,
-                i = me.i, j = me.j, s = me.S;
-            while (count--) {
-                t = s[i = mask & (i + 1)];
-                r = r * width + s[mask & ((s[i] = s[j = mask & (j + t)]) + (s[j] = t))];
-            }
-            me.i = i; me.j = j;
-            return r;
-            // For robust unpredictability, the function call below automatically
-            // discards an initial batch of values.  This is called RC4-drop[256].
-            // See http://google.com/search?q=rsa+fluhrer+response&btnI
-        };
-    }
-
-//
-// copy()
-// Copies internal state of ARC4 to or from a plain object.
-//
-    function copy(f, t) {
-        t.i = f.i;
-        t.j = f.j;
-        t.S = f.S.slice();
-        return t;
-    }
-
-//
-// flatten()
-// Converts an object tree to nested arrays of strings.
-//
-    function flatten(obj, depth) {
-        var result = [], typ = (typeof obj), prop;
-        if (depth && typ == 'object') {
-            for (prop in obj) {
-                try { result.push(flatten(obj[prop], depth - 1)); } catch (e) {}
-            }
-        }
-        return (result.length ? result : typ == 'string' ? obj : obj + '\0');
-    }
-
-//
-// mixkey()
-// Mixes a string seed into a key that is an array of integers, and
-// returns a shortened string seed that is equivalent to the result key.
-//
-    function mixkey(seed, key) {
-        var stringseed = seed + '', smear, j = 0;
-        while (j < stringseed.length) {
-            key[mask & j] =
-                mask & ((smear ^= key[mask & j] * 19) + stringseed.charCodeAt(j++));
-        }
-        return tostring(key);
-    }
-
-
-    function autoseed() {
-        try {
-            if (nodecrypto) { return tostring(nodecrypto.randomBytes(width)); }
-            var out = new Uint8Array(width);
-            (global.crypto || global.msCrypto).getRandomValues(out);
-            return tostring(out);
-        } catch (e) {
-            var browser = global.navigator,
-                plugins = browser && browser.plugins;
-            return [+new Date(), global, plugins, global.screen, tostring(pool)];
-        }
-    }
-
-//
-// tostring()
-// Converts an array of charcodes to a string
-//
-    function tostring(a) {
-        return String.fromCharCode.apply(0, a);
-    }
-
-//
-// When seedrandom.js is loaded, we immediately mix a few bits
-// from the built-in RNG into the entropy pool.  Because we do
-// not want to interfere with deterministic PRNG state later,
-// seedrandom will not call math.random on its own again after
-// initialization.
-//
-    mixkey(math.random(), pool);
-
-//
-// Nodejs and AMD support: export the implementation as a module using
-// either convention.
-//
-
-// End anonymous scope, and pass initial values.
-})(
-    [],     // pool: entropy pool starts empty
-    BMMath    // math: package containing random, pow, and seedrandom
-);
-var BezierFactory = (function(){
-    /**
-     * BezierEasing - use bezier curve for transition easing function
-     * by Gaëtan Renaudeau 2014 - 2015 – MIT License
-     *
-     * Credits: is based on Firefox's nsSMILKeySpline.cpp
-     * Usage:
-     * var spline = BezierEasing([ 0.25, 0.1, 0.25, 1.0 ])
-     * spline.get(x) => returns the easing value | x must be in [0, 1] range
-     *
-     */
-
-        var ob = {};
-    ob.getBezierEasing = getBezierEasing;
-    var beziers = {};
-
-    function getBezierEasing(a,b,c,d,nm){
-        var str = nm || ('bez_' + a+'_'+b+'_'+c+'_'+d).replace(/\./g, 'p');
-        if(beziers[str]){
-            return beziers[str];
-        }
-        var bezEasing = new BezierEasing([a,b,c,d]);
-        beziers[str] = bezEasing;
-        return bezEasing;
-    }
-
-// These values are established by empiricism with tests (tradeoff: performance VS precision)
-    var NEWTON_ITERATIONS = 4;
-    var NEWTON_MIN_SLOPE = 0.001;
-    var SUBDIVISION_PRECISION = 0.0000001;
-    var SUBDIVISION_MAX_ITERATIONS = 10;
-
-    var kSplineTableSize = 11;
-    var kSampleStepSize = 1.0 / (kSplineTableSize - 1.0);
-
-    var float32ArraySupported = typeof Float32Array === "function";
-
-    function A (aA1, aA2) { return 1.0 - 3.0 * aA2 + 3.0 * aA1; }
-    function B (aA1, aA2) { return 3.0 * aA2 - 6.0 * aA1; }
-    function C (aA1)      { return 3.0 * aA1; }
-
-// Returns x(t) given t, x1, and x2, or y(t) given t, y1, and y2.
-    function calcBezier (aT, aA1, aA2) {
-        return ((A(aA1, aA2)*aT + B(aA1, aA2))*aT + C(aA1))*aT;
-    }
-
-// Returns dx/dt given t, x1, and x2, or dy/dt given t, y1, and y2.
-    function getSlope (aT, aA1, aA2) {
-        return 3.0 * A(aA1, aA2)*aT*aT + 2.0 * B(aA1, aA2) * aT + C(aA1);
-    }
-
-    function binarySubdivide (aX, aA, aB, mX1, mX2) {
-        var currentX, currentT, i = 0;
-        do {
-            currentT = aA + (aB - aA) / 2.0;
-            currentX = calcBezier(currentT, mX1, mX2) - aX;
-            if (currentX > 0.0) {
-                aB = currentT;
-            } else {
-                aA = currentT;
-            }
-        } while (Math.abs(currentX) > SUBDIVISION_PRECISION && ++i < SUBDIVISION_MAX_ITERATIONS);
-        return currentT;
-    }
-
-    function newtonRaphsonIterate (aX, aGuessT, mX1, mX2) {
-        for (var i = 0; i < NEWTON_ITERATIONS; ++i) {
-            var currentSlope = getSlope(aGuessT, mX1, mX2);
-            if (currentSlope === 0.0) return aGuessT;
-            var currentX = calcBezier(aGuessT, mX1, mX2) - aX;
-            aGuessT -= currentX / currentSlope;
-        }
-        return aGuessT;
-    }
-
-    /**
-     * points is an array of [ mX1, mY1, mX2, mY2 ]
-     */
-    function BezierEasing (points) {
-        this._p = points;
-        this._mSampleValues = float32ArraySupported ? new Float32Array(kSplineTableSize) : new Array(kSplineTableSize);
-        this._precomputed = false;
-
-        this.get = this.get.bind(this);
-    }
-
-    BezierEasing.prototype = {
-
-        get: function (x) {
-            var mX1 = this._p[0],
-                mY1 = this._p[1],
-                mX2 = this._p[2],
-                mY2 = this._p[3];
-            if (!this._precomputed) this._precompute();
-            if (mX1 === mY1 && mX2 === mY2) return x; // linear
-            // Because JavaScript number are imprecise, we should guarantee the extremes are right.
-            if (x === 0) return 0;
-            if (x === 1) return 1;
-            return calcBezier(this._getTForX(x), mY1, mY2);
-        },
-
-        // Private part
-
-        _precompute: function () {
-            var mX1 = this._p[0],
-                mY1 = this._p[1],
-                mX2 = this._p[2],
-                mY2 = this._p[3];
-            this._precomputed = true;
-            if (mX1 !== mY1 || mX2 !== mY2)
-                this._calcSampleValues();
-        },
-
-        _calcSampleValues: function () {
-            var mX1 = this._p[0],
-                mX2 = this._p[2];
-            for (var i = 0; i < kSplineTableSize; ++i) {
-                this._mSampleValues[i] = calcBezier(i * kSampleStepSize, mX1, mX2);
-            }
-        },
-
-        /**
-         * getTForX chose the fastest heuristic to determine the percentage value precisely from a given X projection.
-         */
-        _getTForX: function (aX) {
-            var mX1 = this._p[0],
-                mX2 = this._p[2],
-                mSampleValues = this._mSampleValues;
-
-            var intervalStart = 0.0;
-            var currentSample = 1;
-            var lastSample = kSplineTableSize - 1;
-
-            for (; currentSample !== lastSample && mSampleValues[currentSample] <= aX; ++currentSample) {
-                intervalStart += kSampleStepSize;
-            }
-            --currentSample;
-
-            // Interpolate to provide an initial guess for t
-            var dist = (aX - mSampleValues[currentSample]) / (mSampleValues[currentSample+1] - mSampleValues[currentSample]);
-            var guessForT = intervalStart + dist * kSampleStepSize;
-
-            var initialSlope = getSlope(guessForT, mX1, mX2);
-            if (initialSlope >= NEWTON_MIN_SLOPE) {
-                return newtonRaphsonIterate(aX, guessForT, mX1, mX2);
-            } else if (initialSlope === 0.0) {
-                return guessForT;
-            } else {
-                return binarySubdivide(aX, intervalStart, intervalStart + kSampleStepSize, mX1, mX2);
-            }
-        }
+    // This function returns a random double in [0, 1) that contains
+    // randomness in every bit of the mantissa of the IEEE 754 value.
+    var prng = function () {
+      var n = arc4.g(chunks), // Start with a numerator n < 2 ^ 48
+        d = startdenom, //   and denominator d = 2 ^ 48.
+        x = 0; //   and no 'extra last byte'.
+      while (n < significance) {
+        // Fill up all significant digits by
+        n = (n + x) * width; //   shifting numerator and
+        d *= width; //   denominator and generating a
+        x = arc4.g(1); //   new least-significant-byte.
+      }
+      while (n >= overflow) {
+        // To avoid rounding up, before adding
+        n /= 2; //   last byte, shift everything
+        d /= 2; //   right using integer math until
+        x >>>= 1; //   we have exactly the desired bits.
+      }
+      return (n + x) / d; // Form the number within [0, 1).
     };
 
-    return ob;
+    prng.int32 = function () {
+      return arc4.g(4) | 0;
+    };
+    prng.quick = function () {
+      return arc4.g(4) / 0x100000000;
+    };
+    prng.double = prng;
 
-}());
-function extendPrototype(sources,destination){
-    var i, len = sources.length, sourcePrototype;
-    for (i = 0;i < len;i += 1) {
-        sourcePrototype = sources[i].prototype;
-        for (var attr in sourcePrototype) {
-            if (sourcePrototype.hasOwnProperty(attr)) destination.prototype[attr] = sourcePrototype[attr];
+    // Mix the randomness into accumulated entropy.
+    mixkey(tostring(arc4.S), pool);
+
+    // Calling convention: what to return as a function of prng, seed, is_math.
+    return (
+      options.pass ||
+      callback ||
+      function (prng, seed, is_math_call, state) {
+        if (state) {
+          // Load the arc4 state from the given state if it has an S array.
+          if (state.S) {
+            copy(state, arc4);
+          }
+          // Only provide the .state method if requested via options.state.
+          prng.state = function () {
+            return copy(arc4, {});
+          };
         }
+
+        // If called as a method of Math (Math.seedrandom()), mutate
+        // Math.random because that is how seedrandom.js has worked since v1.0.
+        if (is_math_call) {
+          math[rngname] = prng;
+          return seed;
+        }
+
+        // Otherwise, it is a newer calling convention, so return the
+        // prng directly.
+        else return prng;
+      }
+    )(prng, shortseed, 'global' in options ? options.global : this == math, options.state);
+  }
+  math['seed' + rngname] = seedrandom;
+
+  //
+  // ARC4
+  //
+  // An ARC4 implementation.  The constructor takes a key in the form of
+  // an array of at most (width) integers that should be 0 <= x < (width).
+  //
+  // The g(count) method returns a pseudorandom integer that concatenates
+  // the next (count) outputs from ARC4.  Its return value is a number x
+  // that is in the range 0 <= x < (width ^ count).
+  //
+  function ARC4(key) {
+    var t,
+      keylen = key.length,
+      me = this,
+      i = 0,
+      j = (me.i = me.j = 0),
+      s = (me.S = []);
+
+    // The empty key [] is treated as [0].
+    if (!keylen) {
+      key = [keylen++];
     }
+
+    // Set up S using the standard key scheduling algorithm.
+    while (i < width) {
+      s[i] = i++;
+    }
+    for (i = 0; i < width; i++) {
+      s[i] = s[(j = mask & (j + key[i % keylen] + (t = s[i])))];
+      s[j] = t;
+    }
+
+    // The "g" method returns the next (count) outputs as one number.
+    me.g = function (count) {
+      // Using instance members instead of closure state nearly doubles speed.
+      var t,
+        r = 0,
+        i = me.i,
+        j = me.j,
+        s = me.S;
+      while (count--) {
+        t = s[(i = mask & (i + 1))];
+        r = r * width + s[mask & ((s[i] = s[(j = mask & (j + t))]) + (s[j] = t))];
+      }
+      me.i = i;
+      me.j = j;
+      return r;
+      // For robust unpredictability, the function call below automatically
+      // discards an initial batch of values.  This is called RC4-drop[256].
+      // See http://google.com/search?q=rsa+fluhrer+response&btnI
+    };
+  }
+
+  //
+  // copy()
+  // Copies internal state of ARC4 to or from a plain object.
+  //
+  function copy(f, t) {
+    t.i = f.i;
+    t.j = f.j;
+    t.S = f.S.slice();
+    return t;
+  }
+
+  //
+  // flatten()
+  // Converts an object tree to nested arrays of strings.
+  //
+  function flatten(obj, depth) {
+    var result = [],
+      typ = typeof obj,
+      prop;
+    if (depth && typ == 'object') {
+      for (prop in obj) {
+        try {
+          result.push(flatten(obj[prop], depth - 1));
+        } catch (e) {}
+      }
+    }
+    return result.length ? result : typ == 'string' ? obj : obj + '\0';
+  }
+
+  //
+  // mixkey()
+  // Mixes a string seed into a key that is an array of integers, and
+  // returns a shortened string seed that is equivalent to the result key.
+  //
+  function mixkey(seed, key) {
+    var stringseed = seed + '',
+      smear,
+      j = 0;
+    while (j < stringseed.length) {
+      key[mask & j] = mask & ((smear ^= key[mask & j] * 19) + stringseed.charCodeAt(j++));
+    }
+    return tostring(key);
+  }
+
+  function autoseed() {
+    try {
+      if (nodecrypto) {
+        return tostring(nodecrypto.randomBytes(width));
+      }
+      var out = new Uint8Array(width);
+      (global.crypto || global.msCrypto).getRandomValues(out);
+      return tostring(out);
+    } catch (e) {
+      var browser = global.navigator,
+        plugins = browser && browser.plugins;
+      return [+new Date(), global, plugins, global.screen, tostring(pool)];
+    }
+  }
+
+  //
+  // tostring()
+  // Converts an array of charcodes to a string
+  //
+  function tostring(a) {
+    return String.fromCharCode.apply(0, a);
+  }
+
+  //
+  // When seedrandom.js is loaded, we immediately mix a few bits
+  // from the built-in RNG into the entropy pool.  Because we do
+  // not want to interfere with deterministic PRNG state later,
+  // seedrandom will not call math.random on its own again after
+  // initialization.
+  //
+  mixkey(math.random(), pool);
+
+  //
+  // Nodejs and AMD support: export the implementation as a module using
+  // either convention.
+  //
+
+  // End anonymous scope, and pass initial values.
+})(
+  [], // pool: entropy pool starts empty
+  BMMath // math: package containing random, pow, and seedrandom
+);
+
+var BezierFactory = (function () {
+  /**
+   * BezierEasing - use bezier curve for transition easing function
+   * by Gaëtan Renaudeau 2014 - 2015 – MIT License
+   *
+   * Credits: is based on Firefox's nsSMILKeySpline.cpp
+   * Usage:
+   * var spline = BezierEasing([ 0.25, 0.1, 0.25, 1.0 ])
+   * spline.get(x) => returns the easing value | x must be in [0, 1] range
+   *
+   */
+
+  var ob = {};
+  ob.getBezierEasing = getBezierEasing;
+  var beziers = {};
+
+  function getBezierEasing(a, b, c, d, nm) {
+    var str = nm || ('bez_' + a + '_' + b + '_' + c + '_' + d).replace(/\./g, 'p');
+    if (beziers[str]) {
+      return beziers[str];
+    }
+    var bezEasing = new BezierEasing([a, b, c, d]);
+    beziers[str] = bezEasing;
+    return bezEasing;
+  }
+
+  // These values are established by empiricism with tests (tradeoff: performance VS precision)
+  var NEWTON_ITERATIONS = 4;
+  var NEWTON_MIN_SLOPE = 0.001;
+  var SUBDIVISION_PRECISION = 0.0000001;
+  var SUBDIVISION_MAX_ITERATIONS = 10;
+
+  var kSplineTableSize = 11;
+  var kSampleStepSize = 1.0 / (kSplineTableSize - 1.0);
+
+  var float32ArraySupported = typeof Float32Array === 'function';
+
+  function A(aA1, aA2) {
+    return 1.0 - 3.0 * aA2 + 3.0 * aA1;
+  }
+  function B(aA1, aA2) {
+    return 3.0 * aA2 - 6.0 * aA1;
+  }
+  function C(aA1) {
+    return 3.0 * aA1;
+  }
+
+  // Returns x(t) given t, x1, and x2, or y(t) given t, y1, and y2.
+  function calcBezier(aT, aA1, aA2) {
+    return ((A(aA1, aA2) * aT + B(aA1, aA2)) * aT + C(aA1)) * aT;
+  }
+
+  // Returns dx/dt given t, x1, and x2, or dy/dt given t, y1, and y2.
+  function getSlope(aT, aA1, aA2) {
+    return 3.0 * A(aA1, aA2) * aT * aT + 2.0 * B(aA1, aA2) * aT + C(aA1);
+  }
+
+  function binarySubdivide(aX, aA, aB, mX1, mX2) {
+    var currentX,
+      currentT,
+      i = 0;
+    do {
+      currentT = aA + (aB - aA) / 2.0;
+      currentX = calcBezier(currentT, mX1, mX2) - aX;
+      if (currentX > 0.0) {
+        aB = currentT;
+      } else {
+        aA = currentT;
+      }
+    } while (Math.abs(currentX) > SUBDIVISION_PRECISION && ++i < SUBDIVISION_MAX_ITERATIONS);
+    return currentT;
+  }
+
+  function newtonRaphsonIterate(aX, aGuessT, mX1, mX2) {
+    for (var i = 0; i < NEWTON_ITERATIONS; ++i) {
+      var currentSlope = getSlope(aGuessT, mX1, mX2);
+      if (currentSlope === 0.0) return aGuessT;
+      var currentX = calcBezier(aGuessT, mX1, mX2) - aX;
+      aGuessT -= currentX / currentSlope;
+    }
+    return aGuessT;
+  }
+
+  /**
+   * points is an array of [ mX1, mY1, mX2, mY2 ]
+   */
+  function BezierEasing(points) {
+    this._p = points;
+    this._mSampleValues = float32ArraySupported ? new Float32Array(kSplineTableSize) : new Array(kSplineTableSize);
+    this._precomputed = false;
+
+    this.get = this.get.bind(this);
+  }
+
+  BezierEasing.prototype = {
+    get: function (x) {
+      var mX1 = this._p[0],
+        mY1 = this._p[1],
+        mX2 = this._p[2],
+        mY2 = this._p[3];
+      if (!this._precomputed) this._precompute();
+      if (mX1 === mY1 && mX2 === mY2) return x; // linear
+      // Because JavaScript number are imprecise, we should guarantee the extremes are right.
+      if (x === 0) return 0;
+      if (x === 1) return 1;
+      return calcBezier(this._getTForX(x), mY1, mY2);
+    },
+
+    // Private part
+
+    _precompute: function () {
+      var mX1 = this._p[0],
+        mY1 = this._p[1],
+        mX2 = this._p[2],
+        mY2 = this._p[3];
+      this._precomputed = true;
+      if (mX1 !== mY1 || mX2 !== mY2) this._calcSampleValues();
+    },
+
+    _calcSampleValues: function () {
+      var mX1 = this._p[0],
+        mX2 = this._p[2];
+      for (var i = 0; i < kSplineTableSize; ++i) {
+        this._mSampleValues[i] = calcBezier(i * kSampleStepSize, mX1, mX2);
+      }
+    },
+
+    /**
+     * getTForX chose the fastest heuristic to determine the percentage value precisely from a given X projection.
+     */
+    _getTForX: function (aX) {
+      var mX1 = this._p[0],
+        mX2 = this._p[2],
+        mSampleValues = this._mSampleValues;
+
+      var intervalStart = 0.0;
+      var currentSample = 1;
+      var lastSample = kSplineTableSize - 1;
+
+      for (; currentSample !== lastSample && mSampleValues[currentSample] <= aX; ++currentSample) {
+        intervalStart += kSampleStepSize;
+      }
+      --currentSample;
+
+      // Interpolate to provide an initial guess for t
+      var dist = (aX - mSampleValues[currentSample]) / (mSampleValues[currentSample + 1] - mSampleValues[currentSample]);
+      var guessForT = intervalStart + dist * kSampleStepSize;
+
+      var initialSlope = getSlope(guessForT, mX1, mX2);
+      if (initialSlope >= NEWTON_MIN_SLOPE) {
+        return newtonRaphsonIterate(aX, guessForT, mX1, mX2);
+      } else if (initialSlope === 0.0) {
+        return guessForT;
+      } else {
+        return binarySubdivide(aX, intervalStart, intervalStart + kSampleStepSize, mX1, mX2);
+      }
+    },
+  };
+
+  return ob;
+})();
+
+function extendPrototype(sources, destination) {
+  var i,
+    len = sources.length,
+    sourcePrototype;
+  for (i = 0; i < len; i += 1) {
+    sourcePrototype = sources[i].prototype;
+    for (var attr in sourcePrototype) {
+      if (sourcePrototype.hasOwnProperty(attr)) destination.prototype[attr] = sourcePrototype[attr];
+    }
+  }
 }
 
 function getDescriptor(object, prop) {
-    return Object.getOwnPropertyDescriptor(object, prop);
+  return Object.getOwnPropertyDescriptor(object, prop);
 }
 
 function createProxyFunction(prototype) {
-	function ProxyFunction(){}
-	ProxyFunction.prototype = prototype;
-	return ProxyFunction;
+  function ProxyFunction() {}
+  ProxyFunction.prototype = prototype;
+  return ProxyFunction;
 }
+
 function bezFunction(){
 
     var easingFunctions = [];
