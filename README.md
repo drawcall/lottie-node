@@ -24,12 +24,12 @@ Oh, I don't have a built-in node-canvas library by default, you can import it ex
 
 # UseAge
 
-- 1. Import lottie-nodejs and node-canvas libraries.
-- 2. Set up Canvas class for lottie-nodejs.
-- 3. Create a Canvas instance for rendering.
-- 4. Lottie loads the animation file and initializes it.
-- 5. Use timer to render lottie framed animation.
-- 6. Render and save the image to the local, or other operations.
+- Import lottie-nodejs and node-canvas libraries.
+- Set up Canvas class for lottie-nodejs.
+- Create a Canvas instance for rendering.
+- Lottie loads the animation file and initializes it.
+- Use timer to render lottie framed animation.
+- Render and save the image to the local, or other operations.
 
 ```javascript
 // 1. Import lottie-nodejs and node-canvas libraries
@@ -67,7 +67,6 @@ setInterval(() => {
 
 ```javascript
 ani.goToAndStop(25, true);
-
 ani.onEnterFrame(...);
 ```
 
@@ -77,10 +76,6 @@ Clone the project and install related dependencies
 
 ```shell
 git clone https://github.com/drawcall/lottie-node.git
-
-cd ...
-
-npm i
 ```
 
 #### You can run the demo to try out the project.
