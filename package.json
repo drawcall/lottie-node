@@ -1,6 +1,6 @@
 {
   "name": "lottie-nodejs",
-  "version": "5.5.92",
+  "version": "5.5.93",
   "description": "Lottie is a AE render library for Node.js",
   "main": "./build/index.js",
   "repository": {
@@ -26,5 +26,8 @@
     "watch": "^1.0.2"
   },
   "types": "./index.d.ts",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "lottie-api": "^1.0.3"
+  }
 }

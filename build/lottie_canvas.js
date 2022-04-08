@@ -8796,6 +8796,7 @@ var animationManager = (function () {
   return moduleOb;
 })();
 
+const lottieApi = require('lottie-api');
 var AnimationItem = function () {
   this._cbs = [];
   this.name = '';
@@ -8851,7 +8852,7 @@ AnimationItem.prototype.setParams = function (params) {
   } else {
     this.loop = parseInt(params.loop);
   }
-  
+
   this.autoplay = 'autoplay' in params ? params.autoplay : true;
   this.name = params.name ? params.name : '';
   this.autoloadSegments = params.hasOwnProperty('autoloadSegments') ? params.autoloadSegments : true;
@@ -8961,6 +8962,23 @@ AnimationItem.prototype.preloadImages = function () {
   this.imagePreloader.loadAssets(this.animationData.assets, this.imagesLoaded.bind(this));
 };
 
+AnimationItem.prototype.replaceAsset = function (id, path) {
+  const data = this.animationData;
+  const asset = data.assets.find((a) => a.id === id);
+  if (asset) asset.p = path;
+};
+
+AnimationItem.prototype.replaceText = function (target, txt) {
+  let data = JSON.stringify(this.animationData);
+  data = data.replace(target, txt);
+  this.animationData = JSON.parse(data);
+};
+
+AnimationItem.prototype.findElements = function (key) {
+  const elements = api.getKeyPath(key);
+  return elements.getElements();
+};
+
 AnimationItem.prototype.configAnimation = function (animData) {
   if (!this.renderer) return;
 
@@ -8982,6 +9000,7 @@ AnimationItem.prototype.configAnimation = function (animData) {
     this.loadSegments();
     this.updaFrameModifier();
     this.waitForFontsLoaded();
+    this.setupApi();
   } catch (error) {
     console.error(error);
     this.triggerConfigError(error);
@@ -8991,6 +9010,10 @@ AnimationItem.prototype.configAnimation = function (animData) {
 AnimationItem.prototype.waitForFontsLoaded = function () {
   if (!this.renderer) return;
   this.checkLoaded();
+};
+
+AnimationItem.prototype.setupApi = function () {
+  this.api = lottieApi.createAnimationApi(this);
 };
 
 AnimationItem.prototype.checkLoaded = function () {
@@ -11950,7 +11973,7 @@ GroupEffect.prototype.init = function (data, element) {
   lottiejs.unfreeze = animationManager.unfreeze;
   lottiejs.getRegisteredAnimations = animationManager.getRegisteredAnimations;
   lottiejs.__getFactory = getFactory;
-  lottiejs.version = "5.5.92";
+  lottiejs.version = "5.5.93";
 
   var standalone = "__[STANDALONE]__";
   var animationData = "__[ANIMATIONDATA]__";

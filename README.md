@@ -46,15 +46,16 @@ lottie.setCanvas({
 const canvas = new Canvas(500, 500);
 
 // 4. Lottie loads the animation file and initializes it
-const ani = lottie.loadAnimation({
+const anim = lottie.loadAnimation({
   container: canvas,
   loop: false,
   path: path.join(__dirname, './assets/data.json'),
+  // animationData: data
 });
 
 // 5. Use timer to render lottie framed animation
 setInterval(() => {
-  ani.render();
+  anim.render();
 
   // 6. Render and save the image to the local, or other operations
   const buffer = canvas.toBuffer('image/png');
@@ -66,8 +67,34 @@ setInterval(() => {
 #### Of course you can use any api of lottie-web.
 
 ```javascript
-ani.goToAndStop(25, true);
-ani.onEnterFrame(...);
+anim.goToAndStop(25, true);
+anim.onEnterFrame(...);
+```
+
+#### Replace placeholder images and text, etc.
+
+- Modify the Text in the lottie json data.
+
+```javascript
+anim.replaceText('_xxx_', 'hello world');
+```
+
+- Modify the Image in the lottie json data.
+
+```javascript
+// param: id, newpath
+anim.replaceAsset(17, path.join(__dirname, 'xx.jpg'));
+```
+
+- Use lottie-api for more advanced modifications. [https://github.com/bodymovin/lottie-api](https://github.com/bodymovin/lottie-api)
+
+```javascript
+const elements = anim.api.getKeyPath('comp1,textnode');
+elements.getElements()[0].setText('hahahahah!');
+
+// or
+const elements = anim.findElements('comp1,textnode');
+elements[0].setText('hahahahah!');
 ```
 
 # Development
@@ -100,12 +127,13 @@ npm run demo
 #### Run the lottie-web effect as a comparison
 
 1. Install the `serve` package globally
+
 ```shell
 npm i -g serve
 ```
 
 2. Execute serve and view the corresponding demo html
-> modify the values of i and j to view the demo
+   > modify the values of i and j to view the demo
 
 http://localhost:xxxx/demo/test/?i=2&j=9
 
