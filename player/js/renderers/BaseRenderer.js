@@ -128,7 +128,7 @@ BaseRenderer.prototype.searchExtraCompositions = function (assets) {
 BaseRenderer.prototype.setupGlobalData = function (animData, fontsContainer) {
   this.globalData.fontManager = new FontManager();
   this.globalData.fontManager.addChars(animData.chars);
-  //this.globalData.fontManager.addFonts(animData.fonts, fontsContainer);
+  this.globalData.fontManager.addFonts(animData.fonts, fontsContainer);
   this.globalData.getAssetData = this.animationItem.getAssetData.bind(this.animationItem);
   this.globalData.getAssetsPath = this.animationItem.getAssetsPath.bind(this.animationItem);
   this.globalData.imageLoader = this.animationItem.imagePreloader;

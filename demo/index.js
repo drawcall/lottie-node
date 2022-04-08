@@ -5,8 +5,8 @@ const { Canvas, Image } = require('canvas');
 
 const num = 50;
 const delta = 33 * 4;
-const i = 1;
-const j = 0;
+const i = 2;
+const j = 1;
 const file = i == 4 ? `test/data${i}/d${j}/data.json` : `test/data${i}/d${j}.json`;
 const frame = 1;
 
