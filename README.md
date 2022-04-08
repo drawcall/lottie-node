@@ -7,9 +7,9 @@ Lottie-node is an API for runnig Lottie with the canvas renderer in Node.js, wit
 # documentation
 
 Lottie-node is transplanted from lottie-web, so its api is exactly the same as lottie-web.
-View documentation, FAQ, help, examples, and more at [lottie-web](http://airbnb.io/lottie/#/web)
+View documentation, FAQ, help, examples, and more at [lottie-web](http://airbnb.io/lottie/#/web).
 
-![Example4](gifs/demo.gif)
+![Example4](./gifs/demo.gif)
 
 # Installation
 
@@ -18,11 +18,18 @@ View documentation, FAQ, help, examples, and more at [lottie-web](http://airbnb.
 npm install lottie-nodejs
 ```
 
-### About node-canvas
+### Install node-canvas
 
 Oh, I don't have a built-in node-canvas library by default, you can import it externally and pass it in. This design is mainly for use in conjunction with FFCreator.
 
 # UseAge
+
+- 1. Import lottie-nodejs and node-canvas libraries.
+- 2. Set up Canvas class for lottie-nodejs.
+- 3. Create a Canvas instance for rendering.
+- 4. Lottie loads the animation file and initializes it.
+- 5. Use timer to render lottie framed animation.
+- 6. Render and save the image to the local, or other operations.
 
 ```javascript
 // 1. Import lottie-nodejs and node-canvas libraries
@@ -42,7 +49,7 @@ const canvas = new Canvas(500, 500);
 const ani = lottie.loadAnimation({
   container: canvas,
   loop: false,
-  path: path.join(__dirname, './assets/data.json'), 
+  path: path.join(__dirname, './assets/data.json'),
 });
 
 // 5. Use timer to render lottie framed animation
@@ -56,43 +63,56 @@ setInterval(() => {
 }, 1000 / 30);
 ```
 
-## Preview
+#### Of course you can use any api of lottie-web.
 
-You can preview or take an svg snapshot of the animation to use as poster. After you render your animation, you can take a snapshot of any frame in the animation and save it to your disk. I recommend to pass the svg through an svg optimizer like https://jakearchibald.github.io/svgomg/ and play around with their settings.<br/>
+```javascript
+ani.goToAndStop(25, true);
 
-## Recommendations
+ani.onEnterFrame(...);
+```
 
-### Files
+# Development
 
-If you have any images or AI layers that you haven't converted to shapes (I recommend that you convert them, so they get exported as vectors, right click each layer and do: "Create shapes from Vector Layers"), they will be saved to an images folder relative to the destination json folder.
-Beware not to overwrite an existing folder on that same location.
+Clone the project and install related dependencies
 
-### Performance
+```shell
+git clone https://github.com/drawcall/lottie-node.git
 
-This is real time rendering. Although it is pretty optimized, it always helps if you keep your AE project to what is necessary<br/>
-More optimizations are on their way, but try not to use huge shapes in AE only to mask a small part of it.<br/>
-Too many nodes will also affect performance.
+cd ...
 
-## AE Feature Support
+npm i
+```
 
-- The script supports precomps, shapes, solids, images, null objects, texts
-- It supports masks and inverted masks. Maybe other modes will come but it has a huge performance hit.
-- It supports time remapping
-- The script supports shapes, rectangles, ellipses and stars.
-- Expressions. Check the wiki page for [more info.](https://github.com/bodymovin/bodymovin/wiki/Expressions)
-- Not supported: image sequences, videos and audio are not supported
-- **No negative layer stretching**! No idea why, but stretching a layer messes with all the data.
+#### You can run the demo to try out the project.
 
-## Development
+1. Modify the demo/index.js file and modify the values of i and j to view the demo.
 
-`npm install` or `bower install` first
-`npm start`
+```javascript
+// i from 1 to 4  [1-4]
+const i = 2; // floder
+// j from 1 to 20 [1-20]
+const j = 9; // file
+const num = 50;
+const delta = 33 * 4;
+```
 
-## Notes
+2. Run the demo script.
 
-- If you want to modify the parser or the player, there are some gulp commands that can simplify the task
-- look at the great animations exported on codepen [See examples on codepen.](http://codepen.io/collection/nVYWZR/)
-- gzipping the animation jsons and the player have a huge reduction on the filesize. I recommend doing it if you use it for a project.
+```shell
+npm run demo
+```
+
+#### Run the lottie-web effect as a comparison
+
+1. Install the `serve` package globally
+```shell
+npm i -g serve
+```
+
+2. Execute serve and view the corresponding demo html
+> modify the values of i and j to view the demo
+
+http://localhost:xxxx/demo/test/?i=2&j=9
 
 ## License
 

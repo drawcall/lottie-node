@@ -8851,6 +8851,7 @@ AnimationItem.prototype.setParams = function (params) {
   } else {
     this.loop = parseInt(params.loop);
   }
+  
   this.autoplay = 'autoplay' in params ? params.autoplay : true;
   this.name = params.name ? params.name : '';
   this.autoloadSegments = params.hasOwnProperty('autoloadSegments') ? params.autoloadSegments : true;
@@ -8882,7 +8883,7 @@ AnimationItem.prototype.includeLayers = function (data) {
     this.animationData.op = data.op;
     this.totalFrames = Math.floor(data.op - this.animationData.ip);
   }
-  
+
   var layers = this.animationData.layers;
   var i,
     len = layers.length;
@@ -8995,7 +8996,7 @@ AnimationItem.prototype.waitForFontsLoaded = function () {
 AnimationItem.prototype.checkLoaded = function () {
   if (!this.isLoaded && this.imagePreloader.loaded()) {
     this.isLoaded = true;
- 
+
     dataManager.completeData(this.animationData, this.renderer.globalData.fontManager);
     if (expressionsPlugin) expressionsPlugin.initExpressions(this);
     this.renderer.initItems();
@@ -11949,7 +11950,7 @@ GroupEffect.prototype.init = function (data, element) {
   lottiejs.unfreeze = animationManager.unfreeze;
   lottiejs.getRegisteredAnimations = animationManager.getRegisteredAnimations;
   lottiejs.__getFactory = getFactory;
-  lottiejs.version = "5.5.91";
+  lottiejs.version = "5.5.92";
 
   var standalone = "__[STANDALONE]__";
   var animationData = "__[ANIMATIONDATA]__";
