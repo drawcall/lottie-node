@@ -1,12 +1,13 @@
 # Lottie for Node.js
 
-Lottie is a AE render library for Node.js that parses [Adobe After Effects](http://www.adobe.com/products/aftereffects.html) animations exported as json with [Bodymovin](https://github.com/airbnb/lottie-web) and renders them natively on mobile!
+Lottie is a AE render library for Node.js that parses [Adobe After Effects](http://www.adobe.com/products/aftereffects.html) animations exported as json with [Bodymovin](https://github.com/airbnb/lottie-web) and renders them natively on web.
 
-For the first time, designers can create **and ship** beautiful animations without an engineer painstakingly recreating it by hand. They say a picture is worth 1,000 words so here are 13,000:
+Lottie-node is an API for runnig Lottie with the canvas renderer in Node.js, with the help of node-canvas. This is intended for rendering Lottie animations to images or video.
 
 # documentation
 
-View documentation, FAQ, help, examples, and more at [airbnb.io/lottie](http://airbnb.io/lottie/)
+Lottie-node is transplanted from lottie-web, so its api is exactly the same as lottie-web.
+View documentation, FAQ, help, examples, and more at [lottie-web](http://airbnb.io/lottie/#/web)
 
 ![Example4](gifs/demo.gif)
 
@@ -17,51 +18,41 @@ View documentation, FAQ, help, examples, and more at [airbnb.io/lottie](http://a
 npm install lottie-nodejs
 ```
 
-# Demo
+### About node-canvas
 
-[See a basic implementation here.](https://codepen.io/airnan/project/editor/ZeNONO/) <br/>
-[See examples on codepen.](http://codepen.io/collection/nVYWZR/) <br/>
+Oh, I don't have a built-in node-canvas library by default, you can import it externally and pass it in. This design is mainly for use in conjunction with FFCreator.
 
-## How it works
+# UseAge
 
-[Here's](https://www.youtube.com/watch?v=5XMUJdjI0L8) a video tutorial explaining how to export a basic animation and load it in an html page <br />
-
-### After Effects
-
-- Open your AE project and select the bodymovin extension on Window > Extensions > bodymovin
-- A Panel will open with a Compositions tab listing all of your Project Compositions.
-- Select the composition you want to export.
-- Select a Destination Folder.
-- look for the exported json file (if you had images or AI layers on your animation, there will be an images folder with the exported files)
-
-### UseAge
-
-You can call lottie.loadAnimation() to start an animation.
-It takes an object as a unique param with:
-
-- animationData: an Object with the exported animation data. **Note:** If your animation contains repeaters and you plan to call loadAnimation multiple times with the same animation, please deep clone the object before passing it (see [#1159](https://github.com/airbnb/lottie-web/issues/1159) and [#2151](https://github.com/airbnb/lottie-web/issues/2151).)
-- path: the relative path to the animation object. (animationData and path are mutually exclusive)
-- loop: true / false / number
-- autoplay: true / false it will start playing as soon as it is ready
-- name: animation name for future reference
-- renderer: 'svg' / 'canvas' / 'html' to set the renderer
-- container: the dom element on which to render the animation
-
-It returns the animation instance you can control with play, pause, setSpeed, etc.
-
-```js
+```javascript
+// 1. Import lottie-nodejs and node-canvas libraries
 const lottie = require('lottie-nodejs');
+const { Canvas, Image } = require('canvas');
 
-const ani = lottie.loadAnimation({
-  container: element, // the dom element that will contain the animation
-  renderer: 'canvas',
-  loop: true,
-  autoplay: false,
-  path: 'data.json', // the path to the animation json
+// 2. Set up Canvas class for lottie-nodejs
+lottie.setCanvas({
+  Canvas,
+  Image,
 });
 
+// 3. Create a Canvas instance for rendering
+const canvas = new Canvas(500, 500);
+
+// 4. Lottie loads the animation file and initializes it
+const ani = lottie.loadAnimation({
+  container: canvas,
+  loop: false,
+  path: path.join(__dirname, './assets/data.json'), 
+});
+
+// 5. Use timer to render lottie framed animation
 setInterval(() => {
   ani.render();
+
+  // 6. Render and save the image to the local, or other operations
+  const buffer = canvas.toBuffer('image/png');
+  const file = path.join(__dirname, `./output/imgs/${index++}.png`);
+  fs.outputFile(file, buffer);
 }, 1000 / 30);
 ```
 
@@ -103,6 +94,6 @@ Too many nodes will also affect performance.
 - look at the great animations exported on codepen [See examples on codepen.](http://codepen.io/collection/nVYWZR/)
 - gzipping the animation jsons and the player have a huge reduction on the filesize. I recommend doing it if you use it for a project.
 
-## Issues
+## License
 
-- For missing mask in Safari browser, please call lottie.setLocationHref(locationHref) before animation is generated. It usually caused by usage of base tag in html. (see above for description of setLocationHref)
+[MIT License](https://opensource.org/licenses/MIT)

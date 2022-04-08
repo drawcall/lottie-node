@@ -40,7 +40,7 @@ AnimationItem.prototype.setParams = function (params) {
     this.wrapper = params.wrapper || params.container;
   }
 
-  var animType = params.animType ? params.animType : params.renderer ? params.renderer : 'canvas';
+  var animType = 'canvas';
   this.renderer = new CanvasRenderer(this, params.rendererSettings);
   this.renderer.setProjectInterface(this.projectInterface);
   this.animType = animType;
@@ -53,6 +53,7 @@ AnimationItem.prototype.setParams = function (params) {
   } else {
     this.loop = parseInt(params.loop);
   }
+  
   this.autoplay = 'autoplay' in params ? params.autoplay : true;
   this.name = params.name ? params.name : '';
   this.autoloadSegments = params.hasOwnProperty('autoloadSegments') ? params.autoloadSegments : true;
@@ -84,7 +85,7 @@ AnimationItem.prototype.includeLayers = function (data) {
     this.animationData.op = data.op;
     this.totalFrames = Math.floor(data.op - this.animationData.ip);
   }
-  
+
   var layers = this.animationData.layers;
   var i,
     len = layers.length;
@@ -197,13 +198,13 @@ AnimationItem.prototype.waitForFontsLoaded = function () {
 AnimationItem.prototype.checkLoaded = function () {
   if (!this.isLoaded && this.imagePreloader.loaded()) {
     this.isLoaded = true;
- 
+
     dataManager.completeData(this.animationData, this.renderer.globalData.fontManager);
     if (expressionsPlugin) expressionsPlugin.initExpressions(this);
     this.renderer.initItems();
 
     this.gotoFrame();
-    if (this.autoplay) this.play();
+    // if (this.autoplay) this.play();
   }
 };
 

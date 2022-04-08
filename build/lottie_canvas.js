@@ -8838,7 +8838,7 @@ AnimationItem.prototype.setParams = function (params) {
     this.wrapper = params.wrapper || params.container;
   }
 
-  var animType = params.animType ? params.animType : params.renderer ? params.renderer : 'canvas';
+  var animType = 'canvas';
   this.renderer = new CanvasRenderer(this, params.rendererSettings);
   this.renderer.setProjectInterface(this.projectInterface);
   this.animType = animType;
@@ -9001,7 +9001,7 @@ AnimationItem.prototype.checkLoaded = function () {
     this.renderer.initItems();
 
     this.gotoFrame();
-    if (this.autoplay) this.play();
+    // if (this.autoplay) this.play();
   }
 };
 
@@ -11949,7 +11949,7 @@ GroupEffect.prototype.init = function (data, element) {
   lottiejs.unfreeze = animationManager.unfreeze;
   lottiejs.getRegisteredAnimations = animationManager.getRegisteredAnimations;
   lottiejs.__getFactory = getFactory;
-  lottiejs.version = "5.5.9";
+  lottiejs.version = "5.5.91";
 
   var standalone = "__[STANDALONE]__";
   var animationData = "__[ANIMATIONDATA]__";
