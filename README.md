@@ -97,6 +97,7 @@ const elements = anim.findElements('comp1,textnode');
 elements[0].setText('hahahahah!');
 ```
 
+
 # Development
 
 Clone the project and install related dependencies
