@@ -11973,7 +11973,7 @@ GroupEffect.prototype.init = function (data, element) {
   lottiejs.unfreeze = animationManager.unfreeze;
   lottiejs.getRegisteredAnimations = animationManager.getRegisteredAnimations;
   lottiejs.__getFactory = getFactory;
-  lottiejs.version = "5.5.93";
+  lottiejs.version = "5.5.95";
 
   var standalone = "__[STANDALONE]__";
   var animationData = "__[ANIMATIONDATA]__";

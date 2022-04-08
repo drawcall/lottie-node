@@ -1,8 +1,8 @@
 {
   "name": "lottie-nodejs",
-  "version": "5.5.93",
+  "version": "5.5.95",
   "description": "Lottie is a AE render library for Node.js",
-  "main": "./build/index.js",
+  "main": "./build/lottie_canvas.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/wood9/lottie-node"
