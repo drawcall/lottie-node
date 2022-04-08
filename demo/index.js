@@ -48,8 +48,10 @@ const intLottie = () => {
 
 const testReplaceImage = () => {
   if (i === 4 && j === 4) {
-    const img = path.join(__dirname, './test/data4/image/img.png');
-    anim.replaceAsset('image_1', img);
+    const img1 = path.join(__dirname, './test/data4/image/img1.png');
+    const img2 = path.join(__dirname, './test/data4/image/img2.png');
+    anim.replaceAsset('image_1', img1);
+    anim.replaceAsset('image_6', img2);
   }
 };
 
