@@ -5,7 +5,7 @@ var ShapePropertyFactory = (function () {
     var iterationIndex = caching.lastIndex;
     var keyPropS, keyPropE, isHold, j, k, jLen, kLen, perc, vertexValue;
     var kf = this.keyframes;
-    
+
     if (frameNum < kf[0].t - this.offsetTime) {
       keyPropS = kf[0].s[0];
       isHold = true;
@@ -127,10 +127,12 @@ var ShapePropertyFactory = (function () {
       this._mdf = false;
       return;
     }
+
     if (this.lock) {
       this.setVValue(this.pv);
       return;
     }
+
     this.lock = true;
     this._mdf = false;
     var finalValue = this.kf ? this.pv : this.data.ks ? this.data.ks.k : this.data.pt.k;
@@ -139,6 +141,7 @@ var ShapePropertyFactory = (function () {
     for (i = 0; i < len; i += 1) {
       finalValue = this.effectsSequence[i](finalValue);
     }
+
     this.setVValue(finalValue);
     this.lock = false;
     this.frameId = this.elem.globalData.frameId;
@@ -239,6 +242,7 @@ var ShapePropertyFactory = (function () {
           this.convertEllToPath();
         }
       },
+
       convertEllToPath: function () {
         var p0 = this.p.v[0],
           p1 = this.p.v[1],
@@ -317,12 +321,14 @@ var ShapePropertyFactory = (function () {
         if (this.elem.globalData.frameId === this.frameId) {
           return;
         }
+        
         this.frameId = this.elem.globalData.frameId;
         this.iterateDynamicProperties();
         if (this._mdf) {
           this.convertToPath();
         }
       },
+
       convertStarToPath: function () {
         var numPts = Math.floor(this.pt.v) * 2;
         var angle = (Math.PI * 2) / numPts;
@@ -476,6 +482,7 @@ var ShapePropertyFactory = (function () {
         if (this.elem.globalData.frameId === this.frameId) {
           return;
         }
+
         this.frameId = this.elem.globalData.frameId;
         this.iterateDynamicProperties();
         if (this._mdf) {

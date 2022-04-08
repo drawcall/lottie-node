@@ -57,6 +57,10 @@ CanvasRenderer.prototype.createNull = function (data) {
   return new NullElement(data, this.globalData, this);
 };
 
+CanvasRenderer.prototype.fixNodeZeroBug = function (val) {
+  return val === 0 ? 0.001 : val;
+};
+
 CanvasRenderer.prototype.ctxTransform = function (props) {
   if (props[0] === 1 && props[1] === 0 && props[4] === 0 && props[5] === 1 && props[12] === 0 && props[13] === 0) {
     return;
@@ -90,7 +94,20 @@ CanvasRenderer.prototype.ctxTransform = function (props) {
 
   this.contextData.cTr.cloneFromProps(this.transformMat.props);
   var trProps = this.contextData.cTr.props;
-  this.canvasContext.setTransform(trProps[0], trProps[1], trProps[4], trProps[5], trProps[12], trProps[13]);
+
+  var a, b, c, d, e, f;
+  a = trProps[0];
+  b = trProps[1];
+  c = trProps[4];
+  d = trProps[5];
+  e = trProps[12];
+  f = trProps[13];
+
+  // fix node-canvas setTransform scale zero value bug
+  a = this.fixNodeZeroBug(a);
+  d = this.fixNodeZeroBug(d);
+  //console.log(a, b, c, d, e, f);
+  this.canvasContext.setTransform(a, b, c, d, e, f);
 };
 
 CanvasRenderer.prototype.ctxOpacity = function (op) {
@@ -328,6 +345,8 @@ CanvasRenderer.prototype.renderFrame = function (num, forceRender) {
   for (i = 0; i < len; i++) {
     if (this.completeLayers || this.elements[i]) {
       this.elements[i].prepareFrame(num - this.layers[i].st);
+      // prepareRenderableFrame(frame) - checkLayerLimits - show/hide
+      // prepareProperties(frame, this.isInRange) - dynamicProperties[i].getValue()
     }
   }
 

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html style="width: 100%; height: 100%">
+  <head>
+    <script src="./ppo.min.js"></script>
+    <script src="../../build/player/lottie.js"></script>
+  </head>
+  <body
+    style="
+      background-color: #ccc;
+      margin: 0px;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    "
+    id="con"
+  >
+    <script>
+      const i = ppo.getUrlParam("i") || 1;
+      const j = ppo.getUrlParam("j") || 1;
+      const path = i == 4 ? `data${i}/d${j}/data.json` : `data${i}/d${j}.json`;
+
+      var animData = {
+        wrapper: document.getElementById("con"),
+        animType: "canvas",
+        loop: false,
+        autoplay: true,
+        path: path,
+      };
+      var anim = bodymovin.loadAnimation(animData);
+    </script>
+  </body>
+</html>

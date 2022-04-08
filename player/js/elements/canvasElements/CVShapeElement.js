@@ -305,11 +305,13 @@ CVShapeElement.prototype.drawLayer = function () {
     }
 
     renderer.ctxOpacity(currentStyle.coOp);
+    
     if (type !== 'st' && type !== 'gs') {
       ctx.beginPath();
     }
 
     renderer.ctxTransform(currentStyle.preTransforms.finalTransform.props);
+
     jLen = elems.length;
     for (j = 0; j < jLen; j += 1) {
       if (type === 'st' || type === 'gs') {

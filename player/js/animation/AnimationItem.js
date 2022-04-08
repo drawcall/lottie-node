@@ -84,12 +84,14 @@ AnimationItem.prototype.includeLayers = function (data) {
     this.animationData.op = data.op;
     this.totalFrames = Math.floor(data.op - this.animationData.ip);
   }
+  
   var layers = this.animationData.layers;
   var i,
     len = layers.length;
   var newLayers = data.layers;
   var j,
     jLen = newLayers.length;
+
   for (j = 0; j < jLen; j += 1) {
     i = 0;
     while (i < len) {
@@ -100,6 +102,7 @@ AnimationItem.prototype.includeLayers = function (data) {
       i += 1;
     }
   }
+
   if (data.chars || data.fonts) {
     this.renderer.globalData.fontManager.addChars(data.chars);
     this.renderer.globalData.fontManager.addFonts(data.fonts, this.renderer.globalData.defs);
@@ -110,12 +113,12 @@ AnimationItem.prototype.includeLayers = function (data) {
       this.animationData.assets.push(data.assets[i]);
     }
   }
+
   this.animationData.__complete = false;
   dataManager.completeData(this.animationData, this.renderer.globalData.fontManager);
   this.renderer.includeLayers(data.layers);
-  if (expressionsPlugin) {
-    expressionsPlugin.initExpressions(this);
-  }
+  if (expressionsPlugin) expressionsPlugin.initExpressions(this);
+
   this.loadNextSegment();
 };
 
@@ -126,6 +129,7 @@ AnimationItem.prototype.loadNextSegment = function () {
     this.timeCompleted = this.totalFrames;
     return;
   }
+
   var segment = segments.shift();
   this.timeCompleted = segment.time * this.frameRate;
   var segmentPath = this.path + this.fileName + '_' + this.segmentPos + '.json';
@@ -193,6 +197,7 @@ AnimationItem.prototype.waitForFontsLoaded = function () {
 AnimationItem.prototype.checkLoaded = function () {
   if (!this.isLoaded && this.imagePreloader.loaded()) {
     this.isLoaded = true;
+ 
     dataManager.completeData(this.animationData, this.renderer.globalData.fontManager);
     if (expressionsPlugin) expressionsPlugin.initExpressions(this);
     this.renderer.initItems();
@@ -281,7 +286,7 @@ AnimationItem.prototype.goToAndStop = function (value, isFrame, name) {
   if (name && this.name != name) {
     return;
   }
-  
+
   if (isFrame) {
     this.setCurrentRawFrameAndGoto(value);
   } else {
