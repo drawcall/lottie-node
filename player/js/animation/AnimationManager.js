@@ -43,9 +43,9 @@ var animationManager = (function () {
   }
 
   function setupAnimation(animItem, element) {
-    animItem.addEventListener("destroy", removeElement);
-    animItem.addEventListener("_active", addPlayingCount);
-    animItem.addEventListener("_idle", subtractPlayingCount);
+    animItem.addEventListener('destroy', removeElement);
+    animItem.addEventListener('_active', addPlayingCount);
+    animItem.addEventListener('_idle', subtractPlayingCount);
     registeredAnimations.push({ elem: element, animation: animItem });
     len += 1;
   }
@@ -83,7 +83,6 @@ var animationManager = (function () {
     for (i = 0; i < len; i += 1) {
       registeredAnimations[i].animation.advanceTime(elapsedTime);
     }
-    
     initTime = nowTime;
     if (playingAnimationsNum && !_isFrozen) {
       global.requestAnimationFrame(resume);
@@ -142,7 +141,7 @@ var animationManager = (function () {
   function activate() {
     if (!_isFrozen && playingAnimationsNum) {
       if (_stopped) {
-        global.requestAnimationFrame(first);
+        //global.requestAnimationFrame(first);
         _stopped = false;
       }
     }

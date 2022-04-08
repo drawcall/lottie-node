@@ -1,26 +1,30 @@
 {
   "name": "lottie-nodejs",
-  "version": "6.0.6",
-  "description": "After Effects plugin for exporting animations to SVG + JavaScript or canvas + JavaScript",
-  "main": "./build/player/lottie_canvas.js",
+  "version": "5.5.9",
+  "description": "Lottie is a AE render library for Node.js",
+  "main": "./build/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/wood9/lottie-node"
   },
   "scripts": {
-    "build": "node tasks/build.js"
+    "build": "node tasks/build.js",
+    "demo": "node demo/",
+    "watch": "node tasks/watch.js"
   },
   "keywords": [
     "animation",
     "canvas",
-    "svg",
     "after effects",
     "plugin",
     "export"
   ],
   "devDependencies": {
+    "canvas": "^2.9.1",
+    "fs-extra": "^10.0.1",
     "cheerio": "^1.0.0-rc.2",
-    "uglify-js": "^3.4.9"
+    "watch": "^1.0.2"
   },
+  "types": "./index.d.ts",
   "license": "MIT"
 }

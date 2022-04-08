@@ -1,11 +1,7 @@
 function CVSolidElement(data, globalData, comp) {
   this.initElement(data, globalData, comp);
 }
-
-extendPrototype(
-  [BaseElement, TransformElement, CVBaseElement, HierarchyElement, FrameElement, RenderableElement],
-  CVSolidElement
-);
+extendPrototype([BaseElement, TransformElement, CVBaseElement, HierarchyElement, FrameElement, RenderableElement], CVSolidElement);
 
 CVSolidElement.prototype.initElement = SVGShapeElement.prototype.initElement;
 CVSolidElement.prototype.prepareFrame = IImageElement.prototype.prepareFrame;

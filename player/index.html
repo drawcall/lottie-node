@@ -67,10 +67,7 @@
     <script src="js/utils/pooling/segments_length_pool.js"></script>
     <script src="js/utils/pooling/bezier_length_pool.js"></script>
     <script src="js/renderers/BaseRenderer.js"></script>
-    <script src="js/renderers/SVGRenderer.js"></script>
     <script src="js/renderers/CanvasRenderer.js" data-builds="full,canvas,canvas_light"></script>
-    <script src="js/renderers/HybridRenderer.js" data-builds="full,html,html_light"></script>
-    <script src="js/mask.js"></script>
     <script src="js/elements/helpers/HierarchyElement.js"></script>
     <script src="js/elements/helpers/FrameElement.js"></script>
     <script src="js/elements/helpers/TransformElement.js"></script>
@@ -101,6 +98,7 @@
     <script src="js/elements/svgElements/SVGShapeElement.js"></script>
     <script src="js/elements/svgElements/effects/SVGTintEffect.js" data-builds="full,svg,svg_light,html,html_light"></script>
     <script src="js/elements/svgElements/effects/SVGFillFilter.js" data-builds="full,svg,svg_light,html,html_light"></script>
+    <script src="js/elements/svgElements/effects/SVGGaussianBlurEffect.js" data-builds="full,svg,svg_light,html,html_light"></script>
     <script src="js/elements/svgElements/effects/SVGStrokeEffect.js" data-builds="full,svg,svg_light,html,html_light"></script>
     <script src="js/elements/svgElements/effects/SVGTritoneFilter.js" data-builds="full,svg,svg_light,html,html_light"></script>
     <script src="js/elements/svgElements/effects/SVGProLevelsFilter.js" data-builds="full,svg,svg_light,html,html_light"></script>
@@ -116,19 +114,12 @@
     <script src="js/elements/canvasElements/CVSolidElement.js" data-builds="full,canvas,canvas_light"></script>
     <script src="js/elements/canvasElements/CVTextElement.js" data-builds="full,canvas,canvas_light"></script>
     <script src="js/elements/canvasElements/CVEffects.js" data-builds="full,canvas,canvas_light,html,html_light"></script>
-    <script src="js/elements/htmlElements/HBaseElement.js" data-builds="full,html,html_light"></script>
-    <script src="js/elements/htmlElements/HSolidElement.js" data-builds="full,html,html_light"></script>
-    <script src="js/elements/htmlElements/HCompElement.js" data-builds="full,html,html_light"></script>
-    <script src="js/elements/htmlElements/HShapeElement.js" data-builds="full,html,html_light"></script>
-    <script src="js/elements/htmlElements/HTextElement.js" data-builds="full,html,html_light"></script>
-    <script src="js/elements/htmlElements/HImageElement.js" data-builds="full,html,html_light"></script>
-    <script src="js/elements/htmlElements/HCameraElement.js" data-builds="full,html,html_light"></script>
-    <script src="js/elements/htmlElements/HEffects.js" data-builds="full,html,html_light"></script>
     <script src="js/animation/AnimationManager.js"></script>
     <script src="js/animation/AnimationItem.js"></script>
     <!-- Expressions -->
     <script src="js/utils/expressions/Expressions.js" data-builds="full,svg,canvas,html"></script>
     <script src="js/utils/expressions/ExpressionManager.js" data-builds="full,svg,canvas,html"></script>
+    <script src="js/utils/expressions/expressionHelpers.js" data-builds="full,svg,canvas,html"></script>
     <script src="js/utils/expressions/ExpressionPropertyDecorator.js" data-builds="full,svg,canvas,html"></script>
     <script src="js/utils/expressions/ExpressionTextPropertyDecorator.js" data-builds="full,svg,canvas,html"></script>
     <script src="js/utils/expressions/ShapeInterface.js" data-builds="full,svg,canvas,html"></script>
@@ -140,6 +131,7 @@
     <script src="js/utils/expressions/EffectInterface.js" data-builds="full,svg,canvas,html"></script>
     <script src="js/utils/expressions/MaskInterface.js" data-builds="full,svg,canvas,html"></script>
     <script src="js/utils/expressions/ExpressionValueFactory.js" data-builds="full,svg,canvas,html"></script>
+    <script src="js/utils/expressions/TextSelectorPropertyDecorator.js" data-builds="full,svg,canvas,html"></script>
     <script src="js/effects/SliderEffect.js" data-builds="full,svg,canvas,html"></script>
     <script src="js/effects/EffectsManagerPlaceholder.js" ></script>
     <script src="js/EffectsManager.js" data-builds="full,svg,canvas,html"></script>
@@ -160,27 +152,28 @@
     var elem = document.getElementById('lottie');
     var animData = {
         container: elem,
-        renderer: 'svg',
-        loop: true,
+        renderer: 'canvas',
+        loop: false,
         autoplay: true,
         rendererSettings: {
             progressiveLoad:true,
             preserveAspectRatio: 'xMidYMid meet',
-            imagePreserveAspectRatio: 'xMidYMid meet'
+            imagePreserveAspectRatio: 'xMidYMid meet',
+            title: 'TEST TITLE',
+            description: 'TEST DESCRIPTION',
         },
         path: 'exports/render/data.json'
     };
     // lottie.setQuality('low');
-    setTimeout(()=>{
-        anim = lottie.loadAnimation(animData);
-        anim.setSubframe(false);
+    anim = lottie.loadAnimation(animData);
+    anim.setSubframe(false);
+    anim.onError = function(errorType, nativeError, errorProps) {
+        console.log(errorType)
+    }
 
-        setTimeout(()=>{
-            // anim.goToAndStop(10, true);
-            
-        },0)
-        
-    },0)
+    anim.addEventListener('error', function(error) {
+        console.log(error)
+    })
 
 </script>
 </body>

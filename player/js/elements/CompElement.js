@@ -14,6 +14,7 @@ ICompElement.prototype.initElement = function (data, globalData, comp) {
   if (this.data.xt || !globalData.progressiveLoad) {
     this.buildAllItems();
   }
+
   this.hide();
 };
 
@@ -21,9 +22,8 @@ ICompElement.prototype.prepareFrame = function (num) {
   this._mdf = false;
   this.prepareRenderableFrame(num);
   this.prepareProperties(num, this.isInRange);
-  if (!this.isInRange && !this.data.xt) {
-    return;
-  }
+  
+  if (!this.isInRange && !this.data.xt) return;
 
   if (!this.tm._placeholder) {
     var timeRemapped = this.tm.v;
@@ -34,14 +34,15 @@ ICompElement.prototype.prepareFrame = function (num) {
   } else {
     this.renderedFrame = num / this.data.sr;
   }
-  
+
   var i,
     len = this.elements.length;
+
   if (!this.completeLayers) {
     this.checkLayers(this.renderedFrame);
   }
-
-  //This iteration needs to be backwards because of how expressions connect between each other
+  
+  // 由于表达式彼此之间的连接方式，此迭代需要向后进行
   for (i = len - 1; i >= 0; i -= 1) {
     if (this.completeLayers || this.elements[i]) {
       this.elements[i].prepareFrame(this.renderedFrame - this.layers[i].st);

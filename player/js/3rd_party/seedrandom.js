@@ -30,7 +30,7 @@
     width = 256, // each RC4 output is 0 <= x < 256
     chunks = 6, // at least six RC4 outputs for each double
     digits = 52, // there are 52 significant digits in a double
-    rngname = "random", // rngname: name for Math.random and Math.seedrandom
+    rngname = 'random', // rngname: name for Math.random and Math.seedrandom
     startdenom = math.pow(width, chunks),
     significance = math.pow(2, digits),
     overflow = significance * 2,
@@ -46,10 +46,7 @@
     options = options === true ? { entropy: true } : options || {};
 
     // Flatten the seed string or build one from local entropy if needed.
-    var shortseed = mixkey(
-      flatten(options.entropy ? [seed, tostring(pool)] : seed === null ? autoseed() : seed, 3),
-      key
-    );
+    var shortseed = mixkey(flatten(options.entropy ? [seed, tostring(pool)] : seed === null ? autoseed() : seed, 3), key);
 
     // Use the seed to initialize an ARC4 generator.
     var arc4 = new ARC4(key);
@@ -113,9 +110,9 @@
         // prng directly.
         else return prng;
       }
-    )(prng, shortseed, "global" in options ? options.global : this == math, options.state);
+    )(prng, shortseed, 'global' in options ? options.global : this == math, options.state);
   }
-  math["seed" + rngname] = seedrandom;
+  math['seed' + rngname] = seedrandom;
 
   //
   // ARC4
@@ -189,14 +186,14 @@
     var result = [],
       typ = typeof obj,
       prop;
-    if (depth && typ == "object") {
+    if (depth && typ == 'object') {
       for (prop in obj) {
         try {
           result.push(flatten(obj[prop], depth - 1));
         } catch (e) {}
       }
     }
-    return result.length ? result : typ == "string" ? obj : obj + "\0";
+    return result.length ? result : typ == 'string' ? obj : obj + '\0';
   }
 
   //
@@ -205,7 +202,7 @@
   // returns a shortened string seed that is equivalent to the result key.
   //
   function mixkey(seed, key) {
-    var stringseed = seed + "",
+    var stringseed = seed + '',
       smear,
       j = 0;
     while (j < stringseed.length) {

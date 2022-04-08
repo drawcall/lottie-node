@@ -1,4 +1,5 @@
 function createTag(type) {
+  
   switch (type) {
     case "img":
     case "image":

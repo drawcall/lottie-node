@@ -1,4 +1,3 @@
 function createNS(type) {
-	//return {appendChild:function(){},setAttribute:function(){},style:{}}
-	return document.createElementNS(svgNS, type);
+	return new lottiejs.canvas.Canvas(50, 50);
 }

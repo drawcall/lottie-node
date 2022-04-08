@@ -4,6 +4,7 @@ BaseRenderer.prototype.checkLayers = function (num) {
     len = this.layers.length,
     data;
   this.completeLayers = true;
+
   for (i = len - 1; i >= 0; i--) {
     if (!this.elements[i]) {
       data = this.layers[i];
@@ -13,9 +14,16 @@ BaseRenderer.prototype.checkLayers = function (num) {
     }
     this.completeLayers = this.elements[i] ? this.completeLayers : false;
   }
+
   this.checkPendingElements();
 };
 
+// 2: image，图片
+// 0: comp，合成图层
+// 1: solid;
+// 3: null;
+// 4: shape，形状图层
+// 5: text，文字
 BaseRenderer.prototype.createItem = function (layer) {
   switch (layer.ty) {
     case 2:
@@ -33,6 +41,7 @@ BaseRenderer.prototype.createItem = function (layer) {
     case 13:
       return this.createCamera(layer);
   }
+
   return this.createNull(layer);
 };
 
@@ -116,10 +125,10 @@ BaseRenderer.prototype.searchExtraCompositions = function (assets) {
   }
 };
 
-BaseRenderer.prototype.setupGlobalData = function (animData) {
+BaseRenderer.prototype.setupGlobalData = function (animData, fontsContainer) {
   this.globalData.fontManager = new FontManager();
   this.globalData.fontManager.addChars(animData.chars);
-  //this.globalData.fontManager.addFonts(animData.fonts, fontsContainer);
+  this.globalData.fontManager.addFonts(animData.fonts, fontsContainer);
   this.globalData.getAssetData = this.animationItem.getAssetData.bind(this.animationItem);
   this.globalData.getAssetsPath = this.animationItem.getAssetsPath.bind(this.animationItem);
   this.globalData.imageLoader = this.animationItem.imagePreloader;

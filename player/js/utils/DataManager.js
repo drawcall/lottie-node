@@ -5,15 +5,18 @@ function dataFunctionManager() {
     var i,
       len = layers.length;
     var j, jLen, k, kLen;
+
     for (i = 0; i < len; i += 1) {
       layerData = layers[i];
-      if (!("ks" in layerData) || layerData.completed) {
+      if (!('ks' in layerData) || layerData.completed) {
         continue;
       }
+
       layerData.completed = true;
       if (layerData.tt) {
         layers[i - 1].td = layerData.tt;
       }
+
       animArray = [];
       lastFrame = -1;
       if (layerData.hasMask) {
@@ -35,6 +38,7 @@ function dataFunctionManager() {
           }
         }
       }
+
       if (layerData.ty === 0) {
         layerData.layers = findCompLayers(layerData.refId, comps);
         completeLayers(layerData.layers, comps, fontManager);
@@ -66,8 +70,9 @@ function dataFunctionManager() {
       len = arr.length;
     var j, jLen;
     var hasPaths = false;
+
     for (i = len - 1; i >= 0; i -= 1) {
-      if (arr[i].ty == "sh") {
+      if (arr[i].ty == 'sh') {
         if (arr[i].ks.k.i) {
           convertPathsToAbsoluteValues(arr[i].ks.k);
         } else {
@@ -82,22 +87,10 @@ function dataFunctionManager() {
           }
         }
         hasPaths = true;
-      } else if (arr[i].ty == "gr") {
+      } else if (arr[i].ty == 'gr') {
         completeShapes(arr[i].it);
       }
     }
-    /*if(hasPaths){
-            //mx: distance
-            //ss: sensitivity
-            //dc: decay
-            arr.splice(arr.length-1,0,{
-                "ty": "ms",
-                "mx":20,
-                "ss":10,
-                 "dc":0.001,
-                "maxDist":200
-            });
-        }*/
   }
 
   function convertPathsToAbsoluteValues(path) {
@@ -111,8 +104,9 @@ function dataFunctionManager() {
     }
   }
 
-  function checkVersion(minimum, animVersionString) {
-    var animVersion = animVersionString ? animVersionString.split(".") : [100, 100, 100];
+  function checkVersion(minimum, animVersionString) { 
+    var animVersion = animVersionString ? animVersionString.split('.') : [100, 100, 100];
+  
     if (minimum[0] > animVersion[0]) {
       return true;
     } else if (animVersion[0] > minimum[0]) {
@@ -181,6 +175,7 @@ function dataFunctionManager() {
           jLen,
           k,
           kLen;
+
         var pathData, paths;
         for (i = 0; i < len; i += 1) {
           if (animationData.chars[i].data && animationData.chars[i].data.shapes) {
@@ -207,10 +202,11 @@ function dataFunctionManager() {
       var i,
         len = shapes.length;
       var j, jLen;
+
       for (i = 0; i < len; i += 1) {
-        if (shapes[i].ty === "gr") {
+        if (shapes[i].ty === 'gr') {
           iterateShapes(shapes[i].it);
-        } else if (shapes[i].ty === "fl" || shapes[i].ty === "st") {
+        } else if (shapes[i].ty === 'fl' || shapes[i].ty === 'st') {
           if (shapes[i].c.k && shapes[i].c.k[0].i) {
             jLen = shapes[i].c.k.length;
             for (j = 0; j < jLen; j += 1) {
@@ -271,8 +267,9 @@ function dataFunctionManager() {
         len = arr.length;
       var j, jLen;
       var hasPaths = false;
+
       for (i = len - 1; i >= 0; i -= 1) {
-        if (arr[i].ty == "sh") {
+        if (arr[i].ty == 'sh') {
           if (arr[i].ks.k.i) {
             arr[i].ks.k.c = arr[i].closed;
           } else {
@@ -287,7 +284,7 @@ function dataFunctionManager() {
             }
           }
           hasPaths = true;
-        } else if (arr[i].ty == "gr") {
+        } else if (arr[i].ty == 'gr') {
           completeShapes(arr[i].it);
         }
       }
@@ -345,6 +342,7 @@ function dataFunctionManager() {
     if (animationData.__complete) {
       return;
     }
+
     checkColors(animationData);
     checkText(animationData);
     checkChars(animationData);
@@ -355,7 +353,7 @@ function dataFunctionManager() {
   }
 
   function completeText(data, fontManager) {
-    if (data.t.a.length === 0 && !("m" in data.t.p)) {
+    if (data.t.a.length === 0 && !('m' in data.t.p)) {
       data.singleShape = true;
     }
   }

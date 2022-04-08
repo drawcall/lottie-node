@@ -8,12 +8,12 @@ function CVTextElement(data, globalData, comp) {
   this.fill = false;
   this.justifyOffset = 0;
   this.currentRender = null;
-  this.renderType = "canvas";
+  this.renderType = 'canvas';
   this.values = {
-    fill: "rgba(0,0,0,0)",
-    stroke: "rgba(0,0,0,0)",
+    fill: 'rgba(0,0,0,0)',
+    stroke: 'rgba(0,0,0,0)',
     sWidth: 0,
-    fValue: "",
+    fValue: '',
   };
   this.initElement(data, globalData, comp);
 }
@@ -22,7 +22,7 @@ extendPrototype(
   CVTextElement
 );
 
-CVTextElement.prototype.tHelper = () => createTag("canvas").getContext("2d");
+CVTextElement.prototype.tHelper = () => createTag('canvas').getContext('2d');
 
 CVTextElement.prototype.buildNewText = function () {
   var documentData = this.textProperty.currentData;
@@ -33,7 +33,7 @@ CVTextElement.prototype.buildNewText = function () {
     hasFill = true;
     this.values.fill = this.buildColor(documentData.fc);
   } else {
-    this.values.fill = "rgba(0,0,0,0)";
+    this.values.fill = 'rgba(0,0,0,0)';
   }
   this.fill = hasFill;
   var hasStroke = false;
@@ -47,10 +47,9 @@ CVTextElement.prototype.buildNewText = function () {
   var letters = documentData.l;
   var matrixHelper = this.mHelper;
   this.stroke = hasStroke;
-  this.values.fValue =
-    documentData.finalSize + "px " + this.globalData.fontManager.getFontByName(documentData.f).fFamily;
+  this.values.fValue = documentData.finalSize + 'px ' + this.globalData.fontManager.getFontByName(documentData.f).fFamily;
   len = documentData.finalText.length;
-
+  //this.tHelper.font = this.values.fValue;
   var charData,
     shapeData,
     k,
@@ -136,8 +135,8 @@ CVTextElement.prototype.renderInnerContent = function () {
   var ctx = this.canvasContext;
   var finalMat = this.finalTransform.mat.props;
   ctx.font = this.values.fValue;
-  ctx.lineCap = "butt";
-  ctx.lineJoin = "miter";
+  ctx.lineCap = 'butt';
+  ctx.lineJoin = 'miter';
   ctx.miterLimit = 4;
 
   if (!this.data.singleShape) {

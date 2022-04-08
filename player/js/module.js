@@ -9,11 +9,10 @@
     root.lottie = factory(root);
     root.bodymovin = root.lottie;
   }
-})({}, function () {
+})(global || {}, function (global) {
   "use strict";
   /*<%= contents %>*/
   var lottiejs = {};
-
   var _isFrozen = false;
 
   function setLocationHref(href) {
@@ -89,12 +88,8 @@
   lottiejs.loadAnimation = loadAnimation;
   lottiejs.setSubframeRendering = setSubframeRendering;
   lottiejs.resize = animationManager.resize;
-
   lottiejs.goToAndStop = animationManager.goToAndStop;
-  lottiejs.destroy = function () {
-    lottiejs.canvas = null;
-    animationManager.destroy();
-  };
+  lottiejs.destroy = animationManager.destroy;
   lottiejs.setQuality = setQuality;
   lottiejs.inBrowser = inBrowser;
   lottiejs.installPlugin = installPlugin;
@@ -102,11 +97,11 @@
   lottiejs.unfreeze = animationManager.unfreeze;
   lottiejs.getRegisteredAnimations = animationManager.getRegisteredAnimations;
   lottiejs.__getFactory = getFactory;
-
   lottiejs.version = "[[BM_VERSION]]";
+
   var standalone = "__[STANDALONE]__";
   var animationData = "__[ANIMATIONDATA]__";
   var renderer = "";
-
+  
   return lottiejs;
 });

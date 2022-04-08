@@ -11,19 +11,23 @@ RenderableElement.prototype = {
     //list of animated components
     this.renderableComponents = [];
   },
+
   addRenderableComponent: function (component) {
     if (this.renderableComponents.indexOf(component) === -1) {
       this.renderableComponents.push(component);
     }
   },
+
   removeRenderableComponent: function (component) {
     if (this.renderableComponents.indexOf(component) !== -1) {
       this.renderableComponents.splice(this.renderableComponents.indexOf(component), 1);
     }
   },
+
   prepareRenderableFrame: function (num) {
     this.checkLayerLimits(num);
   },
+
   checkTransparency: function () {
     if (this.finalTransform.mProp.o.v <= 0) {
       if (!this.isTransparent && this.globalData.renderConfig.hideOnTransparent) {
@@ -36,15 +40,9 @@ RenderableElement.prototype = {
     }
   },
 
-  /**
-   * @function
-   * Initializes frame related properties.
-   *
-   * @param {number} num
-   * current frame number in Layer's time
-   *
-   */
   checkLayerLimits: function (num) {
+    // ip-开始帧 | st-开始时间 | op-持续帧长
+    // [a-num-b]
     if (this.data.ip - this.data.st <= num && this.data.op - this.data.st > num) {
       if (this.isInRange !== true) {
         this.globalData._mdf = true;
@@ -68,6 +66,7 @@ RenderableElement.prototype = {
       this.renderableComponents[i].renderFrame(this._isFirstFrame);
     }
   },
+
   sourceRectAtTime: function () {
     return {
       top: 0,
@@ -76,6 +75,7 @@ RenderableElement.prototype = {
       height: 100,
     };
   },
+  
   getLayerSize: function () {
     if (this.data.ty === 5) {
       return { w: this.data.textData.width, h: this.data.textData.height };

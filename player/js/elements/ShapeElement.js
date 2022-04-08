@@ -8,6 +8,7 @@ IShapeElement.prototype = {
       this.shapeModifiers[i].addShape(data);
     }
   },
+
   isShapeInAnimatedModifiers: function (data) {
     var i = 0,
       len = this.shapeModifiers.length;
@@ -18,10 +19,12 @@ IShapeElement.prototype = {
     }
     return false;
   },
+
   renderModifiers: function () {
     if (!this.shapeModifiers.length) {
       return;
     }
+    
     var i,
       len = this.shapes.length;
     for (i = 0; i < len; i += 1) {
@@ -33,16 +36,18 @@ IShapeElement.prototype = {
       this.shapeModifiers[i].processShapes(this._isFirstFrame);
     }
   },
+
   lcEnum: {
-    1: "butt",
-    2: "round",
-    3: "square",
+    1: 'butt',
+    2: 'round',
+    3: 'square',
   },
   ljEnum: {
-    1: "miter",
-    2: "round",
-    3: "bevel",
+    1: 'miter',
+    2: 'round',
+    3: 'bevel',
   },
+  
   searchProcessedElement: function (elem) {
     var elements = this.processedElements;
     var i = 0,
@@ -55,6 +60,7 @@ IShapeElement.prototype = {
     }
     return 0;
   },
+  
   addProcessedElement: function (elem, pos) {
     var elements = this.processedElements;
     var i = elements.length;
