@@ -13,7 +13,6 @@
   "use strict";
   /*<%= contents %>*/
   var lottiejs = {};
-
   var _isFrozen = false;
 
   function setLocationHref(href) {
