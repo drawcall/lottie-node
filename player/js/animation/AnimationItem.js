@@ -1,4 +1,5 @@
 const lottieApi = require('lottie-api');
+
 var AnimationItem = function () {
   this._cbs = [];
   this.name = '';
@@ -12,18 +13,21 @@ var AnimationItem = function () {
   this.playSpeed = 1;
   this.playDirection = 1;
   this.playCount = 0;
+  this.isLoadNow = true;
+
   this.animationData = {};
   this.assets = [];
+  this.segments = [];
   this.isPaused = true;
   this.autoplay = false;
   this.loop = true;
+  this.params = null;
   this.renderer = null;
-  this.animationID = createElementID();
   this.assetsPath = '';
   this.timeCompleted = 0;
   this.segmentPos = 0;
+  this.animationID = createElementID();
   this.subframeEnabled = subframeEnabled;
-  this.segments = [];
   this._idle = true;
   this._completedLoop = false;
   this.projectInterface = ProjectInterface();
@@ -33,13 +37,10 @@ var AnimationItem = function () {
 extendPrototype([BaseEvent], AnimationItem);
 
 AnimationItem.prototype.setParams = function (params) {
-  if (params.context) {
-    this.context = params.context;
-  }
+  if (params.context) this.context = params.context;
 
-  if (params.wrapper || params.container) {
-    this.wrapper = params.wrapper || params.container;
-  }
+  this.wrapper = params.wrapper || params.container || params.canvas;
+  this.params = params;
 
   var animType = 'canvas';
   this.renderer = new CanvasRenderer(this, params.rendererSettings);
@@ -78,6 +79,18 @@ AnimationItem.prototype.setParams = function (params) {
         this.trigger('data_failed');
       }.bind(this)
     );
+  }
+};
+
+AnimationItem.prototype.loadNow = function () {
+  try {
+    this.preloadImages();
+    this.loadSegments();
+    this.updaFrameModifier();
+    this.waitForFontsLoaded();
+    this.setupApi();
+  } catch (err) {
+    console.error(err);
   }
 };
 
@@ -164,10 +177,15 @@ AnimationItem.prototype.preloadImages = function () {
   this.imagePreloader.loadAssets(this.animationData.assets, this.imagesLoaded.bind(this));
 };
 
-AnimationItem.prototype.replaceAsset = function (id, path) {
+AnimationItem.prototype.replaceAsset = function (id, path, local = true) {
   const data = this.animationData;
   const asset = data.assets.find((a) => a.id === id);
-  if (asset) asset.p = path;
+
+  if (asset) {
+    asset.u = '';
+    asset.p = path;
+    asset.e = local;
+  }
 };
 
 AnimationItem.prototype.replaceText = function (target, txt) {
@@ -188,9 +206,7 @@ AnimationItem.prototype.configAnimation = function (animData) {
     this.animationData = animData;
     this.totalFrames = Math.floor(this.animationData.op - this.animationData.ip);
     this.renderer.configAnimation(animData);
-    if (!animData.assets) {
-      animData.assets = [];
-    }
+    if (!animData.assets) animData.assets = [];
 
     this.assets = this.animationData.assets;
     this.frameRate = this.animationData.fr;
@@ -198,11 +214,7 @@ AnimationItem.prototype.configAnimation = function (animData) {
     this.frameMult = this.animationData.fr / 1000;
     this.renderer.searchExtraCompositions(animData.assets);
     this.trigger('config_ready');
-    this.preloadImages();
-    this.loadSegments();
-    this.updaFrameModifier();
-    this.waitForFontsLoaded();
-    this.setupApi();
+    if (this.isLoadNow) this.loadNow();
   } catch (error) {
     console.error(error);
     this.triggerConfigError(error);
@@ -462,12 +474,17 @@ AnimationItem.prototype.destroy = function (name) {
   if ((name && this.name != name) || !this.renderer) {
     return;
   }
+
   this.renderer.destroy();
   this.imagePreloader.destroy();
   this.trigger('destroy');
-  this._cbs = null;
+
   this.onEnterFrame = this.onLoopComplete = this.onComplete = this.onSegmentStart = this.onDestroy = null;
   this.renderer = null;
+  this.imagePreloader = null;
+  this.animationData = null;
+  this.params = null;
+  this._cbs = null;
 };
 
 AnimationItem.prototype.setCurrentRawFrameAndGoto = function (value) {

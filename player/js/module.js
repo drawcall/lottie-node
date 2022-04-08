@@ -1,16 +1,16 @@
 (function (root, factory) {
-  if (typeof define === "function" && define.amd) {
+  if (typeof define === 'function' && define.amd) {
     define(function () {
       return factory(root);
     });
-  } else if (typeof module === "object" && module.exports) {
+  } else if (typeof module === 'object' && module.exports) {
     module.exports = factory(root);
   } else {
     root.lottie = factory(root);
     root.bodymovin = root.lottie;
   }
 })(global || {}, function (global) {
-  "use strict";
+  'use strict';
   /*<%= contents %>*/
   var lottiejs = {};
   var _isFrozen = false;
@@ -23,23 +23,20 @@
     subframeEnabled = flag;
   }
 
-  function loadAnimation(params) {
-    if (standalone === true) {
-      params.animationData = JSON.parse(animationData);
-    }
-    return animationManager.loadAnimation(params);
+  function loadAnimation(params, isLoadNow) {
+    return animationManager.loadAnimation(params, isLoadNow);
   }
 
   function setQuality(value) {
-    if (typeof value === "string") {
+    if (typeof value === 'string') {
       switch (value) {
-        case "high":
+        case 'high':
           defaultCurveSegments = 200;
           break;
-        case "medium":
+        case 'medium':
           defaultCurveSegments = 50;
           break;
-        case "low":
+        case 'low':
           defaultCurveSegments = 10;
           break;
       }
@@ -58,18 +55,18 @@
   }
 
   function installPlugin(type, plugin) {
-    if (type === "expressions") {
+    if (type === 'expressions') {
       expressionsPlugin = plugin;
     }
   }
 
   function getFactory(name) {
     switch (name) {
-      case "propertyFactory":
+      case 'propertyFactory':
         return PropertyFactory;
-      case "shapePropertyFactory":
+      case 'shapePropertyFactory':
         return ShapePropertyFactory;
-      case "matrix":
+      case 'matrix':
         return Matrix;
     }
   }
@@ -97,11 +94,11 @@
   lottiejs.unfreeze = animationManager.unfreeze;
   lottiejs.getRegisteredAnimations = animationManager.getRegisteredAnimations;
   lottiejs.__getFactory = getFactory;
-  lottiejs.version = "[[BM_VERSION]]";
+  lottiejs.version = '[[BM_VERSION]]';
 
-  var standalone = "__[STANDALONE]__";
-  var animationData = "__[ANIMATIONDATA]__";
-  var renderer = "";
-  
+  var standalone = '__[STANDALONE]__';
+  var animationData = '__[ANIMATIONDATA]__';
+  var renderer = '';
+
   return lottiejs;
 });

@@ -1,16 +1,16 @@
 (function (root, factory) {
-  if (typeof define === "function" && define.amd) {
+  if (typeof define === 'function' && define.amd) {
     define(function () {
       return factory(root);
     });
-  } else if (typeof module === "object" && module.exports) {
+  } else if (typeof module === 'object' && module.exports) {
     module.exports = factory(root);
   } else {
     root.lottie = factory(root);
     root.bodymovin = root.lottie;
   }
 })(global || {}, function (global) {
-  "use strict";
+  'use strict';
   var svgNS = 'http://www.w3.org/2000/svg';
 var locationHref = '';
 var initialDefaultFrame = -999999;
@@ -4150,6 +4150,7 @@ var ImagePreloader = (function () {
       path += assetData.u ? assetData.u : "";
       path += assetData.p;
     }
+
     return path;
   }
 
@@ -4157,7 +4158,7 @@ var ImagePreloader = (function () {
     var path = getAssetsPath(assetData, this.assetsPath, this.path);
     var img = createTag("img");
     img.src = path;
-
+    
     var ob = {
       img: img,
       assetData: assetData,
@@ -8673,10 +8674,12 @@ var animationManager = (function () {
     len += 1;
   }
 
-  function loadAnimation(params) {
+  function loadAnimation(params, isLoadNow = true) {
     var animItem = new AnimationItem();
     setupAnimation(animItem, null);
+    animItem.isLoadNow = isLoadNow;
     animItem.setParams(params);
+
     return animItem;
   }
 
@@ -8797,6 +8800,7 @@ var animationManager = (function () {
 })();
 
 const lottieApi = require('lottie-api');
+
 var AnimationItem = function () {
   this._cbs = [];
   this.name = '';
@@ -8810,18 +8814,21 @@ var AnimationItem = function () {
   this.playSpeed = 1;
   this.playDirection = 1;
   this.playCount = 0;
+  this.isLoadNow = true;
+
   this.animationData = {};
   this.assets = [];
+  this.segments = [];
   this.isPaused = true;
   this.autoplay = false;
   this.loop = true;
+  this.params = null;
   this.renderer = null;
-  this.animationID = createElementID();
   this.assetsPath = '';
   this.timeCompleted = 0;
   this.segmentPos = 0;
+  this.animationID = createElementID();
   this.subframeEnabled = subframeEnabled;
-  this.segments = [];
   this._idle = true;
   this._completedLoop = false;
   this.projectInterface = ProjectInterface();
@@ -8831,13 +8838,10 @@ var AnimationItem = function () {
 extendPrototype([BaseEvent], AnimationItem);
 
 AnimationItem.prototype.setParams = function (params) {
-  if (params.context) {
-    this.context = params.context;
-  }
+  if (params.context) this.context = params.context;
 
-  if (params.wrapper || params.container) {
-    this.wrapper = params.wrapper || params.container;
-  }
+  this.wrapper = params.wrapper || params.container || params.canvas;
+  this.params = params;
 
   var animType = 'canvas';
   this.renderer = new CanvasRenderer(this, params.rendererSettings);
@@ -8876,6 +8880,18 @@ AnimationItem.prototype.setParams = function (params) {
         this.trigger('data_failed');
       }.bind(this)
     );
+  }
+};
+
+AnimationItem.prototype.loadNow = function () {
+  try {
+    this.preloadImages();
+    this.loadSegments();
+    this.updaFrameModifier();
+    this.waitForFontsLoaded();
+    this.setupApi();
+  } catch (err) {
+    console.error(err);
   }
 };
 
@@ -8962,10 +8978,15 @@ AnimationItem.prototype.preloadImages = function () {
   this.imagePreloader.loadAssets(this.animationData.assets, this.imagesLoaded.bind(this));
 };
 
-AnimationItem.prototype.replaceAsset = function (id, path) {
+AnimationItem.prototype.replaceAsset = function (id, path, local = true) {
   const data = this.animationData;
   const asset = data.assets.find((a) => a.id === id);
-  if (asset) asset.p = path;
+
+  if (asset) {
+    asset.u = '';
+    asset.p = path;
+    asset.e = local;
+  }
 };
 
 AnimationItem.prototype.replaceText = function (target, txt) {
@@ -8986,9 +9007,7 @@ AnimationItem.prototype.configAnimation = function (animData) {
     this.animationData = animData;
     this.totalFrames = Math.floor(this.animationData.op - this.animationData.ip);
     this.renderer.configAnimation(animData);
-    if (!animData.assets) {
-      animData.assets = [];
-    }
+    if (!animData.assets) animData.assets = [];
 
     this.assets = this.animationData.assets;
     this.frameRate = this.animationData.fr;
@@ -8996,11 +9015,7 @@ AnimationItem.prototype.configAnimation = function (animData) {
     this.frameMult = this.animationData.fr / 1000;
     this.renderer.searchExtraCompositions(animData.assets);
     this.trigger('config_ready');
-    this.preloadImages();
-    this.loadSegments();
-    this.updaFrameModifier();
-    this.waitForFontsLoaded();
-    this.setupApi();
+    if (this.isLoadNow) this.loadNow();
   } catch (error) {
     console.error(error);
     this.triggerConfigError(error);
@@ -9260,12 +9275,17 @@ AnimationItem.prototype.destroy = function (name) {
   if ((name && this.name != name) || !this.renderer) {
     return;
   }
+
   this.renderer.destroy();
   this.imagePreloader.destroy();
   this.trigger('destroy');
-  this._cbs = null;
+
   this.onEnterFrame = this.onLoopComplete = this.onComplete = this.onSegmentStart = this.onDestroy = null;
   this.renderer = null;
+  this.imagePreloader = null;
+  this.animationData = null;
+  this.params = null;
+  this._cbs = null;
 };
 
 AnimationItem.prototype.setCurrentRawFrameAndGoto = function (value) {
@@ -11899,23 +11919,20 @@ GroupEffect.prototype.init = function (data, element) {
     subframeEnabled = flag;
   }
 
-  function loadAnimation(params) {
-    if (standalone === true) {
-      params.animationData = JSON.parse(animationData);
-    }
-    return animationManager.loadAnimation(params);
+  function loadAnimation(params, isLoadNow) {
+    return animationManager.loadAnimation(params, isLoadNow);
   }
 
   function setQuality(value) {
-    if (typeof value === "string") {
+    if (typeof value === 'string') {
       switch (value) {
-        case "high":
+        case 'high':
           defaultCurveSegments = 200;
           break;
-        case "medium":
+        case 'medium':
           defaultCurveSegments = 50;
           break;
-        case "low":
+        case 'low':
           defaultCurveSegments = 10;
           break;
       }
@@ -11934,18 +11951,18 @@ GroupEffect.prototype.init = function (data, element) {
   }
 
   function installPlugin(type, plugin) {
-    if (type === "expressions") {
+    if (type === 'expressions') {
       expressionsPlugin = plugin;
     }
   }
 
   function getFactory(name) {
     switch (name) {
-      case "propertyFactory":
+      case 'propertyFactory':
         return PropertyFactory;
-      case "shapePropertyFactory":
+      case 'shapePropertyFactory':
         return ShapePropertyFactory;
-      case "matrix":
+      case 'matrix':
         return Matrix;
     }
   }
@@ -11973,11 +11990,11 @@ GroupEffect.prototype.init = function (data, element) {
   lottiejs.unfreeze = animationManager.unfreeze;
   lottiejs.getRegisteredAnimations = animationManager.getRegisteredAnimations;
   lottiejs.__getFactory = getFactory;
-  lottiejs.version = "5.5.95";
+  lottiejs.version = '5.5.95';
 
-  var standalone = "__[STANDALONE]__";
-  var animationData = "__[ANIMATIONDATA]__";
-  var renderer = "";
-  
+  var standalone = '__[STANDALONE]__';
+  var animationData = '__[ANIMATIONDATA]__';
+  var renderer = '';
+
   return lottiejs;
 });

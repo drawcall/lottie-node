@@ -50,10 +50,12 @@ var animationManager = (function () {
     len += 1;
   }
 
-  function loadAnimation(params) {
+  function loadAnimation(params, isLoadNow = true) {
     var animItem = new AnimationItem();
     setupAnimation(animItem, null);
+    animItem.isLoadNow = isLoadNow;
     animItem.setParams(params);
+
     return animItem;
   }
 

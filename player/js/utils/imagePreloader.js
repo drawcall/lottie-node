@@ -36,6 +36,7 @@ var ImagePreloader = (function () {
       path += assetData.u ? assetData.u : "";
       path += assetData.p;
     }
+
     return path;
   }
 
@@ -43,7 +44,7 @@ var ImagePreloader = (function () {
     var path = getAssetsPath(assetData, this.assetsPath, this.path);
     var img = createTag("img");
     img.src = path;
-
+    
     var ob = {
       img: img,
       assetData: assetData,
