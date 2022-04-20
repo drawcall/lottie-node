@@ -1850,7 +1850,35 @@ var FontManager = (function () {
     2380, 2381, 2382, 2383, 2387, 2388, 2389, 2390, 2391, 2402, 2403,
   ]);
 
-  function addFonts(fontData) {}
+  function addFonts(fontData) {
+    if (!fontData) {
+      this.isLoaded = true;
+      return;
+    }
+
+    if (this.chars) {
+      this.isLoaded = true;
+      this.fonts = fontData.list;
+      return;
+    }
+
+    var fontArr = fontData.list;
+    var i;
+    var len = fontArr.length;
+
+    for (i = 0; i < len; i += 1) {
+      fontArr[i].loaded = false;
+      fontArr[i].monoCase = null;
+      fontArr[i].sansCase = null;
+      fontArr[i].loaded = true;
+      fontArr[i].helper = null;
+      fontArr[i].cache = {};
+      this.fonts.push(fontArr[i]);
+    }
+
+    this.isLoaded = true;
+  }
+
   function addChars(chars) {
     if (!chars) {
       return;
@@ -1879,51 +1907,58 @@ var FontManager = (function () {
     }
   }
 
-  function getCharData(char, style, font) {
+  function getCharData(char, style, font, size) {
+    if (!this.chars) {
+      this.chars = [];
+    }
+
     var i = 0,
       len = this.chars.length;
+
     while (i < len) {
       if (this.chars[i].ch === char && this.chars[i].style === style && this.chars[i].fFamily === font) {
         return this.chars[i];
       }
       i += 1;
     }
-    if (((typeof char === 'string' && char.charCodeAt(0) !== 13) || !char) && console && console.warn) {
-      console.warn('Missing character from exported characters list: ', char, style, font);
-    }
-    return emptyChar;
+
+    return Object.assign(emptyChar, { size, w: size });
   }
 
   function measureText(char, fontName, size) {
     var fontData = this.getFontByName(fontName);
     var index = char.charCodeAt(0);
-    if (!fontData.cache[index + 1]) {
-      var tHelper = fontData.helper;
 
-      if (char === ' ') {
-        tHelper.textContent = '|' + char + '|';
-        var doubleSize = tHelper.getComputedTextLength();
-        tHelper.textContent = '||';
-        var singleSize = tHelper.getComputedTextLength();
-        fontData.cache[index + 1] = (doubleSize - singleSize) / 100;
-      } else {
-        tHelper.textContent = char;
-        fontData.cache[index + 1] = tHelper.getComputedTextLength() / 100;
-      }
+    if (!fontData.cache[index + 1]) {
+      // var tHelper = fontData.helper;
+      // if (char === ' ') {
+      //   tHelper.textContent = '|' + char + '|';
+      //   var doubleSize = tHelper.getComputedTextLength();
+      //   tHelper.textContent = '||';
+      //   var singleSize = tHelper.getComputedTextLength();
+      //   fontData.cache[index + 1] = (doubleSize - singleSize) / 100;
+      // } else {
+      //   tHelper.textContent = char;
+      //   fontData.cache[index + 1] = tHelper.getComputedTextLength() / 100;
+      // }
+      fontData.cache[index + 1] = 1;
     }
+
     return fontData.cache[index + 1] * size;
   }
 
-  function getFontByName(name) {
+  function getFontByName(fontName) {
     var i = 0,
       len = this.fonts.length;
     while (i < len) {
-      if (this.fonts[i].fName === name) {
+      if (this.fonts[i].fName === fontName) {
         return this.fonts[i];
       }
+
       i += 1;
     }
-    return this.fonts[0];
+
+    return { cache: {} };
   }
 
   function getCombinedCharacterCodes() {
@@ -8392,6 +8427,7 @@ function CVTextElement(data, globalData, comp) {
   };
   this.initElement(data, globalData, comp);
 }
+
 extendPrototype(
   [BaseElement, TransformElement, CVBaseElement, HierarchyElement, FrameElement, RenderableElement, ITextElement],
   CVTextElement
@@ -8417,6 +8453,7 @@ CVTextElement.prototype.buildNewText = function () {
     this.values.stroke = this.buildColor(documentData.sc);
     this.values.sWidth = documentData.sw;
   }
+
   var fontData = this.globalData.fontManager.getFontByName(documentData.f);
   var i, len;
   var letters = documentData.l;
@@ -8425,6 +8462,7 @@ CVTextElement.prototype.buildNewText = function () {
   this.values.fValue = documentData.finalSize + 'px ' + this.globalData.fontManager.getFontByName(documentData.f).fFamily;
   len = documentData.finalText.length;
   //this.tHelper.font = this.values.fValue;
+
   var charData,
     shapeData,
     k,
@@ -8441,12 +8479,15 @@ CVTextElement.prototype.buildNewText = function () {
     yPos = 0,
     firstLine = true;
   var cnt = 0;
+
   for (i = 0; i < len; i += 1) {
     charData = this.globalData.fontManager.getCharData(
       documentData.finalText[i],
       fontData.fStyle,
-      this.globalData.fontManager.getFontByName(documentData.f).fFamily
+      this.globalData.fontManager.getFontByName(documentData.f).fFamily,
+      documentData.finalSize
     );
+
     shapeData = (charData && charData.data) || {};
     matrixHelper.reset();
     if (singleShape && letters[i].n) {
@@ -8457,11 +8498,13 @@ CVTextElement.prototype.buildNewText = function () {
     }
 
     shapes = shapeData.shapes ? shapeData.shapes[0].it : [];
+
     jLen = shapes.length;
     matrixHelper.scale(documentData.finalSize / 100, documentData.finalSize / 100);
     if (singleShape) {
       this.applyTextPropertiesToMatrix(documentData, matrixHelper, letters[i].line, xPos, yPos);
     }
+
     commands = createSizedArray(jLen);
     for (j = 0; j < jLen; j += 1) {
       kLen = shapes[j].ks.k.i.length;
@@ -11990,7 +12033,7 @@ GroupEffect.prototype.init = function (data, element) {
   lottiejs.unfreeze = animationManager.unfreeze;
   lottiejs.getRegisteredAnimations = animationManager.getRegisteredAnimations;
   lottiejs.__getFactory = getFactory;
-  lottiejs.version = '5.5.95';
+  lottiejs.version = '5.5.99';
 
   var standalone = '__[STANDALONE]__';
   var animationData = '__[ANIMATIONDATA]__';

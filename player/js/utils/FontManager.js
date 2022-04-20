@@ -11,7 +11,35 @@ var FontManager = (function () {
     2380, 2381, 2382, 2383, 2387, 2388, 2389, 2390, 2391, 2402, 2403,
   ]);
 
-  function addFonts(fontData) {}
+  function addFonts(fontData) {
+    if (!fontData) {
+      this.isLoaded = true;
+      return;
+    }
+
+    if (this.chars) {
+      this.isLoaded = true;
+      this.fonts = fontData.list;
+      return;
+    }
+
+    var fontArr = fontData.list;
+    var i;
+    var len = fontArr.length;
+
+    for (i = 0; i < len; i += 1) {
+      fontArr[i].loaded = false;
+      fontArr[i].monoCase = null;
+      fontArr[i].sansCase = null;
+      fontArr[i].loaded = true;
+      fontArr[i].helper = null;
+      fontArr[i].cache = {};
+      this.fonts.push(fontArr[i]);
+    }
+
+    this.isLoaded = true;
+  }
+
   function addChars(chars) {
     if (!chars) {
       return;
@@ -40,51 +68,58 @@ var FontManager = (function () {
     }
   }
 
-  function getCharData(char, style, font) {
+  function getCharData(char, style, font, size) {
+    if (!this.chars) {
+      this.chars = [];
+    }
+
     var i = 0,
       len = this.chars.length;
+
     while (i < len) {
       if (this.chars[i].ch === char && this.chars[i].style === style && this.chars[i].fFamily === font) {
         return this.chars[i];
       }
       i += 1;
     }
-    if (((typeof char === 'string' && char.charCodeAt(0) !== 13) || !char) && console && console.warn) {
-      console.warn('Missing character from exported characters list: ', char, style, font);
-    }
-    return emptyChar;
+
+    return Object.assign(emptyChar, { size, w: size });
   }
 
   function measureText(char, fontName, size) {
     var fontData = this.getFontByName(fontName);
     var index = char.charCodeAt(0);
-    if (!fontData.cache[index + 1]) {
-      var tHelper = fontData.helper;
 
-      if (char === ' ') {
-        tHelper.textContent = '|' + char + '|';
-        var doubleSize = tHelper.getComputedTextLength();
-        tHelper.textContent = '||';
-        var singleSize = tHelper.getComputedTextLength();
-        fontData.cache[index + 1] = (doubleSize - singleSize) / 100;
-      } else {
-        tHelper.textContent = char;
-        fontData.cache[index + 1] = tHelper.getComputedTextLength() / 100;
-      }
+    if (!fontData.cache[index + 1]) {
+      // var tHelper = fontData.helper;
+      // if (char === ' ') {
+      //   tHelper.textContent = '|' + char + '|';
+      //   var doubleSize = tHelper.getComputedTextLength();
+      //   tHelper.textContent = '||';
+      //   var singleSize = tHelper.getComputedTextLength();
+      //   fontData.cache[index + 1] = (doubleSize - singleSize) / 100;
+      // } else {
+      //   tHelper.textContent = char;
+      //   fontData.cache[index + 1] = tHelper.getComputedTextLength() / 100;
+      // }
+      fontData.cache[index + 1] = 1;
     }
+
     return fontData.cache[index + 1] * size;
   }
 
-  function getFontByName(name) {
+  function getFontByName(fontName) {
     var i = 0,
       len = this.fonts.length;
     while (i < len) {
-      if (this.fonts[i].fName === name) {
+      if (this.fonts[i].fName === fontName) {
         return this.fonts[i];
       }
+
       i += 1;
     }
-    return this.fonts[0];
+
+    return { cache: {} };
   }
 
   function getCombinedCharacterCodes() {

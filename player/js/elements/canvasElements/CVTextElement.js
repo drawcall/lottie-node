@@ -17,6 +17,7 @@ function CVTextElement(data, globalData, comp) {
   };
   this.initElement(data, globalData, comp);
 }
+
 extendPrototype(
   [BaseElement, TransformElement, CVBaseElement, HierarchyElement, FrameElement, RenderableElement, ITextElement],
   CVTextElement
@@ -42,6 +43,7 @@ CVTextElement.prototype.buildNewText = function () {
     this.values.stroke = this.buildColor(documentData.sc);
     this.values.sWidth = documentData.sw;
   }
+
   var fontData = this.globalData.fontManager.getFontByName(documentData.f);
   var i, len;
   var letters = documentData.l;
@@ -50,6 +52,7 @@ CVTextElement.prototype.buildNewText = function () {
   this.values.fValue = documentData.finalSize + 'px ' + this.globalData.fontManager.getFontByName(documentData.f).fFamily;
   len = documentData.finalText.length;
   //this.tHelper.font = this.values.fValue;
+
   var charData,
     shapeData,
     k,
@@ -66,12 +69,15 @@ CVTextElement.prototype.buildNewText = function () {
     yPos = 0,
     firstLine = true;
   var cnt = 0;
+
   for (i = 0; i < len; i += 1) {
     charData = this.globalData.fontManager.getCharData(
       documentData.finalText[i],
       fontData.fStyle,
-      this.globalData.fontManager.getFontByName(documentData.f).fFamily
+      this.globalData.fontManager.getFontByName(documentData.f).fFamily,
+      documentData.finalSize
     );
+
     shapeData = (charData && charData.data) || {};
     matrixHelper.reset();
     if (singleShape && letters[i].n) {
@@ -82,11 +88,13 @@ CVTextElement.prototype.buildNewText = function () {
     }
 
     shapes = shapeData.shapes ? shapeData.shapes[0].it : [];
+
     jLen = shapes.length;
     matrixHelper.scale(documentData.finalSize / 100, documentData.finalSize / 100);
     if (singleShape) {
       this.applyTextPropertiesToMatrix(documentData, matrixHelper, letters[i].line, xPos, yPos);
     }
+
     commands = createSizedArray(jLen);
     for (j = 0; j < jLen; j += 1) {
       kLen = shapes[j].ks.k.i.length;

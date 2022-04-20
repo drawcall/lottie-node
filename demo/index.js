@@ -3,8 +3,8 @@ const fs = require('fs-extra');
 const lottie = require('../build/lottie_canvas.js');
 const { Canvas, Image } = require('canvas');
 
-const i = 4; // floder
-const j = 4; // file
+const i = 1; // floder
+const j = 0; // file
 const num = 50;
 const delta = 33 * 4;
 
