@@ -89,7 +89,7 @@ anim.replaceAsset(17, path.join(__dirname, 'xx.jpg'));
 - Use lottie-api for more advanced modifications. [https://github.com/bodymovin/lottie-api](https://github.com/bodymovin/lottie-api)
 
 ```javascript
-const elements = anim.api.getKeyPath('comp1,textnode');
+const elements = anim.getApi().getKeyPath('comp1,textnode');
 elements.getElements()[0].setText('hahahahah!');
 
 // or

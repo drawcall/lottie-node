@@ -8932,7 +8932,7 @@ AnimationItem.prototype.loadNow = function () {
     this.loadSegments();
     this.updaFrameModifier();
     this.waitForFontsLoaded();
-    this.setupApi();
+    //this.setupApi();
   } catch (err) {
     console.error(err);
   }
@@ -9039,6 +9039,7 @@ AnimationItem.prototype.replaceText = function (target, txt) {
 };
 
 AnimationItem.prototype.findElements = function (key) {
+  const api = this.getApi();
   const elements = api.getKeyPath(key);
   return elements.getElements();
 };
@@ -9070,8 +9071,12 @@ AnimationItem.prototype.waitForFontsLoaded = function () {
   this.checkLoaded();
 };
 
-AnimationItem.prototype.setupApi = function () {
-  this.api = lottieApi.createAnimationApi(this);
+AnimationItem.prototype.getApi = function () {
+  if(!this.api) {
+    this.api = lottieApi.createAnimationApi(this);
+  }
+  
+  return this.api;
 };
 
 AnimationItem.prototype.checkLoaded = function () {
@@ -12033,7 +12038,7 @@ GroupEffect.prototype.init = function (data, element) {
   lottiejs.unfreeze = animationManager.unfreeze;
   lottiejs.getRegisteredAnimations = animationManager.getRegisteredAnimations;
   lottiejs.__getFactory = getFactory;
-  lottiejs.version = '5.5.99';
+  lottiejs.version = '5.5.101';
 
   var standalone = '__[STANDALONE]__';
   var animationData = '__[ANIMATIONDATA]__';

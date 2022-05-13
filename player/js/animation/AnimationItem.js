@@ -88,7 +88,7 @@ AnimationItem.prototype.loadNow = function () {
     this.loadSegments();
     this.updaFrameModifier();
     this.waitForFontsLoaded();
-    this.setupApi();
+    //this.setupApi();
   } catch (err) {
     console.error(err);
   }
@@ -195,6 +195,7 @@ AnimationItem.prototype.replaceText = function (target, txt) {
 };
 
 AnimationItem.prototype.findElements = function (key) {
+  const api = this.getApi();
   const elements = api.getKeyPath(key);
   return elements.getElements();
 };
@@ -226,8 +227,12 @@ AnimationItem.prototype.waitForFontsLoaded = function () {
   this.checkLoaded();
 };
 
-AnimationItem.prototype.setupApi = function () {
-  this.api = lottieApi.createAnimationApi(this);
+AnimationItem.prototype.getApi = function () {
+  if(!this.api) {
+    this.api = lottieApi.createAnimationApi(this);
+  }
+  
+  return this.api;
 };
 
 AnimationItem.prototype.checkLoaded = function () {
